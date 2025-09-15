@@ -1,0 +1,44 @@
+{
+  "properties": [
+    {
+      "name": "jwt.access.secret",
+      "type": "java.lang.String",
+      "description": "Secret key for JWT access token"
+    },
+    {
+      "name": "jwt.access.expiration",
+      "type": "java.lang.Long",
+      "description": "Expiration time (in seconds) for JWT access token"
+    },
+    {
+      "name": "jwt.refresh.secret",
+      "type": "java.lang.String",
+      "description": "Secret key for JWT refresh token"
+    },
+    {
+      "name": "jwt.refresh.expiration",
+      "type": "java.lang.Long",
+      "description": "Expiration time (in seconds) for JWT refresh token"
+    },
+    {
+      "name": "minio.endpoint",
+      "type": "java.lang.String",
+      "description": "URL to MinIO"
+    },
+    {
+      "name": "minio.access_key",
+      "type": "java.lang.String",
+      "description": "Access key (aka user ID) of an account in MinIO."
+    },
+    {
+      "name": "minio.secret_key",
+      "type": "java.lang.String",
+      "description": "Secret key (aka password) of an account in MinIO."
+    },
+    {
+      "name": "minio.bucket",
+      "type": "java.lang.String",
+      "description": "Name of the bucket to be created in MinIO (if not exists)."
+    }
+  ]
+}

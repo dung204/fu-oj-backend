@@ -1,0 +1,29 @@
+name: Run Integration Tests
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "src/**"
+  pull_request:
+    branches: [master, main]
+    paths:
+      - "src/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v5
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+      - name: Set up Docker
+        uses: docker/setup-docker-action@v4
+      - name: Run Integration Tests with Maven
+        run: mvn clean test -Dgroups=integration

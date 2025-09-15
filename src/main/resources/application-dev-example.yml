@@ -1,0 +1,19 @@
+# Database configuration
+spring:
+  datasource:
+    url: jdbc:postgresql://<host>:<port>/<database-name>
+    username: <database-username>
+    password: <database-password>
+  data:
+    redis:
+      host: <redis-host>
+      port: 6379
+      password: <redis-password>
+
+jwt:
+  access:
+    secret: your-access-secret
+    expiration: 3600 # 1 hour
+  refresh:
+    secret: your-refresh-secret
+    expiration: 604800 # 7 days

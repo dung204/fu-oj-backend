@@ -1,0 +1,40 @@
+server:
+  port: 4000
+
+spring:
+  profiles:
+    active:
+      - dev # Change to `prod` when deploying to production
+  application:
+    name: spring-rest-api-starter-template
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        type: trace
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  output:
+    ansi:
+      enabled: always
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    tags-sorter: alpha
+    path: /api/v1/docs
+
+logging:
+  file:
+    name: ./logs/app.log

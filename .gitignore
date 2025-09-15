@@ -1,0 +1,60 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Development configuration ###
+src/main/resources/application-dev.properties
+src/main/resources/application-dev.yml
+
+### Production configuration ###
+src/main/resources/application-prod.properties
+src/main/resources/application-prod.yml
+
+### Test configuration ###
+src/main/resources/application-test.properties
+src/main/resources/application-test.yml
+
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lock
+
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+logs/*
+*.log

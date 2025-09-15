@@ -1,0 +1,27 @@
+name: Run Unit Tests
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "src/**"
+  pull_request:
+    branches: [master, main]
+    paths:
+      - "src/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v5
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+      - name: Run Unit Tests with Maven
+        run: mvn clean test -Dgroups=unit
