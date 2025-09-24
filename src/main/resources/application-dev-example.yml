@@ -17,3 +17,9 @@ jwt:
   refresh:
     secret: your-refresh-secret
     expiration: 604800 # 7 days
+
+minio:
+  endpoint: <host>:<port>
+  access_key: your-access-key
+  secret_key: your-secret-key
+  bucket: spring-rest-api-bucket
