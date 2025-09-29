@@ -42,11 +42,7 @@ git clone https://github.com/dung204/spring-rest-api-starter-template.git
 cd spring-rest-api-starter-template
 ```
 
-3. Prepare the environment variables:
-
-3.1. If using Docker Compose, create a `.env` file in the root directory of the project. You can use the `.env.example` file as a template. Make sure to fill in the required environment variables. These variables is required for Docker Compose
-
-3.2. Create a configuration file, named `application-dev.yml`, place it at `src/resources/`. The content of this file should follow the example file (`application-dev-example.yml`)
+3. Create a `.env` file in the root directory of the project. You can use the [`.env.example`](.env.example) file as a template. Make sure to fill in the required environment variables, **and delete all comments**. These variables are required for Docker Compose
 
 4. Use `npm` to install `husky`, `commitlint`, `prettier` & `lint-staged`:
 
@@ -106,11 +102,11 @@ Formatters & Linters & Misc. tools:
 - To run unit tests, use the following command:
 
 ```bash
-mvn test -Dgroups=unit
+mvn clean test -Dgroups=unit
 ```
 
 - To run integration tests, use the following command:
 
 ```bash
-mvn test -Dgroups=integration
+mvn clean test -Dgroups=integration
 ```

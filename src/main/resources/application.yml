@@ -2,6 +2,8 @@ server:
   port: 4000
 
 spring:
+  config:
+    import: file:.env[.properties]
   profiles:
     active:
       - dev # Change to `prod` when deploying to production
@@ -26,6 +28,15 @@ spring:
     multipart:
       max-file-size: 2MB
       max-request-size: 2MB
+  datasource:
+    url: jdbc:postgresql://localhost:${DB_PORT:5432}/${DB_DATABASE_NAME:fu_oj_backend}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  data:
+    redis:
+      host: localhost
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
 
 springdoc:
   api-docs:
@@ -38,3 +49,17 @@ springdoc:
 logging:
   file:
     name: ./logs/app.log
+
+minio:
+  endpoint: http://localhost:${MINIO_PORT:9000}
+  access_key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret_key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:bucket}
+
+jwt:
+  access:
+    secret: ${JWT_ACCESS_SECRET}
+    expiration: ${JWT_ACCESS_EXPIRATION}
+  refresh:
+    secret: ${JWT_REFRESH_SECRET}
+    expiration: ${JWT_REFRESH_EXPIRATION}
