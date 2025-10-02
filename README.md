@@ -69,6 +69,8 @@ mvn spring-boot:run
 
 7. Open `http://localhost:4000/api/v1/docs` to see the OpenAPI documentation of this REST API. You can configure the server port in `application-dev.yml`.
 
+8. (Optional) For VS Code users, you can install the recommended extensions listed in [`.vscode/extensions.json`](.vscode/extensions.json) for a better development experience.
+
 ## 📦 Libraries (dependencies)
 
 Core libraries:
