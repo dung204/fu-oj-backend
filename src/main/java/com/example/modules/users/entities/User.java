@@ -2,12 +2,13 @@ package com.example.modules.users.entities;
 
 import com.example.base.entities.BaseEntity;
 import com.example.modules.auth.entities.Account;
-import com.example.modules.posts.entities.Post;
+import com.example.modules.certifications.entities.Certification;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.List;
@@ -27,10 +28,19 @@ import lombok.experimental.SuperBuilder;
 public class User extends BaseEntity {
 
   @Column
+  private String rollNumber;
+
+  @Column
   private String firstName;
 
   @Column
   private String lastName;
+
+  @Column
+  private String phone;
+
+  @Column
+  private String address;
 
   @Column
   private String avatar;
@@ -39,6 +49,11 @@ public class User extends BaseEntity {
   @JoinColumn(name = "account_id", nullable = false)
   private Account account;
 
-  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-  private List<Post> posts;
+  @ManyToMany
+  @JoinTable(
+    name = "user_certifications",
+    joinColumns = @JoinColumn(name = "user_id"),
+    inverseJoinColumns = @JoinColumn(name = "certification_id")
+  )
+  private List<Certification> certifications;
 }

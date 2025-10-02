@@ -31,7 +31,13 @@ public final class AppRoutes {
   public static final String AUTH_PREFIX = API_PREFIX + "/auth";
   public static final String USER_PREFIX = API_PREFIX + "/users";
   public static final String ME_PREFIX = API_PREFIX + "/me";
-  public static final String POSTS_PREFIX = API_PREFIX + "/posts";
+  public static final String CERTIFICATIONS_PREFIX = API_PREFIX + "/certifications";
+  public static final String COMMENTS_PREFIX = API_PREFIX + "/comments";
+  public static final String EXERCISES_PREFIX = API_PREFIX + "/exercises";
+  public static final String GROUPS_PREFIX = API_PREFIX + "/groups";
+  public static final String SUBMISSIONS_PREFIX = API_PREFIX + "/submissions";
+  public static final String TEST_CASES_PREFIX = API_PREFIX + "/test-cases";
+  public static final String TOPICS_PREFIX = API_PREFIX + "/topics";
 
   public static final List<String> whitelistedRoutes = List.of(
     API_PREFIX + "/docs/**",

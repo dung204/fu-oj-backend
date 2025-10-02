@@ -71,6 +71,7 @@ services:
     volumes:
       - minio_data:/data
     command: server --console-address ":${MINIO_CONSOLE_PORT:-9001}" /data
+    restart: unless-stopped
     networks:
       - fu-oj-network
     healthcheck:

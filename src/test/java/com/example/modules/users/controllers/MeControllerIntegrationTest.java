@@ -78,7 +78,7 @@ public class MeControllerIntegrationTest extends BaseControllerIntegrationTest {
 
     assertEquals(user.getId(), userProfile.getId());
     assertEquals(user.getAccount().getEmail(), userProfile.getEmail());
-    assertEquals(user.getAccount().getRole().getValue(), userProfile.getRole());
+    assertEquals(user.getAccount().getRole().getName(), userProfile.getRole());
   }
 
   @Test
@@ -131,7 +131,7 @@ public class MeControllerIntegrationTest extends BaseControllerIntegrationTest {
 
     assertEquals(user.getId(), userProfile.getId());
     assertEquals(user.getAccount().getEmail(), userProfile.getEmail());
-    assertEquals(user.getAccount().getRole().getValue(), userProfile.getRole());
+    assertEquals(user.getAccount().getRole().getName(), userProfile.getRole());
     assertEquals(updateProfileDTO.getFirstName().get(), userProfile.getFirstName());
     assertEquals(updateProfileDTO.getLastName().get(), userProfile.getLastName());
   }
@@ -224,7 +224,7 @@ public class MeControllerIntegrationTest extends BaseControllerIntegrationTest {
 
     assertEquals(user.getId(), userProfile.getId());
     assertEquals(user.getAccount().getEmail(), userProfile.getEmail());
-    assertEquals(user.getAccount().getRole().getValue(), userProfile.getRole());
+    assertEquals(user.getAccount().getRole().getName(), userProfile.getRole());
 
     MinioFileResponse avatar = userProfile.getAvatar();
     assertNotNull(avatar);
