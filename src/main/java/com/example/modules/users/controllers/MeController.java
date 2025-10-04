@@ -3,12 +3,8 @@ package com.example.modules.users.controllers;
 import static com.example.base.utils.AppRoutes.ME_PREFIX;
 
 import com.example.base.annotations.File;
-import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.CurrentUser;
-import com.example.modules.posts.dtos.MePostsSearchDTO;
-import com.example.modules.posts.dtos.PostResponseDTO;
-import com.example.modules.posts.services.PostsService;
 import com.example.modules.users.dtos.UpdateProfileDTO;
 import com.example.modules.users.dtos.UserProfileDTO;
 import com.example.modules.users.entities.User;
@@ -24,7 +20,6 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.util.unit.DataUnit;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,7 +36,6 @@ import org.springframework.web.multipart.MultipartFile;
 @Tag(name = "me", description = "Operations related to the current authenticated users")
 public class MeController {
 
-  private final PostsService postsService;
   private final UsersService usersService;
   private final UserMapper userMapper;
 
@@ -100,25 +94,6 @@ public class MeController {
     return SuccessResponseDTO.<UserProfileDTO>builder()
       .message("User avatar updated successfully")
       .data(usersService.updateAvatar(currentUser, file))
-      .build();
-  }
-
-  @Operation(
-    summary = "Retrieve all posts of the current user (both public & private, both existing & deleted)",
-    responses = {
-      @ApiResponse(responseCode = "200", description = "Posts retrieved successfully"),
-      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
-    }
-  )
-  @GetMapping("/posts")
-  public PaginatedSuccessResponseDTO<PostResponseDTO> getAllPostsOfCurrentUser(
-    @CurrentUser User currentUser,
-    @ParameterObject @Valid MePostsSearchDTO postsSearchDTO
-  ) {
-    return PaginatedSuccessResponseDTO.<PostResponseDTO>builder()
-      .message("Posts retrieved successfully.")
-      .page(postsService.findAllPostsOfCurrentUser(postsSearchDTO, currentUser))
-      .filters(postsSearchDTO.getFilters())
       .build();
   }
 }

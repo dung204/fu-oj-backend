@@ -47,7 +47,13 @@ cd fu-oj-backend
 
 3. Create a `.env` file in the root directory of the project. You can use the [`.env.example`](.env.example) file as a template. Make sure to fill in the required environment variables, **and delete all comments**. These variables are required for Docker Compose
 
-4. Install `husky`, `commitlint`, `prettier` & `lint-staged` using the following command (you only need to do this once):
+4. (Optional, but recommended) Start the required services using Docker Compose
+
+```bash
+docker compose up -d
+```
+
+5. Install `husky`, `commitlint`, `prettier` & `lint-staged` using the following command (you only need to do this once):
 
 > 📝 You can replace `npm` with `yarn` or `pnpm` or `bun` if you prefer
 
@@ -55,13 +61,15 @@ cd fu-oj-backend
 npm install
 ```
 
-5. Start the application
+6. Start the application
 
 ```bash
 mvn spring-boot:run
 ```
 
-6. Open `http://localhost:4000/api/v1/docs` to see the OpenAPI documentation of this REST API. You can configure the server port in `application-dev.yml`.
+7. Open `http://localhost:4000/api/v1/docs` to see the OpenAPI documentation of this REST API. You can configure the server port in `application-dev.yml`.
+
+8. (Optional) For VS Code users, you can install the recommended extensions listed in [`.vscode/extensions.json`](.vscode/extensions.json) for a better development experience.
 
 ## 📦 Libraries (dependencies)
 

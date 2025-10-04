@@ -10,7 +10,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.example.base.BaseControllerTest;
 import com.example.modules.minio.services.MinioService;
-import com.example.modules.posts.services.PostsService;
 import com.example.modules.users.dtos.UpdateProfileDTO;
 import com.example.modules.users.dtos.UserProfileDTO;
 import com.example.modules.users.entities.User;
@@ -25,9 +24,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @WebMvcTest(MeController.class)
 public class MeControllerTest extends BaseControllerTest {
-
-  @MockitoBean
-  private PostsService postsService;
 
   @MockitoBean
   private UsersService usersService;
@@ -68,7 +64,7 @@ public class MeControllerTest extends BaseControllerTest {
       .andExpect(jsonPath("$.data.email").value(mockUser.getAccount().getEmail()))
       .andExpect(jsonPath("$.data.firstName").value(mockUser.getFirstName()))
       .andExpect(jsonPath("$.data.lastName").value(mockUser.getLastName()))
-      .andExpect(jsonPath("$.data.role").value(mockUser.getAccount().getRole().getValue()));
+      .andExpect(jsonPath("$.data.role").value(mockUser.getAccount().getRole().getName()));
   }
 
   @Test

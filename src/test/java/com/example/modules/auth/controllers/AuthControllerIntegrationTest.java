@@ -64,7 +64,7 @@ public class AuthControllerIntegrationTest extends BaseControllerIntegrationTest
     assertNotNull(tokenDTO.getUser());
     assertEquals(user.getId(), tokenDTO.getUser().getId());
     assertEquals(user.getAccount().getEmail(), tokenDTO.getUser().getEmail());
-    assertEquals(user.getAccount().getRole().getValue(), tokenDTO.getUser().getRole());
+    assertEquals(user.getAccount().getRole().getName(), tokenDTO.getUser().getRole());
   }
 
   @Test
@@ -278,7 +278,7 @@ public class AuthControllerIntegrationTest extends BaseControllerIntegrationTest
     assertNotNull(tokenDTO.getUser());
     assertNotNull(tokenDTO.getUser().getId());
     assertEquals(user.getAccount().getEmail(), tokenDTO.getUser().getEmail());
-    assertEquals(user.getAccount().getRole().getValue(), tokenDTO.getUser().getRole());
+    assertEquals(user.getAccount().getRole().getName(), tokenDTO.getUser().getRole());
   }
 
   @Test

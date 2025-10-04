@@ -12,9 +12,9 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
-	<artifactId>spring-rest-api-starter-template</artifactId>
+	<artifactId>fu-oj-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>spring-rest-api-starter-template</name>
+	<name>fu-oj-backend</name>
 	<description>The Starter Template for Spring REST API</description>
 	<url />
 	<licenses>

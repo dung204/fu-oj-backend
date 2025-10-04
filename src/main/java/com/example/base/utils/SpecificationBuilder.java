@@ -21,6 +21,7 @@ import org.springframework.data.jpa.domain.Specification;
  * @param <T> the entity type that this specification builder operates on
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuppressWarnings("unchecked")
 public class SpecificationBuilder<T> {
 
   protected final List<Specification<T>> specifications = new ArrayList<>();
