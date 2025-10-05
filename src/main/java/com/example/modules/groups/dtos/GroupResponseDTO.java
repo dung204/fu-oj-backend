@@ -12,5 +12,10 @@ import lombok.experimental.SuperBuilder;
 // @NoArgsConstructor
 // @AllArgsConstructor
 public class GroupResponseDTO extends EntityDTO {
+
   // TODO: Add fields
+  private String code;
+  private String name;
+  private String description;
+  private String ownerId;
 }
