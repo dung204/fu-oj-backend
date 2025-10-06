@@ -2,12 +2,17 @@ package com.example.modules.groups.services;
 
 import com.example.modules.groups.dtos.GroupRequestDTO;
 import com.example.modules.groups.dtos.GroupResponseDTO;
+import com.example.modules.groups.dtos.GroupUpdateRequestDTO;
 import com.example.modules.groups.entities.Group;
 import com.example.modules.groups.exeptions.GroupHasAlreadyBeenUsedException;
 import com.example.modules.groups.repositories.GroupsRepository;
+import com.example.modules.groups.utils.GroupMapper;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.repositories.UsersRepository;
 import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,12 +28,55 @@ public class GroupsService {
   private static final SecureRandom random = new SecureRandom();
   private final GroupsRepository groupsRepository;
   private final UsersRepository usersRepository;
+  private final GroupMapper groupMapper;
 
-  public GroupsService(GroupsRepository groupsRepository, UsersRepository usersRepository) {
+  public GroupsService(
+    GroupsRepository groupsRepository,
+    UsersRepository usersRepository,
+    GroupMapper groupMapper
+  ) {
     this.groupsRepository = groupsRepository;
     this.usersRepository = usersRepository;
+    this.groupMapper = groupMapper;
   }
 
+  //get group by id
+  public List<GroupResponseDTO> getGroupByInstructorId(String ownerId) {
+    List<Group> groups = groupsRepository.getGroupByOwnerId(ownerId);
+    if (groups == null) {
+      groups = new ArrayList<>();
+    }
+    return groupMapper.toGroupResponseDTOList(groups);
+  }
+
+  //get all group
+  public List<GroupResponseDTO> getGroups() {
+    List<Group> groups = groupsRepository.findAll();
+    if (groups == null) {
+      groups = new ArrayList<>();
+    }
+    return groupMapper.toGroupResponseDTOList(groups);
+  }
+
+  //delete group
+  public GroupResponseDTO deleteGroup(String id) {
+    Group group = groupsRepository.getGroupById(id);
+    group.softDelete();
+    groupsRepository.save(group);
+    return groupMapper.toGroupResponseDTO(group);
+  }
+
+  //update group by id group
+  public GroupResponseDTO updateGroup(GroupUpdateRequestDTO requestDTO) {
+    Group group = groupsRepository.getGroupById(requestDTO.getId());
+    group.setName(requestDTO.getName());
+    group.setDescription(requestDTO.getDescription());
+    group.setUpdatedTimestamp(Instant.now());
+    groupsRepository.save(group);
+    return groupMapper.toGroupResponseDTO(group);
+  }
+
+  //add group
   public GroupResponseDTO addGroup(GroupRequestDTO groupRequestDTO) {
     final String nameGroup = groupRequestDTO.getName();
     final Optional<Group> existingGroup = groupsRepository.existsGroupByName(nameGroup);
@@ -46,13 +94,7 @@ public class GroupsService {
       .build();
     groupsRepository.save(group);
 
-    //return group => xu ly automapper doan nay
-    return GroupResponseDTO.builder()
-      .name(groupRequestDTO.getName())
-      .description(groupRequestDTO.getDescription())
-      .code(generateUniqueClassCode())
-      .ownerId(instructor.getId())
-      .build();
+    return groupMapper.toGroupResponseDTO(group);
   }
 
   @Transactional
