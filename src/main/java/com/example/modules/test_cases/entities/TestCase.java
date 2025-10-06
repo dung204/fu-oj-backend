@@ -19,16 +19,16 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "exercises")
+@Table(name = "test_cases")
 public class TestCase extends BaseEntity {
 
   @ManyToOne
   @JoinColumn(name = "exercise_id", nullable = false)
   private Exercise exercise;
 
-  @Column
+  @Column(columnDefinition = "TEXT")
   private String input;
 
-  @Column
+  @Column(columnDefinition = "TEXT")
   private String output;
 }
