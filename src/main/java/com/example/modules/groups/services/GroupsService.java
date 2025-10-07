@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,7 +46,66 @@ public class GroupsService {
     this.exercisesRepository = exercisesRepository;
   }
 
+  @Transactional
+  public GroupResponseDTO addStudentsToGroup(String groupId, List<String> studentIds) {
+    Group group = groupsRepository.findGroupById(groupId);
+    List<User> students = usersRepository.findAllById(studentIds);
+    if (group.getStudents() == null) {
+      group.setStudents(new ArrayList<>());
+    }
+    group.getStudents().addAll(students);
+    groupsRepository.save(group);
+    return groupMapper.toGroupResponseDTO(group);
+  }
+
+  public List<User> getStudentsByGroupId(String groupId) {
+    Group group = groupsRepository.findGroupById(groupId);
+    List<User> students = group.getStudents();
+    if (students == null) {
+      students = new ArrayList<>();
+    }
+    return students;
+  }
+
+  @Transactional
+  public GroupResponseDTO removeStudentsFromGroup(String groupId, List<String> studentIds) {
+    Group group = groupsRepository.findGroupById(groupId);
+    List<User> studentsToRemove = group
+      .getStudents()
+      .stream()
+      .filter(student -> studentIds.contains(student.getId()))
+      .toList();
+
+    group.getStudents().removeAll(studentsToRemove);
+    groupsRepository.save(group);
+    return groupMapper.toGroupResponseDTO(group);
+  }
+
+  @Transactional
+  public GroupResponseDTO removeExercisesFromGroup(String groupId, List<String> exerciseIds) {
+    Group group = groupsRepository.findGroupById(groupId);
+    List<Exercise> exercisesToRemove = group
+      .getExercises()
+      .stream()
+      .filter(exercise -> exerciseIds.contains(exercise.getId()))
+      .toList();
+    group.getExercises().removeAll(exercisesToRemove);
+    groupsRepository.save(group);
+    return groupMapper.toGroupResponseDTO(group);
+  }
+
+  //get exercise by groupId
+  public List<Exercise> getExerciseByGroupId(String groupId) {
+    Group group = groupsRepository.findGroupById(groupId);
+    List<Exercise> exercises = group.getExercises();
+    if (exercises == null) {
+      exercises = new ArrayList<>();
+    }
+    return exercises;
+  }
+
   //add exercise to group
+  @Transactional
   public GroupResponseDTO addExerciseToGroup(String groupId, List<String> exerciseIds) {
     Group group = groupsRepository.findGroupById(groupId);
     List<Exercise> exercises = exercisesRepository.findAllById(exerciseIds);

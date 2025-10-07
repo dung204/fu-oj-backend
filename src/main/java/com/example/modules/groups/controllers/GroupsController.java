@@ -4,11 +4,10 @@ import static com.example.base.utils.AppRoutes.GROUPS_PREFIX;
 
 import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.Public;
-import com.example.modules.groups.dtos.AddExerciseToGroupRequestDTO;
-import com.example.modules.groups.dtos.GroupRequestDTO;
-import com.example.modules.groups.dtos.GroupResponseDTO;
-import com.example.modules.groups.dtos.GroupUpdateRequestDTO;
+import com.example.modules.exercises.entities.Exercise;
+import com.example.modules.groups.dtos.*;
 import com.example.modules.groups.services.GroupsService;
+import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -174,12 +173,201 @@ public class GroupsController {
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<GroupResponseDTO> addExerciseToGroup(
     @PathVariable @NotNull(message = "ID must be not null") String id,
-    @Valid @RequestBody AddExerciseToGroupRequestDTO addExerciseToGroupRequestDTO
+    @Valid @RequestBody ListExerciseToGroupRequestDTO addExerciseToGroupRequestDTO
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(201)
       .message("Add exercise to group successfully")
       .data(groupsService.addExerciseToGroup(id, addExerciseToGroupRequestDTO.getExerciseIds()))
+      .build();
+  }
+
+  @Public
+  @Operation(
+    summary = "Remove exercises from a group",
+    description = "Remove one or multiple exercises from a specific group by providing the group ID and a list of exercise IDs to remove.",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Exercises removed from group successfully"),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid group ID format or invalid exercise IDs",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to modify this group",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Group or one of the exercises not found",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.CREATED)
+  public SuccessResponseDTO<GroupResponseDTO> removeExercisesFromGroup(
+    @PathVariable @NotNull(message = "ID must be not null") String id,
+    @Valid @RequestBody ListExerciseToGroupRequestDTO removeExerciseToGroupRequestDTO
+  ) {
+    return SuccessResponseDTO.<GroupResponseDTO>builder()
+      .status(200)
+      .message("remove exercise to group successfully")
+      .data(
+        groupsService.removeExercisesFromGroup(id, removeExerciseToGroupRequestDTO.getExerciseIds())
+      )
+      .build();
+  }
+
+  @Public
+  @Operation(
+    summary = "Get exercises by group ID",
+    description = "Retrieve all exercises that belong to a specific group using the group ID.",
+    responses = {
+      @ApiResponse(
+        responseCode = "200",
+        description = "Successfully retrieved exercises of the group"
+      ),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid group ID format",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized access to this resource",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Group not found or no exercises available",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @GetMapping("/{id}")
+  @ResponseStatus(HttpStatus.OK)
+  public SuccessResponseDTO<List<Exercise>> getExerciseByGroupId(
+    @PathVariable @NotNull(message = "Group ID cannot be null") String id
+  ) {
+    return SuccessResponseDTO.<List<Exercise>>builder()
+      .status(200)
+      .message("Get exercise by id successfully")
+      .data(groupsService.getExerciseByGroupId(id))
+      .build();
+  }
+
+  @Public
+  @Operation(
+    summary = "Add students to a group",
+    description = "Add one or more students to the specified group by group ID.",
+    responses = {
+      @ApiResponse(responseCode = "201", description = "Students added to group successfully"),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid group ID or malformed request body",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to add students to this group",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "404", description = "Group not found", content = @Content),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @PostMapping("/{id}")
+  @ResponseStatus(HttpStatus.CREATED)
+  public SuccessResponseDTO<GroupResponseDTO> addStudentsToGroup(
+    @PathVariable @NotNull(message = "ID must be not null") String id,
+    @Valid @RequestBody ListStudentToGroupRequestDTO addStudentToGroupRequestDTO
+  ) {
+    return SuccessResponseDTO.<GroupResponseDTO>builder()
+      .status(201)
+      .message("Add students to group successfully")
+      .data(groupsService.addStudentsToGroup(id, addStudentToGroupRequestDTO.getStudentIds()))
+      .build();
+  }
+
+  @Public
+  @Operation(
+    summary = "Get students by group ID",
+    description = "Retrieve all students that belong to a specific group using the group ID.",
+    responses = {
+      @ApiResponse(
+        responseCode = "200",
+        description = "Successfully retrieved students of the group"
+      ),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid group ID format",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized access to this resource",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Group not found or no students available",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @GetMapping("/{id}")
+  @ResponseStatus(HttpStatus.OK)
+  public SuccessResponseDTO<List<User>> getStudentsByGroupId(
+    @PathVariable @NotNull(message = "Group ID cannot be null") String id
+  ) {
+    return SuccessResponseDTO.<List<User>>builder()
+      .status(200)
+      .message("Get students by groupId successfully")
+      .data(groupsService.getStudentsByGroupId(id))
+      .build();
+  }
+
+  @Public
+  @Operation(
+    summary = "Remove students from a group",
+    description = "Remove one or multiple students from a specific group by providing the group ID and a list of student IDs to remove.",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Students removed from group successfully"),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid group ID format or invalid student IDs",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to modify this group",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Group or one of the students not found",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.OK)
+  public SuccessResponseDTO<GroupResponseDTO> removeStudentsFromGroup(
+    @PathVariable @NotNull(message = "ID must be not null") String id,
+    @Valid @RequestBody ListStudentToGroupRequestDTO removeStudentToGroupRequestDTO
+  ) {
+    return SuccessResponseDTO.<GroupResponseDTO>builder()
+      .status(200)
+      .message("Remove students from group successfully")
+      .data(
+        groupsService.removeStudentsFromGroup(id, removeStudentToGroupRequestDTO.getStudentIds())
+      )
       .build();
   }
 }

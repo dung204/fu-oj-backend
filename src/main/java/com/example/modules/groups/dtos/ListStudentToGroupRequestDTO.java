@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class AddExerciseToGroupRequestDTO {
+public class ListStudentToGroupRequestDTO {
 
-  @NotEmpty(message = "exerciseIds must not be empty")
-  private List<String> exerciseIds;
+  @NotEmpty(message = "studentIds must not be empty")
+  private List<String> studentIds;
 }
