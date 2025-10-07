@@ -2,6 +2,8 @@ package com.example.modules.Judge0.services;
 
 import com.example.modules.Judge0.enums.Judge0Status;
 import com.example.modules.Judge0.exceptions.Judge0Exception;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +11,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -20,6 +23,7 @@ import org.springframework.web.client.RestTemplate;
 public class Judge0Service {
 
   private final RestTemplate restTemplate = new RestTemplate();
+  private final ObjectMapper objectMapper;
 
   @Value("${judge0.judge0-api-url}")
   private String JUDGE0_API;
@@ -77,34 +81,55 @@ public class Judge0Service {
 
     List<Map<String, Object>> submissions = new ArrayList<>();
     for (String input : testInputs) {
-      Map<String, Object> body = new HashMap<>();
-      body.put("source_code", sourceCode);
-      body.put("language_id", Integer.parseInt(languageId));
-      body.put("stdin", input);
-      // callback to our server when done
-      body.put("callback_url", CALLBACK_URL);
-
-      submissions.add(body);
+      Map<String, Object> submission = new HashMap<>();
+      submission.put("source_code", sourceCode);
+      submission.put("language_id", Integer.parseInt(languageId));
+      submission.put("stdin", input);
+      submission.put("callback_url", CALLBACK_URL);
+      submissions.add(submission);
     }
+
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("submissions", submissions);
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
 
-    HttpEntity<List<Map<String, Object>>> request = new HttpEntity<>(submissions, headers);
+    log.info("Judge0 Batch Request Body BEFORE: {}", requestBody);
+    String jsonBody;
+    try {
+      // Ép thành JSON string thật
+      jsonBody = objectMapper.writeValueAsString(requestBody).replace("\\\\", "\\");
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to serialize requestBody", e);
+    }
 
-    ResponseEntity<List> response = restTemplate.postForEntity(url, request, List.class);
+    log.info("Judge0 Batch Request JSON AFTER: {}", jsonBody);
 
-    List<Map<String, String>> body = response.getBody();
+    HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
 
-    return body
-      .stream()
-      .map(item -> item.get("token"))
-      .collect(Collectors.toList());
+    ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+    log.info("Judge0 Batch Response: {}", response.getBody());
+
+    try {
+      // Parse trực tiếp về List
+      List<Map<String, Object>> parsedList = objectMapper.readValue(
+        response.getBody(),
+        new TypeReference<List<Map<String, Object>>>() {}
+      );
+
+      // Lấy các token
+      return parsedList
+        .stream()
+        .map(item -> item.get("token").toString())
+        .collect(Collectors.toList());
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to parse Judge0 response", e);
+    }
   }
 
   /**
    * Hiện tại đang triển khai bằng callback nên hàm này chưa dùng tới
-   *
    */
   public Map<String, Object> getSubmission(String token) {
     String url = JUDGE0_API + "/submissions/" + token + "?base64_encoded=false";

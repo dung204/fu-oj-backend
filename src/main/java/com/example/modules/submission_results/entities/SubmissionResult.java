@@ -3,6 +3,7 @@ package com.example.modules.submission_results.entities;
 import com.example.base.entities.BaseEntity;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.test_cases.entities.TestCase;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,13 +17,15 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "submissions")
+@Table(name = "submission_results")
 public class SubmissionResult extends BaseEntity {
 
+  @JsonIgnore
   @ManyToOne
   @JoinColumn(name = "submission_id", nullable = false)
   private Submission submission;
 
+  @JsonIgnore
   @ManyToOne
   @JoinColumn(name = "test_case_id", nullable = false)
   private TestCase testCase;
@@ -32,6 +35,9 @@ public class SubmissionResult extends BaseEntity {
 
   @Column(columnDefinition = "TEXT")
   private String actualOutput; // stdout Judge0 trả về
+
+  @Column(columnDefinition = "TEXT")
+  private String stderr;
 
   @Column
   private String verdict; // Accepted, Wrong Answer, CE, RE...

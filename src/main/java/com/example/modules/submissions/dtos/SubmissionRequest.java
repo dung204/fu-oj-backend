@@ -5,8 +5,8 @@ import lombok.Data;
 @Data
 public class SubmissionRequest {
 
-  private Long userId;
-  private Long exerciseId;
+  private String userId;
+  private String exerciseId;
   private String sourceCode;
   private String languageCode;
 }

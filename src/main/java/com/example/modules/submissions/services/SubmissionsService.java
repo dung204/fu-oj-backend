@@ -13,6 +13,8 @@ import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.repositories.UsersRepository;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -88,24 +90,26 @@ public class SubmissionsService {
 
   /**
    * Khi Judge0 callback về, update từng test case
-   *
+   * <p>
    * data: {
-   *     "stdout": "NQo=\n",
-   *     "time": "0.134",
-   *     "memory": 13856,
-   *     "stderr": null,
-   *     "token": "583b7296-9ac6-4136-a654-5904bc549b88",
-   *     "compile_output": null,
-   *     "message": null,
-   *     "status": {
-   *         "id": 4,
-   *         "description": "Wrong Answer"
-   *     }
+   * "stdout": "NQo=\n",
+   * "time": "0.134",
+   * "memory": 13856,
+   * "stderr": null,
+   * "token": "583b7296-9ac6-4136-a654-5904bc549b88",
+   * "compile_output": null,
+   * "message": null,
+   * "status": {
+   * "id": 4,
+   * "description": "Wrong Answer"
+   * }
    * }
    */
   @Transactional
   public void handleCallback(Map<String, Object> result) {
-    // get token, status, stdout, stderr
+    log.info("Received callback result: {}", result);
+
+    //1. Extract basic fields
     String token = (String) result.get("token");
     Map<String, Object> statusMap = (Map<String, Object>) result.get("status");
     int statusId = (int) statusMap.get("id");
@@ -114,19 +118,48 @@ public class SubmissionsService {
     String stdout = (String) result.get("stdout");
     String stderr = (String) result.get("stderr");
 
-    // find SubmissionResult by token
+    //2. Decode base64 safely
+    String decodedStdout = "";
+    String decodedStderr = "";
+
+    if (stdout != null && !stdout.isEmpty()) {
+      try {
+        decodedStdout = new String(
+          Base64.getDecoder().decode(stdout.trim()),
+          StandardCharsets.UTF_8
+        );
+      } catch (IllegalArgumentException e) {
+        // Nếu bạn test callback thủ công bằng curl (plaintext), không decode
+        decodedStdout = stdout;
+        log.warn("stdout is plaintext (not base64) for token {}", token);
+      }
+    }
+
+    if (stderr != null && !stderr.isEmpty()) {
+      try {
+        decodedStderr = new String(
+          Base64.getDecoder().decode(stderr.trim()),
+          StandardCharsets.UTF_8
+        );
+        log.error("Decoded stderr: {}", decodedStderr);
+      } catch (Exception e) {
+        decodedStderr = stderr;
+        log.warn("Failed to decode stderr for token {}: {}", token, e.getMessage());
+      }
+    }
+
+    //3. Find submission result in DB
     SubmissionResult sr = submissionResultRepository
       .findByToken(token)
       .orElseThrow(() -> new RuntimeException("Unknown token: " + token));
 
-    // get expected output + actual output from SubmissionResult
     String expected = sr.getTestCase().getOutput() != null
       ? sr.getTestCase().getOutput().trim()
       : "";
-    // actual: output from judge0
-    String actual = stdout != null ? stdout.trim() : "";
 
-    // Xác định verdict
+    String actual = decodedStdout != null ? decodedStdout.trim() : "";
+
+    //4. Determine verdict
     String verdict;
     switch (statusId) {
       case 6 -> verdict = "COMPILATION_ERROR";
@@ -136,12 +169,13 @@ public class SubmissionsService {
       default -> verdict = expected.equals(actual) ? "ACCEPTED" : "WRONG_ANSWER";
     }
 
+    //5. Update submission result
     sr.setVerdict(verdict);
-    sr.setActualOutput(stdout);
-    // update submission result
+    sr.setActualOutput(decodedStdout);
+    sr.setStderr(decodedStderr);
     submissionResultRepository.save(sr);
 
-    // bắn message lên redis
+    //6. Publish Redis message
     Map<String, Object> message = Map.of(
       "submissionId",
       sr.getSubmission().getId(),
@@ -160,7 +194,7 @@ public class SubmissionsService {
 
     log.info("Callback for token {} => {}", token, verdict);
 
-    // Check nếu tất cả test case của submission đã có verdict -> update Submission
+    // 7. Kiểm tra nếu toàn bộ test case đã xong
     Submission submission = sr.getSubmission();
     List<SubmissionResult> allResults = submissionResultRepository.findAllBySubmission(submission);
 
@@ -176,7 +210,7 @@ public class SubmissionsService {
               ? "TIME_LIMIT_EXCEEDED"
               : "WRONG_ANSWER";
 
-      submission.setTime("—"); // có thể cộng thời gian trung bình
+      submission.setTime("—");
       submission.setMemory("—");
       submission.setInput("auto");
       submission.setExerciseItem(submission.getExercise().getTitle());
