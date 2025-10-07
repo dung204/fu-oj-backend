@@ -2,6 +2,7 @@ package com.example.modules.Judge0.services;
 
 import com.example.modules.Judge0.enums.Judge0Status;
 import com.example.modules.Judge0.exceptions.Judge0Exception;
+import com.example.modules.Judge0.uitils.Base64Uitils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -11,7 +12,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -105,6 +105,71 @@ public class Judge0Service {
     }
 
     log.info("Judge0 Batch Request JSON AFTER: {}", jsonBody);
+
+    HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
+
+    ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+    log.info("Judge0 Batch Response: {}", response.getBody());
+
+    try {
+      // Parse trực tiếp về List
+      List<Map<String, Object>> parsedList = objectMapper.readValue(
+        response.getBody(),
+        new TypeReference<List<Map<String, Object>>>() {}
+      );
+
+      // Lấy các token
+      return parsedList
+        .stream()
+        .map(item -> item.get("token").toString())
+        .collect(Collectors.toList());
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to parse Judge0 response", e);
+    }
+  }
+
+  public List<String> createBatchSubmissionBase64(
+    String sourceCode,
+    String languageId,
+    List<String> testInputs
+  ) {
+    String url = JUDGE0_API + "/submissions/batch?base64_encoded=true&wait=false";
+
+    // Encode sourceCode bằng Base64
+    String encodedSourceCode = Base64Uitils.encodeBase64(sourceCode);
+
+    List<Map<String, Object>> submissions = new ArrayList<>();
+    log.info("testInputs BEFORE: {}", testInputs);
+
+    for (String input : testInputs) {
+      // Encode từng test input bằng Base64
+      log.info("encodedInput BEFORE: {}", input);
+      String encodedInput = Base64Uitils.encodeBase64(input.replaceAll("\\n", "\n"));
+      log.info("encodedInput AFTER: {}", encodedInput);
+
+      Map<String, Object> submission = new HashMap<>();
+      submission.put("source_code", encodedSourceCode);
+      submission.put("language_id", Integer.parseInt(languageId));
+      submission.put("stdin", encodedInput);
+      submission.put("callback_url", CALLBACK_URL);
+      submissions.add(submission);
+    }
+
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("submissions", submissions);
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    log.info("Judge0 Batch Request Body (Base64 encoded): {}", requestBody);
+    String jsonBody;
+    try {
+      jsonBody = objectMapper.writeValueAsString(requestBody);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to serialize requestBody", e);
+    }
+
+    log.info("Judge0 Batch Request JSON: {}", jsonBody);
 
     HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
 
