@@ -175,7 +175,7 @@ public class SubmissionsService {
 
     if (decodedStderr != null && !decodedStderr.isEmpty()) {
       log.error("Decoded stderr: {}", decodedStderr);
-      throw new RuntimeException("Decoded stderr: " + decodedStderr);
+      //      throw new RuntimeException("Decoded stderr: " + decodedStderr);
     }
 
     //3. Find submission result in DB

@@ -5,24 +5,22 @@ import com.example.modules.Judge0.exceptions.Judge0Exception;
 import com.example.modules.Judge0.uitils.Base64Uitils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class Judge0Service {
 
-  private final RestTemplate restTemplate = new RestTemplate();
+  private final WebClient webClient;
   private final ObjectMapper objectMapper;
 
   @Value("${judge0.judge0-api-url}")
@@ -38,39 +36,6 @@ public class Judge0Service {
    * hiểu đúng về JUDGE0: chỉ có nhiệm vụ: biên dịch, chạy code, trả stdout/stderr + status (compile error, runtime error, tle, …).
    * còn việc so sánh output với expected output, tính điểm, v.v… là do hệ thống của mình làm
    */
-  public String createSubmission(String sourceCode, String languageId, String stdin) {
-    String url = JUDGE0_API + "/submissions?base64_encoded=false&wait=false";
-
-    Map<String, Object> body = new HashMap<>();
-    body.put("source_code", sourceCode);
-    body.put("language_id", Integer.parseInt(languageId));
-    body.put("stdin", stdin);
-    body.put("callback_url", CALLBACK_URL);
-
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-
-    HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-
-    try {
-      ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
-
-      if (response.getBody() != null) {
-        return (String) response.getBody().get("token");
-      } else {
-        throw new Judge0Exception(
-          HttpStatus.BAD_GATEWAY,
-          "Judge0 API error: " + response.getStatusCode()
-        );
-      }
-    } catch (Exception e) {
-      log.error("Judge0 API error", e);
-      throw new Judge0Exception(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        "Error when creating submission with Judge0"
-      );
-    }
-  }
 
   public List<String> createBatchSubmission(
     String sourceCode,
@@ -79,47 +44,44 @@ public class Judge0Service {
   ) {
     String url = JUDGE0_API + "/submissions/batch?base64_encoded=false&wait=false";
 
+    // Build request body
     List<Map<String, Object>> submissions = new ArrayList<>();
     for (String input : testInputs) {
       Map<String, Object> submission = new HashMap<>();
       submission.put("source_code", sourceCode);
       submission.put("language_id", Integer.parseInt(languageId));
-      submission.put("stdin", input);
+      submission.put("stdin", input.replace("\\n", "\n"));
+      log.info("==== ACTUAL STDIN ====");
+      log.info(input);
+      log.info("======================");
       submission.put("callback_url", CALLBACK_URL);
       submissions.add(submission);
     }
 
-    Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("submissions", submissions);
+    Map<String, Object> requestBody = Map.of("submissions", submissions);
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
+    log.info("Judge0 Batch Request: {}", requestBody);
 
-    log.info("Judge0 Batch Request Body BEFORE: {}", requestBody);
-    String jsonBody;
+    // Gửi request bằng WebClient
+    String responseBody = webClient
+      .post()
+      .uri(url)
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(requestBody)
+      .retrieve()
+      .bodyToMono(String.class)
+      .block(); // block() để giữ hành vi đồng bộ như RestTemplate
+
+    log.info("Judge0 Batch Response: {}", responseBody);
+
+    // Parse response
     try {
-      // Ép thành JSON string thật
-      jsonBody = objectMapper.writeValueAsString(requestBody).replace("\\\\", "\\");
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to serialize requestBody", e);
-    }
-
-    log.info("Judge0 Batch Request JSON AFTER: {}", jsonBody);
-
-    HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
-
-    ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-    log.info("Judge0 Batch Response: {}", response.getBody());
-
-    try {
-      // Parse trực tiếp về List
-      List<Map<String, Object>> parsedList = objectMapper.readValue(
-        response.getBody(),
+      List<Map<String, Object>> submissionList = objectMapper.readValue(
+        responseBody,
         new TypeReference<List<Map<String, Object>>>() {}
       );
 
-      // Lấy các token
-      return parsedList
+      return submissionList
         .stream()
         .map(item -> item.get("token").toString())
         .collect(Collectors.toList());
@@ -135,17 +97,27 @@ public class Judge0Service {
   ) {
     String url = JUDGE0_API + "/submissions/batch?base64_encoded=true&wait=false";
 
-    // Encode sourceCode bằng Base64
-    String encodedSourceCode = Base64Uitils.encodeBase64(sourceCode);
+    // Encode source code sang Base64
+    String encodedSourceCode = Base64.getEncoder().encodeToString(
+      sourceCode.getBytes(StandardCharsets.UTF_8)
+    );
 
     List<Map<String, Object>> submissions = new ArrayList<>();
+
     log.info("testInputs BEFORE: {}", testInputs);
 
     for (String input : testInputs) {
-      // Encode từng test input bằng Base64
-      log.info("encodedInput BEFORE: {}", input);
-      String encodedInput = Base64Uitils.encodeBase64(input.replaceAll("\\n", "\n"));
-      log.info("encodedInput AFTER: {}", encodedInput);
+      // Chuẩn hóa xuống dòng & encode stdin
+      String normalizedInput = input.replace("\\n", "\n");
+      String encodedInput = Base64.getEncoder().encodeToString(
+        normalizedInput.getBytes(StandardCharsets.UTF_8)
+      );
+
+      log.info("==== ACTUAL STDIN BEFORE ENCODE ====");
+      log.info(normalizedInput);
+      log.info("==== ENCODED STDIN (Base64) ====");
+      log.info(encodedInput);
+      log.info("======================");
 
       Map<String, Object> submission = new HashMap<>();
       submission.put("source_code", encodedSourceCode);
@@ -155,36 +127,30 @@ public class Judge0Service {
       submissions.add(submission);
     }
 
-    Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("submissions", submissions);
+    Map<String, Object> requestBody = Map.of("submissions", submissions);
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
+    log.info("Judge0 Batch Request (Base64 Encoded): {}", requestBody);
 
-    log.info("Judge0 Batch Request Body (Base64 encoded): {}", requestBody);
-    String jsonBody;
+    // --- Gửi request bằng WebClient ---
+    String responseBody = webClient
+      .post()
+      .uri(url)
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(requestBody)
+      .retrieve()
+      .bodyToMono(String.class)
+      .block(); // block để đồng bộ như RestTemplate
+
+    log.info("Judge0 Batch Response: {}", responseBody);
+
+    // --- Parse JSON response ---
     try {
-      jsonBody = objectMapper.writeValueAsString(requestBody);
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to serialize requestBody", e);
-    }
-
-    log.info("Judge0 Batch Request JSON: {}", jsonBody);
-
-    HttpEntity<String> request = new HttpEntity<>(jsonBody, headers);
-
-    ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-    log.info("Judge0 Batch Response: {}", response.getBody());
-
-    try {
-      // Parse trực tiếp về List
-      List<Map<String, Object>> parsedList = objectMapper.readValue(
-        response.getBody(),
+      List<Map<String, Object>> submissionList = objectMapper.readValue(
+        responseBody,
         new TypeReference<List<Map<String, Object>>>() {}
       );
 
-      // Lấy các token
-      return parsedList
+      return submissionList
         .stream()
         .map(item -> item.get("token").toString())
         .collect(Collectors.toList());
@@ -199,38 +165,37 @@ public class Judge0Service {
   public Map<String, Object> getSubmission(String token) {
     String url = JUDGE0_API + "/submissions/" + token + "?base64_encoded=false";
 
+    log.info("Fetching Judge0 Submission with token: {}", token);
+
     try {
-      ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+      // Gửi request đến Judge0
+      String responseBody = webClient.get().uri(url).retrieve().bodyToMono(String.class).block(); // giữ hành vi đồng bộ (như RestTemplate)
 
-      if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-        Map<String, Object> body = response.getBody();
+      log.info("Judge0 Get Submission Response: {}", responseBody);
 
-        // đọc status.id
-        Map<String, Object> statusMap = (Map<String, Object>) body.get("status");
-        int statusId = (int) statusMap.get("id");
-        Judge0Status status = Judge0Status.fromId(statusId);
+      // Parse JSON response thành Map
+      Map<String, Object> body = objectMapper.readValue(responseBody, new TypeReference<>() {});
 
-        if (status == Judge0Status.ACCEPTED) {
-          return body;
-        } else {
-          throw new Judge0Exception(
-            HttpStatus.UNPROCESSABLE_ENTITY,
-            "Judge0 Execution Error: " + status.getDescription()
-          );
-        }
+      // Lấy thông tin status
+      Map<String, Object> statusMap = (Map<String, Object>) body.get("status");
+      int statusId = (int) statusMap.get("id");
+      Judge0Status status = Judge0Status.fromId(statusId);
+
+      // Log trạng thái
+      log.info("Judge0 Status: {} ({})", statusId, status.getDescription());
+
+      // Kiểm tra kết quả thực thi
+      if (status == Judge0Status.ACCEPTED) {
+        log.info("Judge0 submission accepted ✅");
+        return body;
       } else {
-        throw new Judge0Exception(
-          HttpStatus.BAD_GATEWAY,
-          "Judge0 API error: " + response.getStatusCode()
-        );
+        log.warn("Judge0 execution error: {}", status.getDescription());
       }
     } catch (Exception e) {
       log.error("Error fetching submission {} from Judge0", token, e);
-      throw new Judge0Exception(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        "Error fetching submission from Judge0"
-      );
+      throw new RuntimeException("Error fetching submission from Judge0", e);
     }
+    return Collections.emptyMap();
   }
 }
 

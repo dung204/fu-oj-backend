@@ -29,4 +29,15 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
     }
     return this;
   }
+
+  public ExercisesSpecification withGroupId(String groupId) {
+    if (groupId != null && !groupId.isBlank()) {
+      specifications.add((root, query, criteriaBuilder) -> {
+        // Join với bảng group_exercises để lọc exercises thuộc group
+        var groupJoin = root.join("groups"); // Cần thêm field này vào Exercise entity
+        return criteriaBuilder.equal(groupJoin.get("id"), groupId);
+      });
+    }
+    return this;
+  }
 }

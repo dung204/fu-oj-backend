@@ -1,8 +1,10 @@
 package com.example.modules.exercises.entities;
 
 import com.example.base.entities.BaseEntity;
+import com.example.modules.groups.entities.Group;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.topics.entities.Topic;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -20,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@ToString(exclude = { "testCases", "topics" })
+@ToString(exclude = { "testCases", "topics", "groups" })
 @Table(name = "exercises")
 public class Exercise extends BaseEntity {
 
@@ -46,4 +48,8 @@ public class Exercise extends BaseEntity {
 
   @OneToMany(mappedBy = "exercise")
   private List<TestCase> testCases;
+
+  @JsonIgnore
+  @ManyToMany(mappedBy = "exercises")
+  private List<Group> groups;
 }

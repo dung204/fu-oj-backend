@@ -84,6 +84,7 @@ public class ExercisesService {
     Specification<Exercise> spec = ExercisesSpecification.builder()
       .withCode(query.getCode())
       .withTitleLike(query.getTitle())
+      .withGroupId(query.getGroupId())
       .build();
 
     Page<Exercise> exercisePage = exercisesRepository.findAll(spec, query.toPageRequest());

@@ -21,6 +21,9 @@ public class ExerciseQueryDTO extends PaginatedQueryDTO {
   @Parameter(description = "Filter by topic ID")
   private String topicId;
 
+  @Parameter(description = "Filter by group ID - get exercises of a specific group")
+  private String groupId;
+
   @Parameter(
     description = "Sorting fields. Allowed: code, title, maxSubmissions, createdTimestamp, updatedTimestamp"
   )
