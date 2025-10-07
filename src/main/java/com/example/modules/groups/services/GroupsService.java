@@ -1,5 +1,7 @@
 package com.example.modules.groups.services;
 
+import com.example.modules.exercises.entities.Exercise;
+import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.groups.dtos.GroupRequestDTO;
 import com.example.modules.groups.dtos.GroupResponseDTO;
 import com.example.modules.groups.dtos.GroupUpdateRequestDTO;
@@ -29,15 +31,27 @@ public class GroupsService {
   private final GroupsRepository groupsRepository;
   private final UsersRepository usersRepository;
   private final GroupMapper groupMapper;
+  private final ExercisesRepository exercisesRepository;
 
   public GroupsService(
     GroupsRepository groupsRepository,
     UsersRepository usersRepository,
-    GroupMapper groupMapper
+    GroupMapper groupMapper,
+    ExercisesRepository exercisesRepository
   ) {
     this.groupsRepository = groupsRepository;
     this.usersRepository = usersRepository;
     this.groupMapper = groupMapper;
+    this.exercisesRepository = exercisesRepository;
+  }
+
+  //add exercise to group
+  public GroupResponseDTO addExerciseToGroup(String groupId, List<String> exerciseIds) {
+    Group group = groupsRepository.findGroupById(groupId);
+    List<Exercise> exercises = exercisesRepository.findAllById(exerciseIds);
+    group.getExercises().addAll(exercises);
+    groupsRepository.save(group);
+    return groupMapper.toGroupResponseDTO(group);
   }
 
   //get group by id

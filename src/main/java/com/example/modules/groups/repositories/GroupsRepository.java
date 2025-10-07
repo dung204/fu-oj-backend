@@ -20,4 +20,6 @@ public interface GroupsRepository
   List<Group> getGroupByOwnerId(@Param("ownerId") String ownerId);
 
   Group getGroupById(String id);
+
+  Group findGroupById(String id);
 }

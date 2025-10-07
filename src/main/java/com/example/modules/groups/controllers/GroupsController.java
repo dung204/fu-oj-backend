@@ -4,6 +4,7 @@ import static com.example.base.utils.AppRoutes.GROUPS_PREFIX;
 
 import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.Public;
+import com.example.modules.groups.dtos.AddExerciseToGroupRequestDTO;
 import com.example.modules.groups.dtos.GroupRequestDTO;
 import com.example.modules.groups.dtos.GroupResponseDTO;
 import com.example.modules.groups.dtos.GroupUpdateRequestDTO;
@@ -146,6 +147,39 @@ public class GroupsController {
       .status(200)
       .message("Group delete successfully")
       .data(groupsService.deleteGroup(id))
+      .build();
+  }
+
+  @Public
+  @Operation(
+    summary = "Add exercises to a group",
+    description = "Add one or more exercises to the specified group by group ID.",
+    responses = {
+      @ApiResponse(responseCode = "201", description = "Exercises added to group successfully"),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid group ID or malformed request body",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized to add exercises to this group",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "404", description = "Group not found", content = @Content),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @PostMapping("/{id}")
+  @ResponseStatus(HttpStatus.CREATED)
+  public SuccessResponseDTO<GroupResponseDTO> addExerciseToGroup(
+    @PathVariable @NotNull(message = "ID must be not null") String id,
+    @Valid @RequestBody AddExerciseToGroupRequestDTO addExerciseToGroupRequestDTO
+  ) {
+    return SuccessResponseDTO.<GroupResponseDTO>builder()
+      .status(201)
+      .message("Add exercise to group successfully")
+      .data(groupsService.addExerciseToGroup(id, addExerciseToGroupRequestDTO.getExerciseIds()))
       .build();
   }
 }
