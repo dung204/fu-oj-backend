@@ -30,6 +30,13 @@ public class SubmissionsController {
     return ResponseEntity.ok(submission);
   }
 
+  @PostMapping("/base64")
+  @Public
+  public ResponseEntity<?> createSubmissionBase64(@RequestBody SubmissionRequest request) {
+    Submission submission = submissionServices.createSubmissionBase64(request);
+    return ResponseEntity.ok(submission);
+  }
+
   @PutMapping("/callback")
   @Public
   public ResponseEntity<Void> handleCallback(@RequestBody Map<String, Object> result) {

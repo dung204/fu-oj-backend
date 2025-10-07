@@ -1,16 +1,25 @@
 package com.example.modules.exercises.dtos;
 
 import com.example.base.dtos.EntityDTO;
+import com.example.modules.topics.dtos.TopicsResponseDTO;
+import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
 @EqualsAndHashCode(callSuper = true)
-// TODO: After adding fields, uncomment these two lines
-// @NoArgsConstructor
-// @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class ExerciseResponseDTO extends EntityDTO {
-  // TODO: Add fields
+
+  private String code;
+  private String title;
+  private String description;
+  private Integer maxSubmissions;
+  private List<TopicsResponseDTO> topics;
+  private Integer testCasesCount;
 }

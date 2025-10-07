@@ -1,6 +1,7 @@
 package com.example.modules.submissions.services;
 
 import com.example.modules.Judge0.services.Judge0Service;
+import com.example.modules.Judge0.uitils.Base64Uitils;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.redis.configs.publishers.SubmissionPublisher;
@@ -13,8 +14,6 @@ import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.repositories.UsersRepository;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -88,6 +87,58 @@ public class SubmissionsService {
     return submission;
   }
 
+  public Submission createSubmissionBase64(SubmissionRequest request) {
+    // get user + exercise
+    User user = userRepository
+      .findById(String.valueOf(request.getUserId()))
+      .orElseThrow(() -> new RuntimeException("User not found"));
+
+    Exercise exercise = exerciseRepository
+      .findById(String.valueOf(request.getExerciseId()))
+      .orElseThrow(() -> new RuntimeException("Exercise not found"));
+
+    // create submission
+    Submission submission = Submission.builder()
+      .user(user)
+      .exercise(exercise)
+      .sourceCode(request.getSourceCode())
+      .languageCode(request.getLanguageCode())
+      .exerciseItem(exercise.getTitle())
+      .time(null)
+      .memory(null)
+      .build();
+    submission = submissionRepository.save(submission);
+
+    // get all test cases of exercise
+    List<TestCase> testCases = testCaseRepository.findAllByExerciseId((exercise.getId()));
+
+    // bàn lại format lưu test case với ae sau
+    List<String> testInputs = testCases.stream().map(TestCase::getInput).toList();
+
+    // Gửi batch lên Judge0 -> nhận list token
+    List<String> tokens = judge0Service.createBatchSubmissionBase64(
+      request.getSourceCode(),
+      request.getLanguageCode(),
+      testInputs
+    );
+
+    // Gắn từng token với từng test case -> lưu SubmissionResult với verdict = IN_QUEUE
+    for (int i = 0; i < testCases.size(); i++) {
+      SubmissionResult result = SubmissionResult.builder()
+        .submission(submission)
+        .testCase(testCases.get(i))
+        .token(tokens.get(i))
+        .verdict("IN_QUEUE")
+        .build();
+
+      log.info("Submission {}, result: {} ", i, result.toString());
+      submissionResultRepository.save(result);
+    }
+
+    log.info("Submission {} created with {} test cases", submission.getId(), testCases.size());
+    return submission;
+  }
+
   /**
    * Khi Judge0 callback về, update từng test case
    * <p>
@@ -118,34 +169,13 @@ public class SubmissionsService {
     String stdout = (String) result.get("stdout");
     String stderr = (String) result.get("stderr");
 
-    //2. Decode base64 safely
-    String decodedStdout = "";
-    String decodedStderr = "";
+    //2. Decode base64 safely using Base64Utils
+    String decodedStdout = Base64Uitils.decodeBase64Safe(stdout);
+    String decodedStderr = Base64Uitils.decodeBase64Safe(stderr);
 
-    if (stdout != null && !stdout.isEmpty()) {
-      try {
-        decodedStdout = new String(
-          Base64.getDecoder().decode(stdout.trim()),
-          StandardCharsets.UTF_8
-        );
-      } catch (IllegalArgumentException e) {
-        // Nếu bạn test callback thủ công bằng curl (plaintext), không decode
-        decodedStdout = stdout;
-        log.warn("stdout is plaintext (not base64) for token {}", token);
-      }
-    }
-
-    if (stderr != null && !stderr.isEmpty()) {
-      try {
-        decodedStderr = new String(
-          Base64.getDecoder().decode(stderr.trim()),
-          StandardCharsets.UTF_8
-        );
-        log.error("Decoded stderr: {}", decodedStderr);
-      } catch (Exception e) {
-        decodedStderr = stderr;
-        log.warn("Failed to decode stderr for token {}: {}", token, e.getMessage());
-      }
+    if (decodedStderr != null && !decodedStderr.isEmpty()) {
+      log.error("Decoded stderr: {}", decodedStderr);
+      throw new RuntimeException("Decoded stderr: " + decodedStderr);
     }
 
     //3. Find submission result in DB
