@@ -48,6 +48,9 @@ public class SubmissionsService {
       .findById(String.valueOf(request.getExerciseId()))
       .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
 
+    // get all test cases of exercise
+    List<TestCase> testCases = testCaseRepository.findAllByExerciseId((exercise.getId()));
+
     // create submission
     Submission submission = Submission.builder()
       .user(user)
@@ -57,11 +60,10 @@ public class SubmissionsService {
       .exerciseItem(exercise.getTitle())
       .time(null)
       .memory(null)
+      .passedTestCases(0)
+      .totalTestCases(testCases.size())
       .build();
     submission = submissionRepository.save(submission);
-
-    // get all test cases of exercise
-    List<TestCase> testCases = testCaseRepository.findAllByExerciseId((exercise.getId()));
 
     // bàn lại format lưu test case với ae sau
     List<String> testInputs = testCases.stream().map(TestCase::getInput).toList();
@@ -100,6 +102,9 @@ public class SubmissionsService {
       .findById(String.valueOf(request.getExerciseId()))
       .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
 
+    // get all test cases of exercise
+    List<TestCase> testCases = testCaseRepository.findAllByExerciseId((exercise.getId()));
+
     // create submission
     Submission submission = Submission.builder()
       .user(user)
@@ -109,11 +114,10 @@ public class SubmissionsService {
       .exerciseItem(exercise.getTitle())
       .time(null)
       .memory(null)
+      .passedTestCases(0)
+      .totalTestCases(testCases.size())
       .build();
     submission = submissionRepository.save(submission);
-
-    // get all test cases of exercise
-    List<TestCase> testCases = testCaseRepository.findAllByExerciseId((exercise.getId()));
 
     // bàn lại format lưu test case với ae sau
     List<String> testInputs = testCases.stream().map(TestCase::getInput).toList();
@@ -237,29 +241,49 @@ public class SubmissionsService {
     submissionPublisher.publishSubmissionUpdate(message);
 
     log.info("Callback for token {} => {}", token, verdict);
+  }
 
-    // 7. Kiểm tra nếu toàn bộ test case đã xong
-    Submission submission = sr.getSubmission();
+  @Transactional
+  public Submission calculateTestCasesPassed(String submissionId) {
+    Submission submission = submissionRepository
+      .findById(submissionId)
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found"));
+
     List<SubmissionResult> allResults = submissionResultRepository.findAllBySubmission(submission);
 
-    boolean allDone = allResults.stream().allMatch(r -> !"IN_QUEUE".equals(r.getVerdict()));
-    if (allDone) {
-      String finalVerdict = allResults.stream().allMatch(r -> "ACCEPTED".equals(r.getVerdict()))
-        ? "ACCEPTED"
-        : allResults.stream().anyMatch(r -> r.getVerdict().equals("COMPILATION_ERROR"))
-          ? "COMPILATION_ERROR"
-          : allResults.stream().anyMatch(r -> r.getVerdict().equals("RUNTIME_ERROR"))
-            ? "RUNTIME_ERROR"
-            : allResults.stream().anyMatch(r -> r.getVerdict().equals("TIME_LIMIT_EXCEEDED"))
-              ? "TIME_LIMIT_EXCEEDED"
-              : "WRONG_ANSWER";
+    // Đếm số test case đúng
+    long passedCount = allResults
+      .stream()
+      .filter(r -> "ACCEPTED".equals(r.getVerdict()))
+      .count();
 
-      submission.setTime("—");
-      submission.setMemory("—");
-      submission.setExerciseItem(submission.getExercise().getTitle());
-      submissionRepository.save(submission);
+    // Xác định verdict cuối cùng
+    String finalVerdict = allResults.stream().allMatch(r -> "ACCEPTED".equals(r.getVerdict()))
+      ? "ACCEPTED"
+      : allResults.stream().anyMatch(r -> r.getVerdict().equals("COMPILATION_ERROR"))
+        ? "COMPILATION_ERROR"
+        : allResults.stream().anyMatch(r -> r.getVerdict().equals("RUNTIME_ERROR"))
+          ? "RUNTIME_ERROR"
+          : allResults.stream().anyMatch(r -> r.getVerdict().equals("TIME_LIMIT_EXCEEDED"))
+            ? "TIME_LIMIT_EXCEEDED"
+            : "WRONG_ANSWER";
 
-      log.info("Submission {} finished with {}", submission.getId(), finalVerdict);
-    }
+    // Cập nhật submission
+    submission.setTime("—");
+    submission.setMemory("—");
+    submission.setExerciseItem(submission.getExercise().getTitle());
+    submission.setPassedTestCases((int) passedCount);
+    submission.setTotalTestCases(allResults.size());
+    submissionRepository.save(submission);
+
+    log.info(
+      "Submission {} finished with {} ({}/{} test cases passed)",
+      submission.getId(),
+      finalVerdict,
+      passedCount,
+      allResults.size()
+    );
+
+    return submission;
   }
 }

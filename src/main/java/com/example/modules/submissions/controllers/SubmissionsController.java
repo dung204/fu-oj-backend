@@ -54,4 +54,12 @@ public class SubmissionsController {
     Map<String, Object> result = judge0Service.getSubmission(token);
     return ResponseEntity.ok(result);
   }
+
+  @PostMapping("/{submissionId}/calculate")
+  @Public
+  public ResponseEntity<Submission> calculateTestCasesPassed(@PathVariable String submissionId) {
+    log.info("Calculating test cases passed for submission: {}", submissionId);
+    Submission submission = submissionServices.calculateTestCasesPassed(submissionId);
+    return ResponseEntity.ok(submission);
+  }
 }

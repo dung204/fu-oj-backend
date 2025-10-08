@@ -50,4 +50,12 @@ public class Submission extends BaseEntity {
   // ghi lại tên bài tập
   @Column
   private String exerciseItem;
+
+  // số test case đúng
+  @Column
+  private Integer passedTestCases;
+
+  // tổng số test case
+  @Column
+  private Integer totalTestCases;
 }
