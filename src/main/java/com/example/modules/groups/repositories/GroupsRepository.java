@@ -16,7 +16,7 @@ public interface GroupsRepository
 
   Optional<Group> existsGroupByName(String name);
 
-  @Query("SELECT g FROM Group g WHERE g.instructor.id = :ownerId AND g.deletedTimestamp == null")
+  @Query("SELECT g FROM Group g WHERE g.instructor.id = :ownerId AND g.deletedTimestamp IS NULL")
   List<Group> getGroupByOwnerId(@Param("ownerId") String ownerId);
 
   Group getGroupById(String id);
