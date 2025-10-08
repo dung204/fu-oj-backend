@@ -88,6 +88,7 @@ public class ExercisesService {
       .build();
 
     Page<Exercise> exercisePage = exercisesRepository.findAll(spec, query.toPageRequest());
+    log.info("Found {} exercises", exercisePage.getTotalElements());
 
     // Map to DTO
     Page<ExerciseResponseDTO> dtoPage = exercisePage.map(exerciseMapper::toExerciseResponseDTO);

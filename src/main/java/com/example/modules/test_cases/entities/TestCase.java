@@ -31,4 +31,7 @@ public class TestCase extends BaseEntity {
 
   @Column(columnDefinition = "TEXT")
   private String output;
+
+  @Column(name = "is_public", columnDefinition = "BOOLEAN DEFAULT FALSE")
+  private Boolean isPublic;
 }

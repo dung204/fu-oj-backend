@@ -1,16 +1,19 @@
 package com.example.modules.topics.dtos;
 
 import com.example.base.dtos.EntityDTO;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
 @EqualsAndHashCode(callSuper = true)
-// TODO: After adding fields, uncomment these two lines
-// @NoArgsConstructor
-// @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class TopicsResponseDTO extends EntityDTO {
-  // TODO: Add fields
+
+  private String name;
+  private String description;
 }

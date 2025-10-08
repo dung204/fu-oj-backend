@@ -29,10 +29,10 @@ public class Exercise extends BaseEntity {
   @Column(nullable = false, unique = true)
   private String code;
 
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "TEXT")
   private String title;
 
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "TEXT")
   private String description;
 
   @Column(nullable = false)
