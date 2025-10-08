@@ -1,8 +1,6 @@
 package com.example.modules.Judge0.services;
 
 import com.example.modules.Judge0.enums.Judge0Status;
-import com.example.modules.Judge0.exceptions.Judge0Exception;
-import com.example.modules.Judge0.uitils.Base64Uitils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @Service
@@ -62,32 +61,7 @@ public class Judge0Service {
 
     log.info("Judge0 Batch Request: {}", requestBody);
 
-    // Gửi request bằng WebClient
-    String responseBody = webClient
-      .post()
-      .uri(url)
-      .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(requestBody)
-      .retrieve()
-      .bodyToMono(String.class)
-      .block(); // block() để giữ hành vi đồng bộ như RestTemplate
-
-    log.info("Judge0 Batch Response: {}", responseBody);
-
-    // Parse response
-    try {
-      List<Map<String, Object>> submissionList = objectMapper.readValue(
-        responseBody,
-        new TypeReference<List<Map<String, Object>>>() {}
-      );
-
-      return submissionList
-        .stream()
-        .map(item -> item.get("token").toString())
-        .collect(Collectors.toList());
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to parse Judge0 response", e);
-    }
+    return this.requestToJudge0(url, requestBody);
   }
 
   public List<String> createBatchSubmissionBase64(
@@ -131,32 +105,7 @@ public class Judge0Service {
 
     log.info("Judge0 Batch Request (Base64 Encoded): {}", requestBody);
 
-    // --- Gửi request bằng WebClient ---
-    String responseBody = webClient
-      .post()
-      .uri(url)
-      .contentType(MediaType.APPLICATION_JSON)
-      .bodyValue(requestBody)
-      .retrieve()
-      .bodyToMono(String.class)
-      .block(); // block để đồng bộ như RestTemplate
-
-    log.info("Judge0 Batch Response: {}", responseBody);
-
-    // --- Parse JSON response ---
-    try {
-      List<Map<String, Object>> submissionList = objectMapper.readValue(
-        responseBody,
-        new TypeReference<List<Map<String, Object>>>() {}
-      );
-
-      return submissionList
-        .stream()
-        .map(item -> item.get("token").toString())
-        .collect(Collectors.toList());
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to parse Judge0 response", e);
-    }
+    return this.requestToJudge0(url, requestBody);
   }
 
   /**
@@ -186,16 +135,49 @@ public class Judge0Service {
 
       // Kiểm tra kết quả thực thi
       if (status == Judge0Status.ACCEPTED) {
-        log.info("Judge0 submission accepted ✅");
+        log.info("Judge0 submission accepted");
         return body;
       } else {
         log.warn("Judge0 execution error: {}", status.getDescription());
       }
     } catch (Exception e) {
       log.error("Error fetching submission {} from Judge0", token, e);
-      throw new RuntimeException("Error fetching submission from Judge0", e);
+      throw new ResponseStatusException(
+        HttpStatus.BAD_GATEWAY,
+        "Error fetching submission from Judge0"
+      );
     }
     return Collections.emptyMap();
+  }
+
+  private List<String> requestToJudge0(String url, Map<String, Object> requestBody) {
+    // Gửi request bằng WebClient
+    String responseBody = webClient
+      .post()
+      .uri(url)
+      .contentType(MediaType.APPLICATION_JSON)
+      .bodyValue(requestBody)
+      .retrieve()
+      .bodyToMono(String.class)
+      .block(); // block() để giữ hành vi đồng bộ như RestTemplate
+
+    log.info("Judge0 Batch Response: {}", responseBody);
+
+    // Parse response
+    try {
+      List<Map<String, Object>> submissionList = objectMapper.readValue(
+        responseBody,
+        new TypeReference<List<Map<String, Object>>>() {}
+      );
+
+      return submissionList
+        .stream()
+        .map(item -> item.get("token").toString())
+        .collect(Collectors.toList());
+    } catch (Exception e) {
+      log.error("Failed to parse Judge0 response", e);
+      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to parse Judge0 response");
+    }
   }
 }
 

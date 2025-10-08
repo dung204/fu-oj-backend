@@ -19,8 +19,10 @@ import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -40,11 +42,11 @@ public class SubmissionsService {
     // get user + exercise
     User user = userRepository
       .findById(String.valueOf(request.getUserId()))
-      .orElseThrow(() -> new RuntimeException("User not found"));
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
     Exercise exercise = exerciseRepository
       .findById(String.valueOf(request.getExerciseId()))
-      .orElseThrow(() -> new RuntimeException("Exercise not found"));
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
 
     // create submission
     Submission submission = Submission.builder()
@@ -92,11 +94,11 @@ public class SubmissionsService {
     // get user + exercise
     User user = userRepository
       .findById(String.valueOf(request.getUserId()))
-      .orElseThrow(() -> new RuntimeException("User not found"));
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
     Exercise exercise = exerciseRepository
       .findById(String.valueOf(request.getExerciseId()))
-      .orElseThrow(() -> new RuntimeException("Exercise not found"));
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
 
     // create submission
     Submission submission = Submission.builder()
@@ -129,7 +131,7 @@ public class SubmissionsService {
         .submission(submission)
         .testCase(testCases.get(i))
         .token(tokens.get(i))
-        .verdict("IN_QUEUE")
+        .verdict(String.valueOf(Judge0Status.IN_QUEUE))
         .build();
 
       log.info("Submission {}, result: {} ", i, result.toString());
@@ -182,7 +184,9 @@ public class SubmissionsService {
     //3. Find submission result in DB
     SubmissionResult sr = submissionResultRepository
       .findByToken(token)
-      .orElseThrow(() -> new RuntimeException("Unknown token: " + token));
+      .orElseThrow(() ->
+        new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown token: " + token)
+      );
 
     String expected = sr.getTestCase().getOutput() != null
       ? sr.getTestCase().getOutput().trim()
@@ -195,8 +199,8 @@ public class SubmissionsService {
     switch (statusId) {
       case 1 -> verdict = String.valueOf(Judge0Status.IN_QUEUE);
       case 2 -> verdict = String.valueOf(Judge0Status.PROCESSING);
-      case 3 -> verdict = String.valueOf(Judge0Status.ACCEPTED);
-      case 4 -> verdict = String.valueOf(Judge0Status.WRONG_ANSWER);
+      //      case 3 -> verdict = String.valueOf(Judge0Status.ACCEPTED);
+      //      case 4 -> verdict = String.valueOf(Judge0Status.WRONG_ANSWER);
       case 5 -> verdict = String.valueOf(Judge0Status.TIME_LIMIT_EXCEEDED);
       case 6 -> verdict = String.valueOf(Judge0Status.COMPILATION_ERROR);
       case 7, 8, 9, 10, 11, 12 -> verdict = String.valueOf(Judge0Status.RUNTIME_ERROR);
@@ -252,7 +256,6 @@ public class SubmissionsService {
 
       submission.setTime("—");
       submission.setMemory("—");
-      submission.setInput("auto");
       submission.setExerciseItem(submission.getExercise().getTitle());
       submissionRepository.save(submission);
 

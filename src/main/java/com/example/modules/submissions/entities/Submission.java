@@ -47,9 +47,6 @@ public class Submission extends BaseEntity {
   @Column
   private String memory;
 
-  @Column
-  private String input;
-
   // ghi lại tên bài tập
   @Column
   private String exerciseItem;
