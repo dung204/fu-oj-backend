@@ -24,11 +24,17 @@ public class SubmissionSubscriber implements MessageListener {
       log.info("Received Redis pub/sub message: {}", body);
 
       Map<String, Object> payload = objectMapper.readValue(body, Map.class);
-      Long userId = Long.valueOf(payload.get("userId").toString());
+      String userId;
+      if (payload.containsKey("userId")) {
+        userId = String.valueOf(String.valueOf(payload.get("userId")));
+      } else {
+        log.error("Payload does not contain userId: {}", payload);
+        return;
+      }
 
-      // gửi socket đến FE (ví dụ: /topic/submissions/1)
-      messagingTemplate.convertAndSend("/topic/submissions/" + userId, payload);
-      log.info("Sent WebSocket to /topic/submissions/{} -> {}", userId, payload);
+      // gửi socket đến FE (ví dụ: /topic/submission-result-updates/1)
+      messagingTemplate.convertAndSend("/topic/submission-result-updates/" + userId, payload);
+      log.info("Sent WebSocket to /topic/submission-result-updates/{} -> {}", userId, payload);
     } catch (Exception e) {
       log.error("Error processing Redis pub/sub message", e);
     }

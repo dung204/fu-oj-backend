@@ -213,7 +213,7 @@ public class SubmissionsService {
     sr.setStderr(decodedStderr);
     submissionResultRepository.save(sr);
 
-    //6. Publish Redis message
+    //6. Publish Redis message -> send WebSocket to FE (via SubmissionSubscriber)
     Map<String, Object> message = Map.of(
       "submissionId",
       sr.getSubmission().getId(),
@@ -226,7 +226,9 @@ public class SubmissionsService {
       "actualOutput",
       actual,
       "expectedOutput",
-      expected
+      expected,
+      "userId",
+      sr.getSubmission().getUser().getId()
     );
     submissionPublisher.publishSubmissionUpdate(message);
 
