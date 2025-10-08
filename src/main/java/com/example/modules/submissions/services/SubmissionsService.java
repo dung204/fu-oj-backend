@@ -1,5 +1,6 @@
 package com.example.modules.submissions.services;
 
+import com.example.modules.Judge0.enums.Judge0Status;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.Judge0.uitils.Base64Uitils;
 import com.example.modules.exercises.entities.Exercise;
@@ -192,11 +193,18 @@ public class SubmissionsService {
     //4. Determine verdict
     String verdict;
     switch (statusId) {
-      case 6 -> verdict = "COMPILATION_ERROR";
-      case 7 -> verdict = "RUNTIME_ERROR";
-      case 5 -> verdict = "TIME_LIMIT_EXCEEDED";
-      case 8 -> verdict = "INTERNAL_ERROR";
-      default -> verdict = expected.equals(actual) ? "ACCEPTED" : "WRONG_ANSWER";
+      case 1 -> verdict = String.valueOf(Judge0Status.IN_QUEUE);
+      case 2 -> verdict = String.valueOf(Judge0Status.PROCESSING);
+      case 3 -> verdict = String.valueOf(Judge0Status.ACCEPTED);
+      case 4 -> verdict = String.valueOf(Judge0Status.WRONG_ANSWER);
+      case 5 -> verdict = String.valueOf(Judge0Status.TIME_LIMIT_EXCEEDED);
+      case 6 -> verdict = String.valueOf(Judge0Status.COMPILATION_ERROR);
+      case 7, 8, 9, 10, 11, 12 -> verdict = String.valueOf(Judge0Status.RUNTIME_ERROR);
+      case 13 -> verdict = String.valueOf(Judge0Status.INTERNAL_ERROR);
+      case 14 -> verdict = String.valueOf(Judge0Status.EXEC_FORMAT_ERROR);
+      default -> verdict = (expected != null && expected.equals(actual))
+        ? String.valueOf(Judge0Status.ACCEPTED)
+        : String.valueOf(Judge0Status.WRONG_ANSWER);
     }
 
     //5. Update submission result

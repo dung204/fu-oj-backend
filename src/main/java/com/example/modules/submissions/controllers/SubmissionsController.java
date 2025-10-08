@@ -2,6 +2,7 @@ package com.example.modules.submissions.controllers;
 
 import static com.example.base.utils.AppRoutes.SUBMISSIONS_PREFIX;
 
+import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.auth.annotations.Public;
 import com.example.modules.submissions.dtos.SubmissionRequest;
 import com.example.modules.submissions.entities.Submission;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 public class SubmissionsController {
 
   private final SubmissionsService submissionServices;
+  private final Judge0Service judge0Service;
 
   @PostMapping
   @Public
@@ -43,5 +45,13 @@ public class SubmissionsController {
     log.info("Received callback from Judge0: {}", result);
     submissionServices.handleCallback(result);
     return ResponseEntity.ok().build();
+  }
+
+  @GetMapping("/result/{token}")
+  @Public
+  public ResponseEntity<?> GetSubmissionByToken(@PathVariable String token) {
+    log.info("Received token: {}", token);
+    Map<String, Object> result = judge0Service.getSubmission(token);
+    return ResponseEntity.ok(result);
   }
 }

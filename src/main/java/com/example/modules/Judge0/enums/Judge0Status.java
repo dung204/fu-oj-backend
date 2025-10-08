@@ -11,7 +11,8 @@ public enum Judge0Status {
   TIME_LIMIT_EXCEEDED(5, "Time Limit Exceeded"),
   COMPILATION_ERROR(6, "Compilation Error"),
   RUNTIME_ERROR(7, "Runtime Error"),
-  INTERNAL_ERROR(8, "Internal Error");
+  INTERNAL_ERROR(13, "INTERNAL_ERROR"),
+  EXEC_FORMAT_ERROR(14, "EXEC_FORMAT_ERROR");
 
   private final int id;
   private final String description;
