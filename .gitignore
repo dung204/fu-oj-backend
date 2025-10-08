@@ -55,3 +55,5 @@ bun.lock
 
 logs/*
 *.log
+
+db/

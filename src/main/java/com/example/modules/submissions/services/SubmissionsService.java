@@ -8,6 +8,7 @@ import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.redis.configs.publishers.SubmissionPublisher;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
+import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.SubmissionRequest;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
@@ -15,6 +16,7 @@ import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.repositories.UsersRepository;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -285,5 +287,52 @@ public class SubmissionsService {
     );
 
     return submission;
+  }
+
+  /**
+   * Chạy thử code mà không lưu vào database
+   * @param request Request chứa source code, language code, input và expected output
+   * @return Kết quả chạy code đã được decode (Judge0 tự động so sánh nếu có expected output)
+   */
+  public Map<String, Object> runCode(RunCodeRequest request) {
+    log.info("Running code with language: {}", request.getLanguageCode());
+
+    // Gửi request tới Judge0 (Judge0 sẽ tự động so sánh với expected output)
+    Map<String, Object> rawResult = judge0Service.runCode(
+      request.getSourceCode(),
+      request.getLanguageCode(),
+      request.getInput(),
+      request.getExpectedOutput()
+    );
+
+    // Decode base64 output
+    String stdout = (String) rawResult.get("stdout");
+    String stderr = (String) rawResult.get("stderr");
+    String compileOutput = (String) rawResult.get("compile_output");
+    String expectedOutput = (String) rawResult.get("expected_output");
+
+    String decodedStdout = Base64Uitils.decodeBase64Safe(stdout);
+    String decodedStderr = Base64Uitils.decodeBase64Safe(stderr);
+    String decodedCompileOutput = Base64Uitils.decodeBase64Safe(compileOutput);
+    String decodedExpectedOutput = Base64Uitils.decodeBase64Safe(expectedOutput);
+
+    // Lấy thông tin status
+    Map<String, Object> statusMap = (Map<String, Object>) rawResult.get("status");
+    int statusId = (int) statusMap.get("id");
+    String statusDescription = (String) statusMap.get("description");
+
+    // Build response
+    Map<String, Object> response = new HashMap<>();
+    response.put("stdout", decodedStdout);
+    response.put("stderr", decodedStderr);
+    response.put("compile_output", decodedCompileOutput);
+    response.put("expected_output", decodedExpectedOutput);
+    response.put("time", rawResult.get("time"));
+    response.put("memory", rawResult.get("memory"));
+    response.put("status", Map.of("id", statusId, "description", statusDescription));
+
+    log.info("Code execution completed with status: {}", statusDescription);
+
+    return response;
   }
 }

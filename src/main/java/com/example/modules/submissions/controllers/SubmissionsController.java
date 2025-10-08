@@ -4,6 +4,7 @@ import static com.example.base.utils.AppRoutes.SUBMISSIONS_PREFIX;
 
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.auth.annotations.Public;
+import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.SubmissionRequest;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.services.SubmissionsService;
@@ -61,5 +62,13 @@ public class SubmissionsController {
     log.info("Calculating test cases passed for submission: {}", submissionId);
     Submission submission = submissionServices.calculateTestCasesPassed(submissionId);
     return ResponseEntity.ok(submission);
+  }
+
+  @PostMapping("/run")
+  @Public
+  public ResponseEntity<Map<String, Object>> runCode(@RequestBody RunCodeRequest request) {
+    log.info("Running code without saving to database");
+    Map<String, Object> result = submissionServices.runCode(request);
+    return ResponseEntity.ok(result);
   }
 }

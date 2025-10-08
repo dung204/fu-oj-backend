@@ -109,6 +109,77 @@ public class Judge0Service {
   }
 
   /**
+   * Chạy thử code với input và đợi kết quả (không callback)
+   * @param sourceCode mã nguồn
+   * @param languageId ID ngôn ngữ
+   * @param input dữ liệu đầu vào
+   * @param expectedOutput output mong đợi (optional)
+   * @return Kết quả từ Judge0
+   */
+  public Map<String, Object> runCode(
+    String sourceCode,
+    String languageId,
+    String input,
+    String expectedOutput
+  ) {
+    String url = JUDGE0_API + "/submissions?base64_encoded=true&wait=true";
+
+    // Encode source code và input
+    String encodedSourceCode = Base64.getEncoder().encodeToString(
+      sourceCode.getBytes(StandardCharsets.UTF_8)
+    );
+    String encodedInput = Base64.getEncoder().encodeToString(
+      input.replace("\\n", "\n").getBytes(StandardCharsets.UTF_8)
+    );
+
+    // Build request body
+    Map<String, Object> requestBody = new HashMap<>();
+    requestBody.put("source_code", encodedSourceCode);
+    requestBody.put("language_id", Integer.parseInt(languageId));
+    requestBody.put("stdin", encodedInput);
+
+    // Thêm expected_output nếu có (Judge0 sẽ tự động so sánh)
+    if (expectedOutput != null && !expectedOutput.isEmpty()) {
+      String encodedExpectedOutput = Base64.getEncoder().encodeToString(
+        expectedOutput.replace("\\n", "\n").getBytes(StandardCharsets.UTF_8)
+      );
+      requestBody.put("expected_output", encodedExpectedOutput);
+    }
+
+    log.info(
+      "Judge0 Run Code Request: language={}, inputLength={}, hasExpectedOutput={}",
+      languageId,
+      input.length(),
+      expectedOutput != null
+    );
+
+    try {
+      // Gửi request và đợi kết quả
+      String responseBody = webClient
+        .post()
+        .uri(url)
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(requestBody)
+        .retrieve()
+        .bodyToMono(String.class)
+        .block();
+
+      log.info("Judge0 Run Code Response: {}", responseBody);
+
+      // Parse response
+      Map<String, Object> result = objectMapper.readValue(
+        responseBody,
+        new TypeReference<Map<String, Object>>() {}
+      );
+
+      return result;
+    } catch (Exception e) {
+      log.error("Failed to run code on Judge0", e);
+      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to run code on Judge0");
+    }
+  }
+
+  /**
    * Hiện tại đang triển khai bằng callback nên hàm này chưa dùng tới
    */
   public Map<String, Object> getSubmission(String token) {
