@@ -5,10 +5,12 @@ import static com.example.base.utils.AppRoutes.SUBMISSIONS_PREFIX;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.auth.annotations.Public;
 import com.example.modules.submissions.dtos.RunCodeRequest;
+import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.services.SubmissionsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,9 +68,9 @@ public class SubmissionsController {
 
   @PostMapping("/run")
   @Public
-  public ResponseEntity<Map<String, Object>> runCode(@RequestBody RunCodeRequest request) {
-    log.info("Running code without saving to database");
-    Map<String, Object> result = submissionServices.runCode(request);
+  public ResponseEntity<RunCodeResponseDTO> runCode(@Valid @RequestBody RunCodeRequest request) {
+    log.info("Running code for exercise {} without saving to database", request.getExerciseId());
+    RunCodeResponseDTO result = submissionServices.runCode(request);
     return ResponseEntity.ok(result);
   }
 }

@@ -26,7 +26,9 @@ public class Base64Uitils {
   public static String decodeBase64Safe(String input) {
     if (input == null) return null;
     try {
-      return new String(Base64.getDecoder().decode(input.trim()), StandardCharsets.UTF_8);
+      // Remove tất cả whitespace (newlines, spaces, etc.) trong base64 string
+      String cleanedInput = input.replaceAll("\\s+", "");
+      return new String(Base64.getDecoder().decode(cleanedInput), StandardCharsets.UTF_8);
     } catch (IllegalArgumentException e) {
       return input; // nếu không phải base64 thì giữ nguyên
     }

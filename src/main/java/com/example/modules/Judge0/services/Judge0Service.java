@@ -179,9 +179,89 @@ public class Judge0Service {
     }
   }
 
-  /**
-   * Hiện tại đang triển khai bằng callback nên hàm này chưa dùng tới
-   */
+  public List<Map<String, Object>> runBatchCode(
+    String sourceCode,
+    String languageId,
+    List<String> testInputs,
+    List<String> expectedOutputs
+  ) {
+    log.info("Judge0 Run Batch Code Request: {} test cases", testInputs.size());
+
+    // 1. Sử dụng hàm createBatchSubmissionBase64 có sẵn để lấy tokens
+    List<String> tokens = createBatchSubmissionBase64(sourceCode, languageId, testInputs);
+
+    log.info("Received {} tokens from Judge0 batch submission", tokens.size());
+
+    // 2. Polling để lấy kết quả từng token
+    return pollBatchResults(tokens);
+  }
+
+  private List<Map<String, Object>> pollBatchResults(List<String> tokens) {
+    String baseUrl = JUDGE0_API + "/submissions/batch?base64_encoded=true&tokens=";
+    String tokensParam = String.join(",", tokens);
+    String pollUrl = baseUrl + tokensParam;
+
+    int maxRetries = 20; // Tối đa 20 lần (20 giây)
+    int retryCount = 0;
+    int delayMs = 1000; // Đợi 1 giây mỗi lần
+
+    while (retryCount < maxRetries) {
+      try {
+        // Gửi request để lấy kết quả
+        String responseBody = webClient
+          .get()
+          .uri(pollUrl)
+          .retrieve()
+          .bodyToMono(String.class)
+          .block();
+
+        // Parse response
+        Map<String, Object> response = objectMapper.readValue(
+          responseBody,
+          new TypeReference<Map<String, Object>>() {}
+        );
+
+        List<Map<String, Object>> submissions = (List<Map<String, Object>>) response.get(
+          "submissions"
+        );
+
+        // Kiểm tra xem tất cả submissions đã hoàn thành chưa
+        boolean allCompleted = submissions
+          .stream()
+          .allMatch(sub -> {
+            Map<String, Object> status = (Map<String, Object>) sub.get("status");
+            int statusId = (int) status.get("id");
+            // Status 1 = In Queue, 2 = Processing
+            return statusId != 1 && statusId != 2;
+          });
+
+        if (allCompleted) {
+          log.info("All submissions completed after {} retries", retryCount);
+          return submissions;
+        }
+
+        // Chưa xong, đợi thêm
+        retryCount++;
+        log.info("Batch submissions not completed yet, retry {}/{}", retryCount, maxRetries);
+        Thread.sleep(delayMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Polling interrupted");
+      } catch (Exception e) {
+        log.error("Error polling batch results", e);
+        throw new ResponseStatusException(
+          HttpStatus.BAD_GATEWAY,
+          "Failed to poll batch results from Judge0"
+        );
+      }
+    }
+
+    throw new ResponseStatusException(
+      HttpStatus.GATEWAY_TIMEOUT,
+      "Batch submissions timed out after " + maxRetries + " retries"
+    );
+  }
+
   public Map<String, Object> getSubmission(String token) {
     String url = JUDGE0_API + "/submissions/" + token + "?base64_encoded=false";
 

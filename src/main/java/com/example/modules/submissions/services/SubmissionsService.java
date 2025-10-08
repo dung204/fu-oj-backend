@@ -8,15 +8,18 @@ import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.redis.configs.publishers.SubmissionPublisher;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
+import com.example.modules.submissions.dtos.Judge0StatusDTO;
 import com.example.modules.submissions.dtos.RunCodeRequest;
+import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
+import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.repositories.UsersRepository;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -289,49 +292,117 @@ public class SubmissionsService {
     return submission;
   }
 
-  /**
-   * Chạy thử code mà không lưu vào database
-   * @param request Request chứa source code, language code, input và expected output
-   * @return Kết quả chạy code đã được decode (Judge0 tự động so sánh nếu có expected output)
-   */
-  public Map<String, Object> runCode(RunCodeRequest request) {
-    log.info("Running code with language: {}", request.getLanguageCode());
+  public RunCodeResponseDTO runCode(RunCodeRequest request) {
+    log.info("Running code for exercise: {}", request.getExerciseId());
 
-    // Gửi request tới Judge0 (Judge0 sẽ tự động so sánh với expected output)
-    Map<String, Object> rawResult = judge0Service.runCode(
-      request.getSourceCode(),
-      request.getLanguageCode(),
-      request.getInput(),
-      request.getExpectedOutput()
+    // 1. Lấy exercise từ DB
+    Exercise exercise = exerciseRepository
+      .findById(request.getExerciseId())
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
+
+    // 2. Lấy tất cả test cases public
+    List<TestCase> publicTestCases = testCaseRepository.findAllByExerciseIdAndIsPublicTrue(
+      exercise.getId()
     );
 
-    // Decode base64 output
-    String stdout = (String) rawResult.get("stdout");
-    String stderr = (String) rawResult.get("stderr");
-    String compileOutput = (String) rawResult.get("compile_output");
-    String expectedOutput = (String) rawResult.get("expected_output");
+    if (publicTestCases.isEmpty()) {
+      throw new ResponseStatusException(
+        HttpStatus.NOT_FOUND,
+        "No public test cases found for this exercise"
+      );
+    }
 
-    String decodedStdout = Base64Uitils.decodeBase64Safe(stdout);
-    String decodedStderr = Base64Uitils.decodeBase64Safe(stderr);
-    String decodedCompileOutput = Base64Uitils.decodeBase64Safe(compileOutput);
-    String decodedExpectedOutput = Base64Uitils.decodeBase64Safe(expectedOutput);
+    log.info(
+      "Found {} public test cases for exercise {}",
+      publicTestCases.size(),
+      exercise.getTitle()
+    );
 
-    // Lấy thông tin status
-    Map<String, Object> statusMap = (Map<String, Object>) rawResult.get("status");
-    int statusId = (int) statusMap.get("id");
-    String statusDescription = (String) statusMap.get("description");
+    // 3. Chuẩn bị inputs và expected outputs (normalize \n)
+    List<String> testInputs = publicTestCases
+      .stream()
+      .map(tc -> tc.getInput() != null ? tc.getInput().replace("\\n", "\n") : "")
+      .toList();
+    List<String> expectedOutputs = publicTestCases
+      .stream()
+      .map(tc -> tc.getOutput() != null ? tc.getOutput().replace("\\n", "\n") : "")
+      .toList();
 
-    // Build response
-    Map<String, Object> response = new HashMap<>();
-    response.put("stdout", decodedStdout);
-    response.put("stderr", decodedStderr);
-    response.put("compile_output", decodedCompileOutput);
-    response.put("expected_output", decodedExpectedOutput);
-    response.put("time", rawResult.get("time"));
-    response.put("memory", rawResult.get("memory"));
-    response.put("status", Map.of("id", statusId, "description", statusDescription));
+    // 4. Gửi batch lên Judge0 và đợi kết quả
+    List<Map<String, Object>> rawResults = judge0Service.runBatchCode(
+      request.getSourceCode(),
+      request.getLanguageCode(),
+      testInputs,
+      expectedOutputs
+    );
 
-    log.info("Code execution completed with status: {}", statusDescription);
+    log.info("rawResults: {}", rawResults);
+
+    // 5. Decode và xử lý kết quả
+    List<TestCaseResultDTO> processedResults = new ArrayList<>();
+    int passedCount = 0;
+
+    for (int i = 0; i < rawResults.size(); i++) {
+      Map<String, Object> rawResult = rawResults.get(i);
+
+      // Decode base64 outputs
+      String stdout = (String) rawResult.get("stdout");
+      String stderr = (String) rawResult.get("stderr");
+      String compileOutput = (String) rawResult.get("compile_output");
+
+      String decodedStdout = Base64Uitils.decodeBase64Safe(stdout);
+      String decodedStderr = Base64Uitils.decodeBase64Safe(stderr);
+      String decodedCompileOutput = Base64Uitils.decodeBase64Safe(compileOutput);
+
+      // Lấy thông tin status
+      Map<String, Object> statusMap = (Map<String, Object>) rawResult.get("status");
+      int statusId = (int) statusMap.get("id");
+      String statusDescription = (String) statusMap.get("description");
+
+      // Kiểm tra kết quả
+      boolean isPassed = statusId == 3; // Status 3 = Accepted
+      if (isPassed) {
+        passedCount++;
+      }
+
+      // Build status DTO
+      Judge0StatusDTO status = Judge0StatusDTO.builder()
+        .id(statusId)
+        .description(statusDescription)
+        .build();
+
+      // Build kết quả cho từng test case (dùng input/output đã normalize)
+      TestCaseResultDTO testResult = TestCaseResultDTO.builder()
+        .testCaseIndex(i + 1)
+        .input(testInputs.get(i))
+        .expectedOutput(expectedOutputs.get(i))
+        .actualOutput(decodedStdout)
+        .stderr(decodedStderr)
+        .compileOutput(decodedCompileOutput)
+        .time((String) rawResult.get("time"))
+        .memory((Integer) rawResult.get("memory"))
+        .status(status)
+        .passed(isPassed)
+        .build();
+
+      processedResults.add(testResult);
+    }
+
+    // 6. Build response tổng hợp
+    RunCodeResponseDTO response = RunCodeResponseDTO.builder()
+      .exerciseId(exercise.getId())
+      .exerciseTitle(exercise.getTitle())
+      .totalTestCases(publicTestCases.size())
+      .passedTestCases(passedCount)
+      .results(processedResults)
+      .allPassed(passedCount == publicTestCases.size())
+      .build();
+
+    log.info(
+      "Code execution completed: {}/{} test cases passed",
+      passedCount,
+      publicTestCases.size()
+    );
 
     return response;
   }

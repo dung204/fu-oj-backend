@@ -1,5 +1,6 @@
 package com.example.modules.submissions.dtos;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,8 +12,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RunCodeRequest {
 
-  private String sourceCode;
+  @NotBlank(message = "Exercise ID is required")
+  private String exerciseId;
+
+  @NotBlank(message = "Language code is required")
   private String languageCode;
-  private String input; // input để test
-  private String expectedOutput; // output mong đợi (optional)
+
+  @NotBlank(message = "Source code is required")
+  private String sourceCode;
 }
