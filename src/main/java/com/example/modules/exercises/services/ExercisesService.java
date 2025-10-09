@@ -9,6 +9,7 @@ import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.exercises.utils.ExerciseMapper;
 import com.example.modules.exercises.utils.ExercisesSpecification;
+import com.example.modules.test_cases.dtos.TestCaseResponseDTO;
 import com.example.modules.topics.entities.Topic;
 import com.example.modules.topics.repositories.TopicsRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -91,7 +92,17 @@ public class ExercisesService {
     log.info("Found {} exercises", exercisePage.getTotalElements());
 
     // Map to DTO
-    Page<ExerciseResponseDTO> dtoPage = exercisePage.map(exerciseMapper::toExerciseResponseDTO);
+    Page<ExerciseResponseDTO> dtoPage = exercisePage.map(exercise -> {
+      ExerciseResponseDTO dto = exerciseMapper.toExerciseResponseDTO(exercise);
+
+      if (dto.getTestCases() != null) {
+        dto.setTestCases(
+          dto.getTestCases().stream().filter(TestCaseResponseDTO::getIsPublic).toList()
+        );
+      }
+
+      return dto;
+    });
 
     return PaginatedSuccessResponseDTO.<ExerciseResponseDTO>builder()
       .message("Exercises retrieved successfully")
