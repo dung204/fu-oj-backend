@@ -6,6 +6,7 @@ import com.example.modules.Judge0.uitils.Base64Uitils;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.redis.configs.publishers.SubmissionPublisher;
+import com.example.modules.submission_results.dtos.SubmissionResultResponseDTO;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
 import com.example.modules.submissions.dtos.Judge0StatusDTO;
@@ -15,6 +16,7 @@ import com.example.modules.submissions.dtos.SubmissionRequest;
 import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
+import com.example.modules.submissions.utils.SubmissionResultMapper;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.users.entities.User;
@@ -41,6 +43,7 @@ public class SubmissionsService {
   private final UsersRepository userRepository;
   private final ExercisesRepository exerciseRepository;
   private final SubmissionPublisher submissionPublisher;
+  private final SubmissionResultMapper submissionResultMapper;
 
   @Transactional
   public Submission createSubmission(SubmissionRequest request) {
@@ -405,5 +408,15 @@ public class SubmissionsService {
     );
 
     return response;
+  }
+
+  public List<SubmissionResultResponseDTO> getAllSubmissionResultBySubmissionId(
+    String submissionId
+  ) {
+    return submissionResultRepository
+      .findAllBySubmissionId(submissionId)
+      .stream()
+      .map(submissionResultMapper::toSubmissionResponseDTO)
+      .toList();
   }
 }

@@ -6,9 +6,16 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface SubmissionResultRepository
   extends JpaRepository<SubmissionResult, String>, JpaSpecificationExecutor<SubmissionResult> {
   Optional<SubmissionResult> findByToken(String token);
   List<SubmissionResult> findAllBySubmission(Submission submission);
+
+  @Query(
+    "SELECT sr FROM SubmissionResult sr LEFT JOIN FETCH sr.testCase WHERE sr.submission.id = :submissionId"
+  )
+  List<SubmissionResult> findAllBySubmissionId(@Param("submissionId") String submissionId);
 }
