@@ -2,6 +2,7 @@ package com.example.modules.submissions.controllers;
 
 import static com.example.base.utils.AppRoutes.SUBMISSIONS_PREFIX;
 
+import com.example.base.annotations.VerifyTurnstile;
 import com.example.modules.Judge0.dtos.Judge0CallbackRequestDTO;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.services.Judge0Service;
@@ -40,6 +41,7 @@ public class SubmissionsController {
 
   @PostMapping("/base64")
   @Public
+  @VerifyTurnstile
   public ResponseEntity<?> createSubmissionBase64(@RequestBody SubmissionRequest request) {
     Submission submission = submissionServices.createSubmissionBase64(request);
     return ResponseEntity.ok(submission);
