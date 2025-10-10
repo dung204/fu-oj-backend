@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 
 import com.example.base.BaseServiceTest;
 import com.example.modules.auth.entities.Account;
-import com.example.modules.auth.enums.Role;
 import com.example.modules.minio.services.MinioService;
 import com.example.modules.users.dtos.UserProfileDTO;
 import com.example.modules.users.entities.User;
@@ -37,7 +36,7 @@ public class UserMapperTest extends BaseServiceTest {
 
     User user = User.builder()
       .avatar(avatarFileName)
-      .account(Account.builder().email("test@example.com").role(Role.USER).build())
+      .account(Account.builder().email("test@example.com").build())
       .build();
 
     UserProfileDTO dto = userMapper.toUserProfileDTO(user);
@@ -51,7 +50,7 @@ public class UserMapperTest extends BaseServiceTest {
   void toUserProfileDTO_ShouldReturnNullAvatar_WhenAvatarIsNull() {
     User user = User.builder()
       .avatar(null)
-      .account(Account.builder().email("test@example.com").role(Role.USER).build())
+      .account(Account.builder().email("test@example.com").build())
       .build();
 
     UserProfileDTO dto = userMapper.toUserProfileDTO(user);
@@ -63,7 +62,7 @@ public class UserMapperTest extends BaseServiceTest {
   void toUserProfileDTO_ShouldReturnNullAvatar_WhenAvatarIsEmpty() {
     User user = User.builder()
       .avatar("   ")
-      .account(Account.builder().email("test@example.com").role(Role.USER).build())
+      .account(Account.builder().email("test@example.com").build())
       .build();
 
     UserProfileDTO dto = userMapper.toUserProfileDTO(user);
@@ -80,7 +79,7 @@ public class UserMapperTest extends BaseServiceTest {
 
     User user = User.builder()
       .avatar(avatarFileName)
-      .account(Account.builder().email("test@example.com").role(Role.USER).build())
+      .account(Account.builder().email("test@example.com").build())
       .build();
 
     UserProfileDTO dto = userMapper.toUserProfileDTO(user);

@@ -73,7 +73,7 @@ public class JwtServiceIntegrationTest extends BaseServiceIntegrationTest {
     Claims claims = parsed.getPayload();
 
     assertEquals(user.getId(), claims.getSubject());
-    assertEquals(user.getAccount().getRole().getValue(), claims.get("role"));
+    assertEquals(user.getAccount().getRole().getName(), claims.get("role"));
     assertNotNull(claims.getIssuedAt());
     assertNotNull(claims.getExpiration());
     assertNotNull(claims.getExpiration().after(claims.getIssuedAt()));

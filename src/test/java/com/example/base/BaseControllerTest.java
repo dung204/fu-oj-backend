@@ -97,7 +97,7 @@ public abstract class BaseControllerTest {
           ? null
           : MinioFileResponse.builder().fileName(user.getAvatar()).url("image url").build()
       )
-      .role(user.getAccount().getRole().getValue())
+      .role(user.getAccount().getRole().getName())
       .createdTimestamp(user.getCreatedTimestamp().toString())
       .updatedTimestamp(user.getUpdatedTimestamp().toString())
       .build();

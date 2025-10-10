@@ -7,16 +7,20 @@ services:
     volumes:
       - postgresql_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_DATABASE_NAME}
+      - POSTGRES_DB=${DB_DATABASE_NAME:-postgres}
       - POSTGRES_INITDB_ARGS=--locale-provider=icu --icu-locale=vi
       - TZ=Asia/Ho_Chi_Minh
     restart: unless-stopped
     networks:
-      - spring-rest-api-starter-template-network
+      - fu-oj-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE_NAME} -h localhost"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE_NAME:-postgres} -h localhost",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,16 +28,33 @@ services:
   redis:
     container_name: redis
     image: redis:7.0-alpine
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}", "--appendonly", "yes"]
+    command:
+      - sh
+      - -c
+      - |
+        if [ -n "${REDIS_PASSWORD}" ]; then
+          redis-server --requirepass "${REDIS_PASSWORD}" --appendonly yes
+        else
+          redis-server --appendonly yes
+        fi
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
     networks:
-      - spring-rest-api-starter-template-network
+      - fu-oj-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test:
+        - CMD
+        - sh
+        - -c
+        - |
+          if [ -n "${REDIS_PASSWORD}" ]; then
+            redis-cli -a "${REDIS_PASSWORD}" ping
+          else
+            redis-cli ping
+          fi
       interval: 10s
       timeout: 5s
       retries: 5
@@ -50,10 +71,11 @@ services:
     volumes:
       - minio_data:/data
     command: server --console-address ":${MINIO_CONSOLE_PORT:-9001}" /data
+    restart: unless-stopped
     networks:
-      - spring-rest-api-starter-template-network
+      - fu-oj-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:${MINIO_PORT:-9000}/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -66,16 +88,16 @@ services:
     entrypoint: >
       /bin/sh -c "
       sleep 10;
-      /usr/bin/mc config host add myminio http://minio:9000 ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin};
-      /usr/bin/mc mb myminio/${MINIO_BUCKET:-spring-rest-api-bucket} --ignore-existing;
-      /usr/bin/mc policy set public myminio/${MINIO_BUCKET:-spring-rest-api-bucket};
+      /usr/bin/mc config host add myminio http://minio:${MINIO_PORT:-9000} ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin};
+      /usr/bin/mc mb myminio/${MINIO_BUCKET:-bucket} --ignore-existing;
+      /usr/bin/mc policy set public myminio/${MINIO_BUCKET:-bucket};
       exit 0;
       "
     networks:
-      - spring-rest-api-starter-template-network
+      - fu-oj-network
 
 networks:
-  spring-rest-api-starter-template-network:
+  fu-oj-network:
     driver: bridge
 
 volumes:

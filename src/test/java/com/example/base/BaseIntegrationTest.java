@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -23,28 +22,38 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @ActiveProfiles("test")
 @Tag("integration")
+@SuppressWarnings("resource")
 public class BaseIntegrationTest {
 
-  @SuppressWarnings("resource")
-  @ServiceConnection
   protected static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")
     .withUsername("postgres")
     .withPassword("postgres")
     .withInitScript(null);
 
-  protected static RedisContainer redis = new RedisContainer("redis:7.0-alpine");
+  protected static RedisContainer redis = new RedisContainer("redis:7.0-alpine").withCommand(
+    "redis-server",
+    "--requirepass",
+    "password",
+    "--appendonly",
+    "yes"
+  );
 
   protected static MinIOContainer minio = new MinIOContainer("minio/minio:latest");
 
   @DynamicPropertySource
   static void populateProperties(DynamicPropertyRegistry registry) {
+    registry.add("spring.datasource.url", postgres::getJdbcUrl);
+    registry.add("spring.datasource.username", postgres::getUsername);
+    registry.add("spring.datasource.password", postgres::getPassword);
+
     registry.add("minio.endpoint", minio::getS3URL);
     registry.add("minio.access-key", minio::getUserName);
     registry.add("minio.secret-key", minio::getPassword);
-    registry.add("minio.bucket", () -> "spring-rest-api-bucket");
+    registry.add("minio.bucket", () -> "bucket");
 
     registry.add("spring.data.redis.host", redis::getHost);
     registry.add("spring.data.redis.port", redis::getRedisPort);
+    registry.add("spring.data.redis.password", () -> "password");
   }
 
   @BeforeAll

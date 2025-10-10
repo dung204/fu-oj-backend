@@ -1,17 +1,20 @@
-# Spring REST API Starter Template
+# FPT University Online Judge (FU-OJ) Backend
 
-A production-ready Spring Boot template for building modern RESTful APIs.
-It provides a clean project structure, recommended libraries, and best practices for development, testing, and deployment.
-This template is designed to help you quickly start new backend projects and streamline your workflow.
+The REST API for FPT University Online Judge (FU-OJ) - a platform for practicing programming exercises, made for FPT University. This project is the Capstone Project for the Software Engineering program at FPT University.
 
-## 🚀 Key features
+## 👥 Authors
 
-- 🔒 **Authentication and Authorization** with Spring Security & JWT (JSON Web Token)
-- 📂 **File Storage** with MinIO
-- 🚀 **Deployment** with Docker Compose
-- 🎨 **Code formatting** with Prettier
-- 🧪 **Testing** with JUnit, Mockito & Testcontainers
-- 🔄 **CI/CD workflows** with GitHub Actions (currently including testing workflow only)
+The project is developed by group 128 of the SEP490 (Capstone Project) course at FPT University. The team members are:
+
+- Hồ Anh Dũng - HE181529 - [@dung204](https://github.com/dung204)
+- Hoàng Gia Trọng - HE172557 - [@GiaTrongHocBe](https://github.com/GiaTrong2003)
+- Phạm Ngọc Tùng Lâm - HE173556 - [@lampnthe173556](https://github.com/lampnthe173556)
+- Lê Đức Đạt - HE171371 - [@LeDatFPT](https://github.com/LeDatFPT)
+- Lê Minh Chiến - HE141150 - [@MilkOCD](https://github.com/MilkOCD)
+
+## 📋 Features
+
+> Working in progress... 🚧
 
 ## 🛠️ Prerequisites
 
@@ -19,7 +22,7 @@ You need to install all of these before continuing:
 
 - [Java 21](https://www.oracle.com/java/technologies/downloads/#java21)
 - [Maven](https://maven.apache.org/download.cgi) (if not installed, you can use `mvnw` instead)
-- [Node.js](https://nodejs.org/en/download)
+- [Node.js](https://nodejs.org/en/download) (if using `npm`, `yarn` or `pnpm`) or [Bun](https://bun.sh/) (if using `bun`)
 - [Docker & Docker Compose](https://docs.docker.com/get-docker/)
 
 The following tools will be downloaded & started by Docker Compose. If not using Docker Compose, you will need to install them manually in your environment:
@@ -33,31 +36,29 @@ The following tools will be downloaded & started by Docker Compose. If not using
 1. Clone the repository
 
 ```bash
-git clone https://github.com/dung204/spring-rest-api-starter-template.git
+git clone https://github.com/dung204/fu-oj-backend.git
 ```
 
 2. Change directory into the project folder
 
 ```bash
-cd spring-rest-api-starter-template
+cd fu-oj-backend
 ```
 
-3. Prepare the environment variables:
+3. Create a `.env` file in the root directory of the project. You can use the [`.env.example`](.env.example) file as a template. Make sure to fill in the required environment variables, **and delete all comments**. These variables are required for Docker Compose
 
-3.1. If using Docker Compose, create a `.env` file in the root directory of the project. You can use the `.env.example` file as a template. Make sure to fill in the required environment variables. These variables is required for Docker Compose
+4. (Optional, but recommended) Start the required services using Docker Compose
 
-3.2. Create a configuration file, named `application-dev.yml`, place it at `src/resources/`. The content of this file should follow the example file (`application-dev-example.yml`)
+```bash
+docker compose up -d
+```
 
-4. Use `npm` to install `husky`, `commitlint`, `prettier` & `lint-staged`:
+5. Install `husky`, `commitlint`, `prettier` & `lint-staged` using the following command (you only need to do this once):
+
+> 📝 You can replace `npm` with `yarn` or `pnpm` or `bun` if you prefer
 
 ```
 npm install
-```
-
-5. Install the dependencies & build the project
-
-```bash
-mvn clean install
 ```
 
 6. Start the application
@@ -67,6 +68,8 @@ mvn spring-boot:run
 ```
 
 7. Open `http://localhost:4000/api/v1/docs` to see the OpenAPI documentation of this REST API. You can configure the server port in `application-dev.yml`.
+
+8. (Optional) For VS Code users, you can install the recommended extensions listed in [`.vscode/extensions.json`](.vscode/extensions.json) for a better development experience.
 
 ## 📦 Libraries (dependencies)
 
@@ -106,11 +109,11 @@ Formatters & Linters & Misc. tools:
 - To run unit tests, use the following command:
 
 ```bash
-mvn test -Dgroups=unit
+mvn clean test -Dgroups=unit
 ```
 
 - To run integration tests, use the following command:
 
 ```bash
-mvn test -Dgroups=integration
+mvn clean test -Dgroups=integration
 ```

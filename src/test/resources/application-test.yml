@@ -11,7 +11,7 @@ minio:
   endpoint: http://localhost:9000
   access_key: minioadmin
   secret_key: minioadmin
-  bucket: spring-rest-api-bucket
+  bucket: bucket
 
 jwt:
   access:

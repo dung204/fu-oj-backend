@@ -1,2 +1,2 @@
 echo -----------------------------------------------------------------
-npx commitlint --verbose --color --edit "$1"
+commitlint --verbose --color --edit "$1"
