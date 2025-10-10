@@ -47,7 +47,7 @@ public class BaseServiceTest {
           ? null
           : MinioFileResponse.builder().fileName(user.getAvatar()).url("image url").build()
       )
-      .role(user.getAccount().getRole().getName())
+      .role(user.getAccount().getRole().getValue())
       .createdTimestamp(user.getCreatedTimestamp().toString())
       .updatedTimestamp(user.getUpdatedTimestamp().toString())
       .build();

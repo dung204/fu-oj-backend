@@ -53,7 +53,7 @@ public class JwtService {
 
     return Jwts.builder()
       .subject(user.getId())
-      .claim("role", user.getAccount().getRole().getName())
+      .claim("role", user.getAccount().getRole())
       .issuedAt(issuedAt)
       .expiration(expiration)
       .signWith(getSecretKeyFromString(ACCESS_SECRET))
@@ -92,7 +92,7 @@ public class JwtService {
   }
 
   private SecretKey getSecretKeyFromString(String secret) {
-    byte[] keyBytes = Decoders.BASE64URL.decode(secret);
+    byte[] keyBytes = Decoders.BASE64.decode(secret);
     return Keys.hmacShaKeyFor(keyBytes);
   }
 }

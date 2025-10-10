@@ -95,7 +95,7 @@ public class JwtServiceTest extends BaseServiceTest {
     Claims claims = parsed.getPayload();
 
     assertEquals(mockUser.getId(), claims.getSubject());
-    assertEquals(mockUser.getAccount().getRole().getName(), claims.get("role"));
+    assertEquals(mockUser.getAccount().getRole().getValue(), claims.get("role"));
     assertNotNull(claims.getIssuedAt());
     assertNotNull(claims.getExpiration());
     assertTrue(claims.getExpiration().after(claims.getIssuedAt()));
@@ -161,7 +161,7 @@ public class JwtServiceTest extends BaseServiceTest {
     Claims claims = parsed.getPayload();
 
     assertEquals(mockUser.getId(), claims.getSubject());
-    assertEquals(mockUser.getAccount().getRole().getName(), claims.get("role"));
+    assertEquals(mockUser.getAccount().getRole().getValue(), claims.get("role"));
     assertNotNull(claims.getIssuedAt());
     assertNotNull(claims.getExpiration());
   }
