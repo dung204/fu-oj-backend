@@ -35,7 +35,7 @@ public class AuthControllerTest extends BaseControllerTest {
         .email("email@example.com")
         .firstName("John")
         .lastName("Doe")
-        .role(Role.USER.getValue())
+        .role(Role.STUDENT.getValue())
         .build()
     )
     .build();

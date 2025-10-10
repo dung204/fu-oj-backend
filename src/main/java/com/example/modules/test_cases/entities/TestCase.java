@@ -19,7 +19,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "exercises")
+@Table(name = "test_cases")
 public class TestCase extends BaseEntity {
 
   @ManyToOne
