@@ -64,7 +64,7 @@ public class MeControllerTest extends BaseControllerTest {
       .andExpect(jsonPath("$.data.email").value(mockUser.getAccount().getEmail()))
       .andExpect(jsonPath("$.data.firstName").value(mockUser.getFirstName()))
       .andExpect(jsonPath("$.data.lastName").value(mockUser.getLastName()))
-      .andExpect(jsonPath("$.data.role").value(mockUser.getAccount().getRole().getName()));
+      .andExpect(jsonPath("$.data.role").value(mockUser.getAccount().getRole().getValue()));
   }
 
   @Test
