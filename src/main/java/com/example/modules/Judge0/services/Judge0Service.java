@@ -1,5 +1,7 @@
 package com.example.modules.Judge0.services;
 
+import com.example.modules.Judge0.dtos.Judge0BatchResponseDTO;
+import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.enums.Judge0Status;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -179,7 +181,7 @@ public class Judge0Service {
     }
   }
 
-  public List<Map<String, Object>> runBatchCode(
+  public List<Judge0SubmissionResponseDTO> runBatchCode(
     String sourceCode,
     String languageId,
     List<String> testInputs,
@@ -196,7 +198,7 @@ public class Judge0Service {
     return pollBatchResults(tokens);
   }
 
-  private List<Map<String, Object>> pollBatchResults(List<String> tokens) {
+  private List<Judge0SubmissionResponseDTO> pollBatchResults(List<String> tokens) {
     String baseUrl = JUDGE0_API + "/submissions/batch?base64_encoded=true&tokens=";
     String tokensParam = String.join(",", tokens);
     String pollUrl = baseUrl + tokensParam;
@@ -216,21 +218,18 @@ public class Judge0Service {
           .block();
 
         // Parse response
-        Map<String, Object> response = objectMapper.readValue(
+        Judge0BatchResponseDTO batchResponse = objectMapper.readValue(
           responseBody,
-          new TypeReference<Map<String, Object>>() {}
+          Judge0BatchResponseDTO.class
         );
 
-        List<Map<String, Object>> submissions = (List<Map<String, Object>>) response.get(
-          "submissions"
-        );
+        List<Judge0SubmissionResponseDTO> submissions = batchResponse.getSubmissions();
 
         // Kiểm tra xem tất cả submissions đã hoàn thành chưa
         boolean allCompleted = submissions
           .stream()
           .allMatch(sub -> {
-            Map<String, Object> status = (Map<String, Object>) sub.get("status");
-            int statusId = (int) status.get("id");
+            int statusId = sub.getStatus().getId();
             // Status 1 = In Queue, 2 = Processing
             return statusId != 1 && statusId != 2;
           });
@@ -262,7 +261,7 @@ public class Judge0Service {
     );
   }
 
-  public Map<String, Object> getSubmission(String token) {
+  public Judge0SubmissionResponseDTO getSubmission(String token) {
     String url = JUDGE0_API + "/submissions/" + token + "?base64_encoded=false";
 
     log.info("Fetching Judge0 Submission with token: {}", token);
@@ -273,12 +272,14 @@ public class Judge0Service {
 
       log.info("Judge0 Get Submission Response: {}", responseBody);
 
-      // Parse JSON response thành Map
-      Map<String, Object> body = objectMapper.readValue(responseBody, new TypeReference<>() {});
+      // Parse JSON response thành DTO
+      Judge0SubmissionResponseDTO response = objectMapper.readValue(
+        responseBody,
+        Judge0SubmissionResponseDTO.class
+      );
 
       // Lấy thông tin status
-      Map<String, Object> statusMap = (Map<String, Object>) body.get("status");
-      int statusId = (int) statusMap.get("id");
+      int statusId = response.getStatus().getId();
       Judge0Status status = Judge0Status.fromId(statusId);
 
       // Log trạng thái
@@ -287,10 +288,11 @@ public class Judge0Service {
       // Kiểm tra kết quả thực thi
       if (status == Judge0Status.ACCEPTED) {
         log.info("Judge0 submission accepted");
-        return body;
       } else {
         log.warn("Judge0 execution error: {}", status.getDescription());
       }
+
+      return response;
     } catch (Exception e) {
       log.error("Error fetching submission {} from Judge0", token, e);
       throw new ResponseStatusException(
@@ -298,7 +300,6 @@ public class Judge0Service {
         "Error fetching submission from Judge0"
       );
     }
-    return Collections.emptyMap();
   }
 
   private List<String> requestToJudge0(String url, Map<String, Object> requestBody) {

@@ -2,6 +2,8 @@ package com.example.modules.submissions.controllers;
 
 import static com.example.base.utils.AppRoutes.SUBMISSIONS_PREFIX;
 
+import com.example.modules.Judge0.dtos.Judge0CallbackRequestDTO;
+import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.auth.annotations.Public;
 import com.example.modules.submission_results.dtos.SubmissionResultResponseDTO;
@@ -13,7 +15,6 @@ import com.example.modules.submissions.services.SubmissionsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -46,17 +47,19 @@ public class SubmissionsController {
 
   @PutMapping("/callback")
   @Public
-  public ResponseEntity<Void> handleCallback(@RequestBody Map<String, Object> result) {
-    log.info("Received callback from Judge0: {}", result);
-    submissionServices.handleCallback(result);
+  public ResponseEntity<Void> handleCallback(@RequestBody Judge0CallbackRequestDTO callback) {
+    log.info("Received callback from Judge0: {}", callback);
+    submissionServices.handleCallback(callback);
     return ResponseEntity.ok().build();
   }
 
   @GetMapping("/result/{token}")
   @Public
-  public ResponseEntity<?> GetSubmissionByToken(@PathVariable String token) {
+  public ResponseEntity<Judge0SubmissionResponseDTO> GetSubmissionByToken(
+    @PathVariable String token
+  ) {
     log.info("Received token: {}", token);
-    Map<String, Object> result = judge0Service.getSubmission(token);
+    Judge0SubmissionResponseDTO result = judge0Service.getSubmission(token);
     return ResponseEntity.ok(result);
   }
 
@@ -76,10 +79,10 @@ public class SubmissionsController {
     return ResponseEntity.ok(result);
   }
 
-  @PostMapping("/{submissionId}/submissionResult")
+  @GetMapping("/{submissionId}/submissionResult")
   @Public
   public ResponseEntity<List<SubmissionResultResponseDTO>> getAllSubmissionResult(
-    @Valid @RequestBody String submissionId
+    @PathVariable String submissionId
   ) {
     log.info("SubmissionId", submissionId);
     List<SubmissionResultResponseDTO> result =

@@ -1,5 +1,7 @@
 package com.example.modules.submissions.services;
 
+import com.example.modules.Judge0.dtos.Judge0CallbackRequestDTO;
+import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.enums.Judge0Status;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.Judge0.uitils.Base64Uitils;
@@ -9,7 +11,6 @@ import com.example.modules.redis.configs.publishers.SubmissionPublisher;
 import com.example.modules.submission_results.dtos.SubmissionResultResponseDTO;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
-import com.example.modules.submissions.dtos.Judge0StatusDTO;
 import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
@@ -172,21 +173,16 @@ public class SubmissionsService {
    * }
    */
   @Transactional
-  public void handleCallback(Map<String, Object> result) {
-    log.info("Received callback result: {}", result);
+  public void handleCallback(Judge0CallbackRequestDTO callback) {
+    log.info("Received callback result: {}", callback);
 
     //1. Extract basic fields
-    String token = (String) result.get("token");
-    Map<String, Object> statusMap = (Map<String, Object>) result.get("status");
-    int statusId = (int) statusMap.get("id");
-    String statusDesc = (String) statusMap.get("description");
-
-    String stdout = (String) result.get("stdout");
-    String stderr = (String) result.get("stderr");
+    String token = callback.getToken();
+    int statusId = callback.getStatus().getId();
 
     //2. Decode base64 safely using Base64Utils
-    String decodedStdout = Base64Uitils.decodeBase64Safe(stdout);
-    String decodedStderr = Base64Uitils.decodeBase64Safe(stderr);
+    String decodedStdout = Base64Uitils.decodeBase64Safe(callback.getStdout());
+    String decodedStderr = Base64Uitils.decodeBase64Safe(callback.getStderr());
 
     if (decodedStderr != null && !decodedStderr.isEmpty()) {
       log.error("Decoded stderr: {}", decodedStderr);
@@ -332,47 +328,35 @@ public class SubmissionsService {
       .toList();
 
     // 4. Gửi batch lên Judge0 và đợi kết quả
-    List<Map<String, Object>> rawResults = judge0Service.runBatchCode(
+    List<Judge0SubmissionResponseDTO> results = judge0Service.runBatchCode(
       request.getSourceCode(),
       request.getLanguageCode(),
       testInputs,
       expectedOutputs
     );
 
-    log.info("rawResults: {}", rawResults);
+    log.info("Received {} results from Judge0", results.size());
 
     // 5. Decode và xử lý kết quả
     List<TestCaseResultDTO> processedResults = new ArrayList<>();
     int passedCount = 0;
 
-    for (int i = 0; i < rawResults.size(); i++) {
-      Map<String, Object> rawResult = rawResults.get(i);
+    for (int i = 0; i < results.size(); i++) {
+      Judge0SubmissionResponseDTO result = results.get(i);
 
       // Decode base64 outputs
-      String stdout = (String) rawResult.get("stdout");
-      String stderr = (String) rawResult.get("stderr");
-      String compileOutput = (String) rawResult.get("compile_output");
-
-      String decodedStdout = Base64Uitils.decodeBase64Safe(stdout);
-      String decodedStderr = Base64Uitils.decodeBase64Safe(stderr);
-      String decodedCompileOutput = Base64Uitils.decodeBase64Safe(compileOutput);
+      String decodedStdout = Base64Uitils.decodeBase64Safe(result.getStdout());
+      String decodedStderr = Base64Uitils.decodeBase64Safe(result.getStderr());
+      String decodedCompileOutput = Base64Uitils.decodeBase64Safe(result.getCompileOutput());
 
       // Lấy thông tin status
-      Map<String, Object> statusMap = (Map<String, Object>) rawResult.get("status");
-      int statusId = (int) statusMap.get("id");
-      String statusDescription = (String) statusMap.get("description");
+      int statusId = result.getStatus().getId();
 
       // Kiểm tra kết quả
       boolean isPassed = statusId == 3; // Status 3 = Accepted
       if (isPassed) {
         passedCount++;
       }
-
-      // Build status DTO
-      Judge0StatusDTO status = Judge0StatusDTO.builder()
-        .id(statusId)
-        .description(statusDescription)
-        .build();
 
       // Build kết quả cho từng test case (dùng input/output đã normalize)
       TestCaseResultDTO testResult = TestCaseResultDTO.builder()
@@ -382,9 +366,9 @@ public class SubmissionsService {
         .actualOutput(decodedStdout)
         .stderr(decodedStderr)
         .compileOutput(decodedCompileOutput)
-        .time((String) rawResult.get("time"))
-        .memory((Integer) rawResult.get("memory"))
-        .status(status)
+        .time(result.getTime())
+        .memory(result.getMemory())
+        .status(result.getStatus())
         .passed(isPassed)
         .build();
 

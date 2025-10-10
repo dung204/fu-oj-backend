@@ -18,4 +18,9 @@ public interface SubmissionResultRepository
     "SELECT sr FROM SubmissionResult sr LEFT JOIN FETCH sr.testCase WHERE sr.submission.id = :submissionId"
   )
   List<SubmissionResult> findAllBySubmissionId(@Param("submissionId") String submissionId);
+
+  @Query(
+    "SELECT sr FROM SubmissionResult sr LEFT JOIN FETCH sr.testCase WHERE sr.verdict IN :verdicts"
+  )
+  List<SubmissionResult> findByVerdictIn(@Param("verdicts") List<String> verdicts);
 }
