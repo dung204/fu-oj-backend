@@ -63,3 +63,12 @@ jwt:
   refresh:
     secret: ${JWT_REFRESH_SECRET}
     expiration: ${JWT_REFRESH_EXPIRATION}
+
+judge0:
+  judge0-api-url: ${JUDGE0_API_URL}
+  callback-url: ${CALL_BACK_URL}
+
+cloudflare:
+  turnstile:
+    secret-key: ${TURNSTILE_SECRET_KEY}
+    verify-url: ${TURNSTILE_VERIFY_URL:https://challenges.cloudflare.com/turnstile/v0/siteverify}

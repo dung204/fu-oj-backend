@@ -1,0 +1,77 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch: # Cho phép deploy thủ công khi cần
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push Docker Image
+        run: |
+          # Tạo tag có timestamp và short commit
+          GIT_SHA=$(git rev-parse --short HEAD)
+          TAG=$(date +'%Y%m%d-%H%M')-$GIT_SHA
+          IMAGE_NAME=giatrong/fu-oj-backend
+
+          echo "Building image: $IMAGE_NAME:$TAG"
+
+          docker build -t $IMAGE_NAME:$TAG -t $IMAGE_NAME:latest .
+
+          docker push $IMAGE_NAME:$TAG
+          docker push $IMAGE_NAME:latest
+
+          # Tự động tạo tag môi trường (prod/dev)
+          if [[ $GITHUB_REF == "refs/heads/main" ]]; then
+            ENV_TAG="prod"
+          else
+            ENV_TAG="dev"
+          fi
+
+          docker tag $IMAGE_NAME:$TAG $IMAGE_NAME:$ENV_TAG
+          docker push $IMAGE_NAME:$ENV_TAG
+
+          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+          echo "ENV_TAG=$ENV_TAG" >> $GITHUB_ENV
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e  # Stop if any command fails
+            export IMAGE_TAG=${{ env.IMAGE_TAG }}
+
+            echo "Pulling latest image version: giatrong/fu-oj-backend:$IMAGE_TAG"
+
+            # Cập nhật image trên server
+            cd ~/fu-oj-backend
+            docker compose -f docker-compose-deploy.yml pull
+
+            echo "Starting deployment with image tag: $IMAGE_TAG"
+            docker compose -f docker-compose-deploy.yml --env-file .env up -d --remove-orphans || {
+              echo "Deployment failed. Rolling back..."
+              docker compose -f docker-compose-deploy.yml down
+              exit 1
+            }
+
+            echo "Deployment successful!"
