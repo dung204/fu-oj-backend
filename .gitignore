@@ -35,7 +35,7 @@ src/main/resources/application-dev.yml
 
 ### Production configuration ###
 src/main/resources/application-prod.properties
-src/main/resources/application-prod.yml
+#src/main/resources/application-prod.yml
 
 ### Test configuration ###
 src/main/resources/application-test.properties
