@@ -45,6 +45,7 @@ public class SubmissionsService {
   private final ExercisesRepository exerciseRepository;
   private final SubmissionPublisher submissionPublisher;
   private final SubmissionResultMapper submissionResultMapper;
+  private final SubmissionLimitService submissionLimitService;
 
   @Transactional
   public Submission createSubmission(SubmissionRequest request) {
@@ -56,6 +57,16 @@ public class SubmissionsService {
     Exercise exercise = exerciseRepository
       .findById(String.valueOf(request.getExerciseId()))
       .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
+
+    // check submission limit
+    if (exercise.getMaxSubmissions() != 0) {
+      log.info(
+        "Checking submission limit for user {} on exercise {}",
+        user.getId(),
+        exercise.getId()
+      );
+      submissionLimitService.checkAndIncrease(user.getId(), exercise.getId());
+    }
 
     // get all test cases of exercise
     List<TestCase> testCases = testCaseRepository.findAllByExerciseId((exercise.getId()));
@@ -110,6 +121,15 @@ public class SubmissionsService {
     Exercise exercise = exerciseRepository
       .findById(String.valueOf(request.getExerciseId()))
       .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
+
+    if (exercise.getMaxSubmissions() != 0) {
+      log.info(
+        "Checking submission limit for user {} on exercise {}",
+        user.getId(),
+        exercise.getId()
+      );
+      submissionLimitService.checkAndIncrease(user.getId(), exercise.getId());
+    }
 
     // get all test cases of exercise
     List<TestCase> testCases = testCaseRepository.findAllByExerciseId((exercise.getId()));
