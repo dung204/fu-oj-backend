@@ -21,6 +21,9 @@ public class GroupUpdateRequestDTO {
   @NotBlank
   private String name;
 
+  @Schema(description = "The access modifier of group", example = SwaggerExamples.PUBLIC)
+  private boolean isPublic;
+
   @Schema(description = "The description of group", example = SwaggerExamples.DESCRIPTION)
   private String description;
 }

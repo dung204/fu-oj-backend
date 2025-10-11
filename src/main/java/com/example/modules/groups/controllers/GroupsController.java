@@ -3,7 +3,10 @@ package com.example.modules.groups.controllers;
 import static com.example.base.utils.AppRoutes.GROUPS_PREFIX;
 
 import com.example.base.dtos.SuccessResponseDTO;
+import com.example.modules.auth.annotations.AllowRoles;
+import com.example.modules.auth.annotations.CurrentUser;
 import com.example.modules.auth.annotations.Public;
+import com.example.modules.auth.enums.Role;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.groups.dtos.*;
 import com.example.modules.groups.services.GroupsService;
@@ -16,10 +19,12 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping(path = GROUPS_PREFIX, produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "groups", description = "Operations related to groups")
@@ -28,7 +33,7 @@ public class GroupsController {
 
   private final GroupsService groupsService;
 
-  @Public
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Create new group",
     responses = {
@@ -45,8 +50,10 @@ public class GroupsController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<GroupResponseDTO> createGroup(
-    @RequestBody @Valid GroupRequestDTO groupRequestDTO
+    @RequestBody @Valid GroupRequestDTO groupRequestDTO,
+    @CurrentUser User user
   ) {
+    groupRequestDTO.setOwnerId(user.getId());
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(201)
       .message("Group created successfully")
@@ -54,7 +61,7 @@ public class GroupsController {
       .build();
   }
 
-  @Public
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Update group by id",
     responses = {
@@ -79,7 +86,7 @@ public class GroupsController {
       .build();
   }
 
-  @Public
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Get group by ownerId",
     responses = {
@@ -104,7 +111,7 @@ public class GroupsController {
       .build();
   }
 
-  @Public
+  @AllowRoles(Role.ADMIN)
   @Operation(
     summary = "Get all group",
     responses = {
@@ -123,7 +130,7 @@ public class GroupsController {
       .build();
   }
 
-  @Public
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Delete group",
     responses = {
@@ -149,7 +156,7 @@ public class GroupsController {
       .build();
   }
 
-  @Public
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Add exercises to a group",
     description = "Add one or more exercises to the specified group by group ID.",
@@ -182,7 +189,7 @@ public class GroupsController {
       .build();
   }
 
-  @Public
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Remove exercises from a group",
     description = "Remove one or multiple exercises from a specific group by providing the group ID and a list of exercise IDs to remove.",
@@ -221,7 +228,7 @@ public class GroupsController {
       .build();
   }
 
-  @Public
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Get exercises by group ID",
     description = "Retrieve all exercises that belong to a specific group using the group ID.",
@@ -260,7 +267,7 @@ public class GroupsController {
       .build();
   }
 
-  @Public
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Add students to a group",
     description = "Add one or more students to the specified group by group ID.",
@@ -293,7 +300,7 @@ public class GroupsController {
       .build();
   }
 
-  @Public
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Get students by group ID",
     description = "Retrieve all students that belong to a specific group using the group ID.",
@@ -332,7 +339,7 @@ public class GroupsController {
       .build();
   }
 
-  @Public
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Remove students from a group",
     description = "Remove one or multiple students from a specific group by providing the group ID and a list of student IDs to remove.",

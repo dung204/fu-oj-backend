@@ -145,6 +145,7 @@ public class GroupsService {
     Group group = groupsRepository.getGroupById(requestDTO.getId());
     group.setName(requestDTO.getName());
     group.setDescription(requestDTO.getDescription());
+    group.setPublic(requestDTO.isPublic());
     group.setUpdatedTimestamp(Instant.now());
     groupsRepository.save(group);
     return groupMapper.toGroupResponseDTO(group);
@@ -163,9 +164,14 @@ public class GroupsService {
     Group group = Group.builder()
       .name(groupRequestDTO.getName())
       .description(groupRequestDTO.getDescription())
+      .isPublic(groupRequestDTO.isPublic())
       .code(generateUniqueClassCode())
       .instructor(instructor)
       .build();
+    if (!groupRequestDTO.isPublic()) {
+      group.setCode("");
+    }
+
     groupsRepository.save(group);
 
     return groupMapper.toGroupResponseDTO(group);
