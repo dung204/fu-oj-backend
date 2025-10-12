@@ -19,7 +19,7 @@ public abstract class UserMapper {
 
   @Named("toUserProfileDTO")
   @Mapping(source = "account.email", target = "email")
-  @Mapping(source = "account.role.name", target = "role")
+  @Mapping(source = "account.role", target = "role")
   @Mapping(source = "avatar", target = "avatar", qualifiedByName = "mapAvatar")
   public abstract UserProfileDTO toUserProfileDTO(User user);
 

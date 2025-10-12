@@ -67,10 +67,10 @@ public abstract class BaseControllerTest {
 
     Jws<Claims> mockJws = mock(Jws.class);
     Claims mockClaims = mock(Claims.class);
-    mockClaims.put("role", Role.USER.getValue());
+    mockClaims.put("role", Role.STUDENT.getValue());
 
     when(mockJws.getPayload()).thenReturn(mockClaims);
-    when(mockJws.getPayload().get("role", String.class)).thenReturn(Role.USER.getValue());
+    when(mockJws.getPayload().get("role", String.class)).thenReturn(Role.STUDENT.getValue());
     when(mockClaims.getSubject()).thenReturn(userId);
 
     when(jwtService.verifyAccessToken(accessToken)).thenReturn(mockJws);
@@ -97,7 +97,7 @@ public abstract class BaseControllerTest {
           ? null
           : MinioFileResponse.builder().fileName(user.getAvatar()).url("image url").build()
       )
-      .role(user.getAccount().getRole().getName())
+      .role(user.getAccount().getRole().getValue())
       .createdTimestamp(user.getCreatedTimestamp().toString())
       .updatedTimestamp(user.getUpdatedTimestamp().toString())
       .build();

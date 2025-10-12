@@ -24,5 +24,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface AllowRoles {
-  Role[] value() default { Role.ADMIN, Role.USER };
+  Role[] value() default { Role.ADMIN, Role.INSTRUCTOR, Role.STUDENT };
 }
