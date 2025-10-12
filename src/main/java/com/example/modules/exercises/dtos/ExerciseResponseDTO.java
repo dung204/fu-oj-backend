@@ -2,7 +2,7 @@ package com.example.modules.exercises.dtos;
 
 import com.example.base.dtos.EntityDTO;
 import com.example.modules.test_cases.dtos.TestCaseResponseDTO;
-import com.example.modules.topics.dtos.TopicsResponseDTO;
+import com.example.modules.topics.dtos.TopicResponseDTO;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,7 +21,7 @@ public class ExerciseResponseDTO extends EntityDTO {
   private String title;
   private String description;
   private Integer maxSubmissions;
-  private List<TopicsResponseDTO> topics;
+  private List<TopicResponseDTO> topics;
   private List<TestCaseResponseDTO> testCases;
   private Integer testCasesCount;
 }

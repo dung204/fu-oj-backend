@@ -9,7 +9,6 @@ import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
-@ToString(exclude = "topics")
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
