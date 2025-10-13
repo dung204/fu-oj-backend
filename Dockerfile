@@ -1,5 +1,5 @@
 # ====== Build stage ======
-FROM eclipse-temurin:21-jdk-alpine as builder
+FROM eclipse-temurin:22-jdk-alpine as builder
 
 # Set working directory
 WORKDIR /app
@@ -23,7 +23,7 @@ RUN ./mvnw clean package -DskipTests \
 
 
 # ====== Runtime stage ======
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:22-jre-alpine
 
 # Create app user
 RUN addgroup -S spring && adduser -S spring -G spring
