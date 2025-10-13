@@ -74,7 +74,7 @@ public class GroupsController {
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @PatchMapping
+  @PutMapping
   @ResponseStatus(HttpStatus.OK)
   public SuccessResponseDTO<GroupResponseDTO> updateGroup(
     @RequestBody @Valid GroupUpdateRequestDTO groupUpdateRequestDTO
@@ -176,7 +176,7 @@ public class GroupsController {
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @PostMapping("/exercise/{id}")
+  @PostMapping("/{id}/exercises")
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<GroupResponseDTO> addExerciseToGroup(
     @PathVariable @NotNull(message = "ID must be not null") String id,
@@ -213,8 +213,8 @@ public class GroupsController {
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @DeleteMapping("/exercise/{id}")
-  @ResponseStatus(HttpStatus.CREATED)
+  @DeleteMapping("/{id}/exercises")
+  @ResponseStatus(HttpStatus.OK)
   public SuccessResponseDTO<GroupResponseDTO> removeExercisesFromGroup(
     @PathVariable @NotNull(message = "ID must be not null") String id,
     @Valid @RequestBody ListExerciseToGroupRequestDTO removeExerciseToGroupRequestDTO
@@ -255,7 +255,7 @@ public class GroupsController {
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @GetMapping("/exercise/{id}")
+  @GetMapping("/{id}/exercises")
   @ResponseStatus(HttpStatus.OK)
   public SuccessResponseDTO<List<Exercise>> getExerciseByGroupId(
     @PathVariable @NotNull(message = "Group ID cannot be null") String id
@@ -287,7 +287,7 @@ public class GroupsController {
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @PostMapping("/students/{id}")
+  @PostMapping("/{id}/students")
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<GroupResponseDTO> addStudentsToGroup(
     @PathVariable @NotNull(message = "ID must be not null") String id,
@@ -327,7 +327,7 @@ public class GroupsController {
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @GetMapping("/students/{id}")
+  @GetMapping("/{id}/students")
   @ResponseStatus(HttpStatus.OK)
   public SuccessResponseDTO<List<User>> getStudentsByGroupId(
     @PathVariable @NotNull(message = "Group ID cannot be null") String id
@@ -363,7 +363,7 @@ public class GroupsController {
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @DeleteMapping("/students/{id}")
+  @DeleteMapping("/{id}/students")
   @ResponseStatus(HttpStatus.OK)
   public SuccessResponseDTO<GroupResponseDTO> removeStudentsFromGroup(
     @PathVariable @NotNull(message = "ID must be not null") String id,
