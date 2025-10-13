@@ -19,7 +19,7 @@ public class ExerciseQueryDTO extends PaginatedQueryDTO {
   private String title;
 
   @Parameter(description = "Filter by topic ID")
-  private String topicId;
+  private List<String> topicIds;
 
   @Parameter(description = "Filter by group ID - get exercises of a specific group")
   private String groupId;

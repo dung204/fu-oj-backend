@@ -54,7 +54,10 @@ public class ExercisesService {
 
     // Gắn topics nếu có
     if (request.getTopicIds() != null && !request.getTopicIds().isEmpty()) {
-      List<Topic> topics = topicsRepository.findAllById(request.getTopicIds());
+      // filter duplicate IDS
+      List<String> uniqueTopicIds = request.getTopicIds().stream().distinct().toList();
+      // get topics from DB
+      List<Topic> topics = topicsRepository.findAllById(uniqueTopicIds);
       if (topics.size() != request.getTopicIds().size()) {
         throw new EntityNotFoundException("Some topic IDs not found");
       }
@@ -82,11 +85,12 @@ public class ExercisesService {
    * Lấy danh sách exercises với pagination và filter
    */
   public PaginatedSuccessResponseDTO<ExerciseResponseDTO> getExercises(ExerciseQueryDTO query) {
-    Specification<Exercise> spec = ExercisesSpecification.builder()
-      .withCode(query.getCode())
-      .withTitleLike(query.getTitle())
-      .withGroupId(query.getGroupId())
-      .build();
+    Specification<Exercise> spec = ExercisesSpecification.buildOrFilters(
+      query.getCode(),
+      query.getTitle(),
+      query.getTopicIds(),
+      query.getGroupId()
+    );
 
     Page<Exercise> exercisePage = exercisesRepository.findAll(spec, query.toPageRequest());
     log.info("Found {} exercises", exercisePage.getTotalElements());
@@ -99,6 +103,8 @@ public class ExercisesService {
         dto.setTestCases(
           dto.getTestCases().stream().filter(TestCaseResponseDTO::getIsPublic).toList()
         );
+      } else {
+        dto.setTestCases(new ArrayList<>());
       }
 
       return dto;
