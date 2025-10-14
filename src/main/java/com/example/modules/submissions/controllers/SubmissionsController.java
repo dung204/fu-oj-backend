@@ -3,6 +3,7 @@ package com.example.modules.submissions.controllers;
 import static com.example.base.utils.AppRoutes.SUBMISSIONS_PREFIX;
 
 import com.example.base.annotations.VerifyTurnstile;
+import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.Judge0.dtos.Judge0CallbackRequestDTO;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.services.Judge0Service;
@@ -11,6 +12,7 @@ import com.example.modules.submission_results.dtos.SubmissionResultResponseDTO;
 import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
+import com.example.modules.submissions.dtos.SubmissionResponseDTO;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.services.SubmissionsService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,17 +36,29 @@ public class SubmissionsController {
 
   @PostMapping
   @Public
-  public ResponseEntity<?> createSubmission(@RequestBody SubmissionRequest request) {
+  public SuccessResponseDTO<SubmissionResponseDTO> createSubmission(
+    @RequestBody SubmissionRequest request
+  ) {
     Submission submission = submissionServices.createSubmission(request);
-    return ResponseEntity.ok(submission);
+    SubmissionResponseDTO submissionResponseDTO = SubmissionResponseDTO.fromEntity(submission);
+    return SuccessResponseDTO.<SubmissionResponseDTO>builder()
+      .message("Submission created successfully")
+      .data(submissionResponseDTO)
+      .build();
   }
 
   @PostMapping("/base64")
   @Public
   @VerifyTurnstile
-  public ResponseEntity<?> createSubmissionBase64(@RequestBody SubmissionRequest request) {
+  public SuccessResponseDTO<SubmissionResponseDTO> createSubmissionBase64(
+    @RequestBody SubmissionRequest request
+  ) {
     Submission submission = submissionServices.createSubmissionBase64(request);
-    return ResponseEntity.ok(submission);
+    SubmissionResponseDTO submissionResponseDTO = SubmissionResponseDTO.fromEntity(submission);
+    return SuccessResponseDTO.<SubmissionResponseDTO>builder()
+      .message("Submission created successfully")
+      .data(submissionResponseDTO)
+      .build();
   }
 
   @PutMapping("/callback")
@@ -57,38 +71,55 @@ public class SubmissionsController {
 
   @GetMapping("/result/{token}")
   @Public
-  public ResponseEntity<Judge0SubmissionResponseDTO> GetSubmissionByToken(
+  public SuccessResponseDTO<Judge0SubmissionResponseDTO> GetSubmissionByToken(
     @PathVariable String token
   ) {
     log.info("Received token: {}", token);
     Judge0SubmissionResponseDTO result = judge0Service.getSubmission(token);
-    return ResponseEntity.ok(result);
+    return SuccessResponseDTO.<Judge0SubmissionResponseDTO>builder()
+      .message("Get submission result successfully")
+      .data(result)
+      .build();
   }
 
   @PostMapping("/{submissionId}/calculate")
   @Public
-  public ResponseEntity<Submission> calculateTestCasesPassed(@PathVariable String submissionId) {
+  public SuccessResponseDTO<SubmissionResponseDTO> calculateTestCasesPassed(
+    @PathVariable String submissionId
+  ) {
     log.info("Calculating test cases passed for submission: {}", submissionId);
     Submission submission = submissionServices.calculateTestCasesPassed(submissionId);
-    return ResponseEntity.ok(submission);
+    SubmissionResponseDTO submissionResponseDTO = SubmissionResponseDTO.fromEntity(submission);
+    return SuccessResponseDTO.<SubmissionResponseDTO>builder()
+      .message("Calculating test cases passed for submission successfully")
+      .data(submissionResponseDTO)
+      .build();
   }
 
   @PostMapping("/run")
   @Public
-  public ResponseEntity<RunCodeResponseDTO> runCode(@Valid @RequestBody RunCodeRequest request) {
+  public SuccessResponseDTO<RunCodeResponseDTO> runCode(
+    @Valid @RequestBody RunCodeRequest request
+  ) {
     log.info("Running code for exercise {} without saving to database", request.getExerciseId());
     RunCodeResponseDTO result = submissionServices.runCode(request);
-    return ResponseEntity.ok(result);
+    return SuccessResponseDTO.<RunCodeResponseDTO>builder()
+      .message("Run code successfully")
+      .data(result)
+      .build();
   }
 
   @GetMapping("/{submissionId}/submissionResult")
   @Public
-  public ResponseEntity<List<SubmissionResultResponseDTO>> getAllSubmissionResult(
+  public SuccessResponseDTO<List<SubmissionResultResponseDTO>> getAllSubmissionResult(
     @PathVariable String submissionId
   ) {
     log.info("SubmissionId", submissionId);
     List<SubmissionResultResponseDTO> result =
       submissionServices.getAllSubmissionResultBySubmissionId(submissionId);
-    return ResponseEntity.ok(result);
+    return SuccessResponseDTO.<List<SubmissionResultResponseDTO>>builder()
+      .message("Run code successfully")
+      .data(result)
+      .build();
   }
 }
