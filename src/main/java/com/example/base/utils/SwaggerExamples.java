@@ -15,4 +15,7 @@ public class SwaggerExamples {
   public static final String FIRST_NAME = "John";
   public static final String LAST_NAME = "Doe";
   public static final String URL = "https://example.com";
+  public static final String TOPIC_NAME = "topic name";
+  public static final String TITLE = "title";
+  public static final String DESCRIPTION = "description";
 }

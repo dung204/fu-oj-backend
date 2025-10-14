@@ -1,0 +1,15 @@
+server:
+  port: 4000
+
+spring:
+  jpa:
+    show-sql: false
+  datasource:
+    url: jdbc:postgresql://postgres:${DB_PORT:5432}/${DB_DATABASE_NAME:fu_oj_backend}
+  data:
+    redis:
+      host: redis
+
+minio:
+  endpoint: http://minio:${MINIO_PORT:9000}
+

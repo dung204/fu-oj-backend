@@ -31,13 +31,11 @@ public class Submission extends BaseEntity {
   @JoinColumn(name = "exercise_id", nullable = false)
   private Exercise exercise;
 
+  // code ở đây là code của bài tập, kiểu mã code để phân biệt các bài tập với nhau
   @Column
   private String code;
 
-  @Column
-  private String token;
-
-  @Column
+  @Column(columnDefinition = "TEXT") // text: for long source codes
   private String sourceCode;
 
   @Column
@@ -49,18 +47,15 @@ public class Submission extends BaseEntity {
   @Column
   private String memory;
 
-  @Column
-  private String input;
-
-  @Column
-  private String output;
-
-  @Column
-  private String userOutput;
-
-  @Column
-  private String status;
-
+  // ghi lại tên bài tập
   @Column
   private String exerciseItem;
+
+  // số test case đúng
+  @Column
+  private Integer passedTestCases;
+
+  // tổng số test case
+  @Column
+  private Integer totalTestCases;
 }
