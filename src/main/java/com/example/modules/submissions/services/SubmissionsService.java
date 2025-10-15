@@ -21,7 +21,6 @@ import com.example.modules.submissions.utils.SubmissionResultMapper;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.users.entities.User;
-import com.example.modules.users.repositories.UsersRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,19 +40,14 @@ public class SubmissionsService {
   private final SubmissionsRepository submissionRepository;
   private final TestCasesRepository testCaseRepository;
   private final SubmissionResultRepository submissionResultRepository;
-  private final UsersRepository userRepository;
   private final ExercisesRepository exerciseRepository;
   private final SubmissionPublisher submissionPublisher;
   private final SubmissionResultMapper submissionResultMapper;
   private final SubmissionLimitService submissionLimitService;
 
   @Transactional
-  public Submission createSubmission(SubmissionRequest request) {
+  public Submission createSubmission(SubmissionRequest request, User currentUser) {
     // get user + exercise
-    User user = userRepository
-      .findById(String.valueOf(request.getUserId()))
-      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
     Exercise exercise = exerciseRepository
       .findById(String.valueOf(request.getExerciseId()))
       .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
@@ -62,10 +56,10 @@ public class SubmissionsService {
     if (exercise.getMaxSubmissions() != 0) {
       log.info(
         "Checking submission limit for user {} on exercise {}",
-        user.getId(),
+        currentUser.getId(),
         exercise.getId()
       );
-      submissionLimitService.checkAndIncrease(user.getId(), exercise.getId());
+      submissionLimitService.checkAndIncrease(currentUser.getId(), exercise.getId());
     }
 
     // get all test cases of exercise
@@ -73,7 +67,7 @@ public class SubmissionsService {
 
     // create submission
     Submission submission = Submission.builder()
-      .user(user)
+      .user(currentUser)
       .exercise(exercise)
       .sourceCode(request.getSourceCode())
       .languageCode(request.getLanguageCode())
@@ -112,12 +106,7 @@ public class SubmissionsService {
     return submission;
   }
 
-  public Submission createSubmissionBase64(SubmissionRequest request) {
-    // get user + exercise
-    User user = userRepository
-      .findById(String.valueOf(request.getUserId()))
-      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
+  public Submission createSubmissionBase64(SubmissionRequest request, User currentUser) {
     Exercise exercise = exerciseRepository
       .findById(String.valueOf(request.getExerciseId()))
       .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
@@ -125,10 +114,10 @@ public class SubmissionsService {
     if (exercise.getMaxSubmissions() != 0) {
       log.info(
         "Checking submission limit for user {} on exercise {}",
-        user.getId(),
+        currentUser.getId(),
         exercise.getId()
       );
-      submissionLimitService.checkAndIncrease(user.getId(), exercise.getId());
+      submissionLimitService.checkAndIncrease(currentUser.getId(), exercise.getId());
     }
 
     // get all test cases of exercise
@@ -136,7 +125,7 @@ public class SubmissionsService {
 
     // create submission
     Submission submission = Submission.builder()
-      .user(user)
+      .user(currentUser)
       .exercise(exercise)
       .sourceCode(request.getSourceCode())
       .languageCode(request.getLanguageCode())

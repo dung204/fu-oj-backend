@@ -4,7 +4,9 @@ import static com.example.base.utils.AppRoutes.EXERCISES_PREFIX;
 
 import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
+import com.example.modules.auth.annotations.AllowRoles;
 import com.example.modules.auth.annotations.Public;
+import com.example.modules.auth.enums.Role;
 import com.example.modules.exercises.dtos.ExerciseQueryDTO;
 import com.example.modules.exercises.dtos.ExerciseRequestDTO;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
@@ -29,16 +31,27 @@ public class ExercisesController {
 
   private final ExercisesService exercisesService;
 
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
-    summary = "Create new exercise",
+    summary = "Create new exercise (for INSTRUCTOR only)",
     responses = {
       @ApiResponse(responseCode = "201", description = "Exercise created successfully"),
       @ApiResponse(responseCode = "400", description = "Invalid request data", content = @Content),
-      @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(
+        responseCode = "403",
+        description = "User's role is not `INSTRUCTOR`",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "409",
+        description = "Exercise code already exists",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
   @PostMapping
-  @Public
   public ResponseEntity<SuccessResponseDTO<ExerciseResponseDTO>> createExercise(
     @Valid @RequestBody ExerciseRequestDTO request
   ) {
@@ -55,11 +68,17 @@ public class ExercisesController {
     summary = "Get exercise by ID",
     responses = {
       @ApiResponse(responseCode = "200", description = "Exercise retrieved successfully"),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(
+        responseCode = "403",
+        description = "User's role is not `INSTRUCTOR`",
+        content = @Content
+      ),
       @ApiResponse(responseCode = "404", description = "Exercise not found", content = @Content),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
   @GetMapping("/{id}")
-  @Public
   public ResponseEntity<SuccessResponseDTO<ExerciseResponseDTO>> getExerciseById(
     @PathVariable String id
   ) {
@@ -79,7 +98,6 @@ public class ExercisesController {
     }
   )
   @GetMapping
-  @Public
   public ResponseEntity<PaginatedSuccessResponseDTO<ExerciseResponseDTO>> getExercises(
     @ParameterObject @Valid ExerciseQueryDTO query
   ) {
@@ -89,16 +107,22 @@ public class ExercisesController {
     return ResponseEntity.ok(response);
   }
 
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
-    summary = "Update exercise",
+    summary = "Update exercise (for INSTRUCTOR only)",
     responses = {
       @ApiResponse(responseCode = "200", description = "Exercise updated successfully"),
-      @ApiResponse(responseCode = "404", description = "Exercise not found", content = @Content),
       @ApiResponse(responseCode = "400", description = "Invalid request data", content = @Content),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(
+        responseCode = "403",
+        description = "User's role is not `INSTRUCTOR`",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "404", description = "Exercise not found", content = @Content),
     }
   )
   @PutMapping("/{id}")
-  @Public
   public ResponseEntity<SuccessResponseDTO<ExerciseResponseDTO>> updateExercise(
     @PathVariable String id,
     @Valid @RequestBody ExerciseRequestDTO request
@@ -112,15 +136,21 @@ public class ExercisesController {
     );
   }
 
+  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
-    summary = "Delete exercise",
+    summary = "Delete exercise (for INSTRUCTOR only)",
     responses = {
       @ApiResponse(responseCode = "200", description = "Exercise deleted successfully"),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(
+        responseCode = "403",
+        description = "User's role is not `INSTRUCTOR`",
+        content = @Content
+      ),
       @ApiResponse(responseCode = "404", description = "Exercise not found", content = @Content),
     }
   )
   @DeleteMapping("/{id}")
-  @Public
   public ResponseEntity<SuccessResponseDTO<Void>> deleteExercise(@PathVariable String id) {
     exercisesService.deleteExercise(id);
     return ResponseEntity.ok(
