@@ -69,7 +69,8 @@ public class Judge0Service {
   public List<String> createBatchSubmissionBase64(
     String sourceCode,
     String languageId,
-    List<String> testInputs
+    List<String> testInputs,
+    List<String> expectedOutputs
   ) {
     String url = JUDGE0_API + "/submissions/batch?base64_encoded=true&wait=false";
 
@@ -82,11 +83,18 @@ public class Judge0Service {
 
     log.info("testInputs BEFORE: {}", testInputs);
 
-    for (String input : testInputs) {
+    for (int i = 0; i < testInputs.size(); i++) {
       // Chuẩn hóa xuống dòng & encode stdin
+      String input = testInputs.get(i);
       String normalizedInput = input.replace("\\n", "\n");
       String encodedInput = Base64.getEncoder().encodeToString(
         normalizedInput.getBytes(StandardCharsets.UTF_8)
+      );
+
+      String output = expectedOutputs.get(i);
+      String normalizedOutput = output.replace("\\n", "\n");
+      String encodedOutput = Base64.getEncoder().encodeToString(
+        normalizedOutput.getBytes(StandardCharsets.UTF_8)
       );
 
       log.info("==== ACTUAL STDIN BEFORE ENCODE ====");
@@ -95,10 +103,17 @@ public class Judge0Service {
       log.info(encodedInput);
       log.info("======================");
 
+      log.info("==== ACTUAL STDOUT BEFORE ENCODE ====");
+      log.info(normalizedOutput);
+      log.info("==== ENCODED STDOUT (Base64) ====");
+      log.info(encodedOutput);
+      log.info("======================");
+
       Map<String, Object> submission = new HashMap<>();
       submission.put("source_code", encodedSourceCode);
       submission.put("language_id", Integer.parseInt(languageId));
       submission.put("stdin", encodedInput);
+      submission.put("expected_output", encodedOutput);
       submission.put("callback_url", CALLBACK_URL);
       submissions.add(submission);
     }
@@ -190,7 +205,12 @@ public class Judge0Service {
     log.info("Judge0 Run Batch Code Request: {} test cases", testInputs.size());
 
     // 1. Sử dụng hàm createBatchSubmissionBase64 có sẵn để lấy tokens
-    List<String> tokens = createBatchSubmissionBase64(sourceCode, languageId, testInputs);
+    List<String> tokens = createBatchSubmissionBase64(
+      sourceCode,
+      languageId,
+      testInputs,
+      expectedOutputs
+    );
 
     log.info("Received {} tokens from Judge0 batch submission", tokens.size());
 

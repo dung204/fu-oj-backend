@@ -16,7 +16,6 @@ import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
 import com.example.modules.submissions.dtos.SubmissionResponseDTO;
-import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.services.SubmissionsService;
 import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,7 +38,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class SubmissionsController {
 
-  private final SubmissionsService submissionServices;
+  private final SubmissionsService submissionsService;
   private final Judge0Service judge0Service;
 
   @AllowRoles(Role.STUDENT)
@@ -71,11 +70,9 @@ public class SubmissionsController {
     @RequestBody SubmissionRequest request,
     @CurrentUser User currentUser
   ) {
-    Submission submission = submissionServices.createSubmission(request, currentUser);
-    SubmissionResponseDTO submissionResponseDTO = SubmissionResponseDTO.fromEntity(submission);
     return SuccessResponseDTO.<SubmissionResponseDTO>builder()
       .message("Submission created successfully")
-      .data(submissionResponseDTO)
+      .data(submissionsService.createSubmission(request, currentUser))
       .build();
   }
 
@@ -109,11 +106,9 @@ public class SubmissionsController {
     @RequestBody SubmissionRequest request,
     @CurrentUser User currentUser
   ) {
-    Submission submission = submissionServices.createSubmissionBase64(request, currentUser);
-    SubmissionResponseDTO submissionResponseDTO = SubmissionResponseDTO.fromEntity(submission);
     return SuccessResponseDTO.<SubmissionResponseDTO>builder()
       .message("Submission created successfully")
-      .data(submissionResponseDTO)
+      .data(submissionsService.createSubmissionBase64(request, currentUser))
       .build();
   }
 
@@ -122,7 +117,7 @@ public class SubmissionsController {
   @PutMapping("/callback")
   public ResponseEntity<Void> handleCallback(@RequestBody Judge0CallbackRequestDTO callback) {
     log.info("Received callback from Judge0: {}", callback);
-    submissionServices.handleCallback(callback);
+    submissionsService.handleCallback(callback);
     return ResponseEntity.ok().build();
   }
 
@@ -154,11 +149,9 @@ public class SubmissionsController {
   public SuccessResponseDTO<SubmissionResponseDTO> calculateTestCasesPassed(
     @PathVariable String submissionId
   ) {
-    Submission submission = submissionServices.calculateTestCasesPassed(submissionId);
-    SubmissionResponseDTO submissionResponseDTO = SubmissionResponseDTO.fromEntity(submission);
     return SuccessResponseDTO.<SubmissionResponseDTO>builder()
       .message("Calculating test cases passed for submission successfully")
-      .data(submissionResponseDTO)
+      .data(submissionsService.calculateTestCasesPassed(submissionId))
       .build();
   }
 
@@ -189,7 +182,7 @@ public class SubmissionsController {
   public SuccessResponseDTO<RunCodeResponseDTO> runCode(
     @Valid @RequestBody RunCodeRequest request
   ) {
-    RunCodeResponseDTO result = submissionServices.runCode(request);
+    RunCodeResponseDTO result = submissionsService.runCode(request);
     return SuccessResponseDTO.<RunCodeResponseDTO>builder()
       .message("Run code successfully")
       .data(result)
@@ -216,7 +209,7 @@ public class SubmissionsController {
     @PathVariable String submissionId
   ) {
     List<SubmissionResultResponseDTO> result =
-      submissionServices.getAllSubmissionResultBySubmissionId(submissionId);
+      submissionsService.getAllSubmissionResultBySubmissionId(submissionId);
     return SuccessResponseDTO.<List<SubmissionResultResponseDTO>>builder()
       .message("Run code successfully")
       .data(result)

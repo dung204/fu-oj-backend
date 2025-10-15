@@ -9,7 +9,7 @@ import org.mapstruct.Mapper;
 @Slf4j
 public abstract class SubmissionResultMapper {
 
-  public abstract SubmissionResultResponseDTO toSubmissionResponseDTO(
+  public abstract SubmissionResultResponseDTO toSubmissionResultResponseDTO(
     SubmissionResult submissionResult
   );
 }

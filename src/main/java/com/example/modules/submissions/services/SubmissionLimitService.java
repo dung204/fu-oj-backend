@@ -4,7 +4,6 @@ import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
