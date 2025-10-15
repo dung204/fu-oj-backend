@@ -12,9 +12,6 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class TestCaseQueryDTO extends PaginatedQueryDTO {
 
-  @Parameter(description = "Filter by exercise ID")
-  private String exerciseId;
-
   @Parameter(description = "Filter by isPublic status")
   private Boolean isPublic;
 

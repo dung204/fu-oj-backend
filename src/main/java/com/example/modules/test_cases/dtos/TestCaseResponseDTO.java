@@ -15,6 +15,10 @@ import lombok.experimental.SuperBuilder;
 public class TestCaseResponseDTO extends EntityDTO {
 
   private String input;
+
   private String output;
+
+  private String note;
+
   private Boolean isPublic;
 }

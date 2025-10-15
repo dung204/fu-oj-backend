@@ -4,7 +4,6 @@ import static com.example.base.utils.AppRoutes.TOPICS_PREFIX;
 
 import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
-import com.example.modules.auth.annotations.Public;
 import com.example.modules.topics.dtos.CreateTopicDTO;
 import com.example.modules.topics.dtos.TopicResponseDTO;
 import com.example.modules.topics.dtos.TopicsSearchDTO;

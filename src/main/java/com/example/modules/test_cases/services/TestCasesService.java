@@ -1,13 +1,14 @@
 package com.example.modules.test_cases.services;
 
-import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.utils.ObjectUtils;
 import com.example.modules.exercises.entities.Exercise;
+import com.example.modules.exercises.exceptions.ExerciseNotFoundException;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.test_cases.dtos.TestCaseQueryDTO;
 import com.example.modules.test_cases.dtos.TestCaseRequestDTO;
 import com.example.modules.test_cases.dtos.TestCaseResponseDTO;
 import com.example.modules.test_cases.entities.TestCase;
+import com.example.modules.test_cases.exceptions.TestCaseNotFoundException;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.test_cases.utils.TestCaseMapper;
 import com.example.modules.test_cases.utils.TestCasesSpecification;
@@ -15,7 +16,6 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,13 +32,11 @@ public class TestCasesService {
    * Tạo mới test case
    */
   @Transactional
-  public TestCaseResponseDTO createTestCase(TestCaseRequestDTO request) {
+  public TestCaseResponseDTO createTestCase(String exerciseId, TestCaseRequestDTO request) {
     // Kiểm tra exercise có tồn tại không
     Exercise exercise = exercisesRepository
-      .findById(request.getExerciseId())
-      .orElseThrow(() ->
-        new EntityNotFoundException("Exercise not found: " + request.getExerciseId())
-      );
+      .findById(exerciseId)
+      .orElseThrow(ExerciseNotFoundException::new);
 
     TestCase testCase = TestCase.builder()
       .exercise(exercise)
@@ -47,83 +45,61 @@ public class TestCasesService {
       .isPublic(request.getIsPublic())
       .build();
 
-    TestCase savedTestCase = testCasesRepository.save(testCase);
-    log.info("Created test case: {}", savedTestCase.getId());
-
-    return testCaseMapper.toTestCaseResponseDTO(savedTestCase);
+    return testCaseMapper.toTestCaseResponseDTO(testCasesRepository.save(testCase));
   }
 
-  /**
-   * Lấy test case theo ID
-   */
-  public TestCaseResponseDTO getTestCaseById(String id) {
-    TestCase testCase = testCasesRepository
-      .findById(id)
-      .orElseThrow(() -> new EntityNotFoundException("Test case not found: " + id));
-
-    return testCaseMapper.toTestCaseResponseDTO(testCase);
-  }
-
-  /**
-   * Lấy danh sách test cases với pagination và filter
-   */
-  public PaginatedSuccessResponseDTO<TestCaseResponseDTO> getTestCases(TestCaseQueryDTO query) {
-    Specification<TestCase> spec = TestCasesSpecification.buildFilters(
-      query.getExerciseId(),
-      query.getIsPublic()
+  public TestCaseResponseDTO getTestCaseByIdAndExerciseId(String testCaseId, String exerciseId) {
+    return testCaseMapper.toTestCaseResponseDTO(
+      testCasesRepository
+        .findOne(
+          TestCasesSpecification.builder().withExerciseId(exerciseId).withId(testCaseId).build()
+        )
+        .orElseThrow(TestCaseNotFoundException::new)
     );
-
-    Page<TestCase> testCasePage = testCasesRepository.findAll(spec, query.toPageRequest());
-    log.info("Found {} test cases", testCasePage.getTotalElements());
-
-    // Map to DTO
-    Page<TestCaseResponseDTO> dtoPage = testCasePage.map(testCaseMapper::toTestCaseResponseDTO);
-
-    return PaginatedSuccessResponseDTO.<TestCaseResponseDTO>builder()
-      .message("Test cases retrieved successfully")
-      .page(dtoPage)
-      .filters(query.getFilters())
-      .build();
   }
 
-  /**
-   * Cập nhật test case
-   */
+  public Page<TestCaseResponseDTO> getTestCasesOfExercise(
+    String exerciseId,
+    TestCaseQueryDTO query
+  ) {
+    exercisesRepository
+      .findById(exerciseId)
+      .orElseThrow(() -> new EntityNotFoundException("Exercise not found: " + exerciseId));
+
+    return testCasesRepository
+      .findAll(
+        TestCasesSpecification.buildFilters(exerciseId, query.getIsPublic()),
+        query.toPageRequest()
+      )
+      .map(testCaseMapper::toTestCaseResponseDTO);
+  }
+
   @Transactional
-  public TestCaseResponseDTO updateTestCase(String id, TestCaseRequestDTO request) {
+  public TestCaseResponseDTO updateTestCase(
+    String exerciseId,
+    String testCaseId,
+    TestCaseRequestDTO request
+  ) {
     TestCase testCase = testCasesRepository
-      .findById(id)
-      .orElseThrow(() -> new EntityNotFoundException("Test case not found: " + id));
+      .findOne(
+        TestCasesSpecification.builder().withExerciseId(exerciseId).withId(testCaseId).build()
+      )
+      .orElseThrow(TestCaseNotFoundException::new);
 
-    // Nếu exerciseId thay đổi, kiểm tra exercise mới có tồn tại không
-    if (!testCase.getExercise().getId().equals(request.getExerciseId())) {
-      Exercise exercise = exercisesRepository
-        .findById(request.getExerciseId())
-        .orElseThrow(() ->
-          new EntityNotFoundException("Exercise not found: " + request.getExerciseId())
-        );
-      testCase.setExercise(exercise);
-    }
-
-    // Update fields
     ObjectUtils.assign(testCase, request);
 
-    TestCase updatedTestCase = testCasesRepository.save(testCase);
-    log.info("Updated test case: {}", updatedTestCase.getId());
-
-    return testCaseMapper.toTestCaseResponseDTO(updatedTestCase);
+    return testCaseMapper.toTestCaseResponseDTO(testCasesRepository.save(testCase));
   }
 
   /**
    * Xóa test case
    */
   @Transactional
-  public void deleteTestCase(String id) {
+  public void deleteTestCase(String exerciseId, String testCaseId) {
     TestCase testCase = testCasesRepository
-      .findById(id)
-      .orElseThrow(() -> new EntityNotFoundException("Test case not found: " + id));
+      .findById(testCaseId)
+      .orElseThrow(TestCaseNotFoundException::new);
 
     testCasesRepository.delete(testCase);
-    log.info("Deleted test case: {}", id);
   }
 }

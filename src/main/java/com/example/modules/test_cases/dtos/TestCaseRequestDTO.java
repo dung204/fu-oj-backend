@@ -11,13 +11,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TestCaseRequestDTO {
 
-  @NotBlank(message = "Exercise ID is required")
-  private String exerciseId;
-
+  @NotBlank
   private String input;
 
+  @NotBlank
   private String output;
 
-  @NotNull(message = "IsPublic is required")
+  @NotNull
   private Boolean isPublic;
 }

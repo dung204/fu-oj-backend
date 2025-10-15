@@ -2,7 +2,6 @@ package com.example.modules.test_cases.entities;
 
 import com.example.base.entities.BaseEntity;
 import com.example.modules.exercises.entities.Exercise;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -21,7 +20,6 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "test_cases")
 public class TestCase extends BaseEntity {
 
-  @JsonIgnore
   @ManyToOne
   @JoinColumn(name = "exercise_id", nullable = false)
   private Exercise exercise;
@@ -31,6 +29,9 @@ public class TestCase extends BaseEntity {
 
   @Column(columnDefinition = "TEXT")
   private String output;
+
+  @Column(columnDefinition = "TEXT", nullable = true)
+  private String note;
 
   @Column(name = "is_public", columnDefinition = "BOOLEAN DEFAULT FALSE")
   private Boolean isPublic;
