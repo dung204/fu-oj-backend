@@ -1,6 +1,8 @@
 package com.example.modules.submissions.dtos;
 
 import com.example.base.dtos.EntityDTO;
+import com.example.modules.exercises.dtos.ExerciseResponseDTO;
+import com.example.modules.users.dtos.UserProfileDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
@@ -8,9 +10,16 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Data
 @EqualsAndHashCode(callSuper = true)
-// TODO: After adding fields, uncomment these two lines
-// @NoArgsConstructor
-// @AllArgsConstructor
 public class SubmissionResponseDTO extends EntityDTO {
-  // TODO: Add fields
+
+  private UserProfileDTO user;
+  private ExerciseResponseDTO exercise;
+  private String code;
+  private String sourceCode;
+  private String languageCode;
+  private String time;
+  private String memory;
+  private String exerciseItem;
+  private Integer passedTestCases;
+  private Integer totalTestCases;
 }

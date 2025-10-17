@@ -1,24 +1,22 @@
 package com.example.modules.test_cases.dtos;
 
-import com.example.base.dtos.EntityDTO;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
-@SuperBuilder
 @Data
-@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class TestCaseResponseDTO extends EntityDTO {
+public class TestCaseRequestDTO {
 
+  @NotBlank
   private String input;
 
+  @NotBlank
   private String output;
 
-  private String note;
-
+  @NotNull
   private Boolean isPublic;
 }

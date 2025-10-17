@@ -14,14 +14,15 @@ import com.example.modules.submission_results.repositories.SubmissionResultRepos
 import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
+import com.example.modules.submissions.dtos.SubmissionResponseDTO;
 import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
+import com.example.modules.submissions.utils.SubmissionMapper;
 import com.example.modules.submissions.utils.SubmissionResultMapper;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.users.entities.User;
-import com.example.modules.users.repositories.UsersRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,19 +42,15 @@ public class SubmissionsService {
   private final SubmissionsRepository submissionRepository;
   private final TestCasesRepository testCaseRepository;
   private final SubmissionResultRepository submissionResultRepository;
-  private final UsersRepository userRepository;
   private final ExercisesRepository exerciseRepository;
   private final SubmissionPublisher submissionPublisher;
   private final SubmissionResultMapper submissionResultMapper;
   private final SubmissionLimitService submissionLimitService;
+  private final SubmissionMapper submissionMapper;
 
   @Transactional
-  public Submission createSubmission(SubmissionRequest request) {
+  public SubmissionResponseDTO createSubmission(SubmissionRequest request, User currentUser) {
     // get user + exercise
-    User user = userRepository
-      .findById(String.valueOf(request.getUserId()))
-      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
     Exercise exercise = exerciseRepository
       .findById(String.valueOf(request.getExerciseId()))
       .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
@@ -62,10 +59,10 @@ public class SubmissionsService {
     if (exercise.getMaxSubmissions() != 0) {
       log.info(
         "Checking submission limit for user {} on exercise {}",
-        user.getId(),
+        currentUser.getId(),
         exercise.getId()
       );
-      submissionLimitService.checkAndIncrease(user.getId(), exercise.getId());
+      submissionLimitService.checkAndIncrease(currentUser.getId(), exercise.getId());
     }
 
     // get all test cases of exercise
@@ -73,7 +70,7 @@ public class SubmissionsService {
 
     // create submission
     Submission submission = Submission.builder()
-      .user(user)
+      .user(currentUser)
       .exercise(exercise)
       .sourceCode(request.getSourceCode())
       .languageCode(request.getLanguageCode())
@@ -109,15 +106,10 @@ public class SubmissionsService {
     }
 
     log.info("Submission {} created with {} test cases", submission.getId(), testCases.size());
-    return submission;
+    return submissionMapper.toSubmissionResponseDTO(submission);
   }
 
-  public Submission createSubmissionBase64(SubmissionRequest request) {
-    // get user + exercise
-    User user = userRepository
-      .findById(String.valueOf(request.getUserId()))
-      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
+  public SubmissionResponseDTO createSubmissionBase64(SubmissionRequest request, User currentUser) {
     Exercise exercise = exerciseRepository
       .findById(String.valueOf(request.getExerciseId()))
       .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
@@ -125,10 +117,10 @@ public class SubmissionsService {
     if (exercise.getMaxSubmissions() != 0) {
       log.info(
         "Checking submission limit for user {} on exercise {}",
-        user.getId(),
+        currentUser.getId(),
         exercise.getId()
       );
-      submissionLimitService.checkAndIncrease(user.getId(), exercise.getId());
+      submissionLimitService.checkAndIncrease(currentUser.getId(), exercise.getId());
     }
 
     // get all test cases of exercise
@@ -136,7 +128,7 @@ public class SubmissionsService {
 
     // create submission
     Submission submission = Submission.builder()
-      .user(user)
+      .user(currentUser)
       .exercise(exercise)
       .sourceCode(request.getSourceCode())
       .languageCode(request.getLanguageCode())
@@ -151,11 +143,14 @@ public class SubmissionsService {
     // bàn lại format lưu test case với ae sau
     List<String> testInputs = testCases.stream().map(TestCase::getInput).toList();
 
+    List<String> expectedOutputs = testCases.stream().map(TestCase::getOutput).toList();
+
     // Gửi batch lên Judge0 -> nhận list token
     List<String> tokens = judge0Service.createBatchSubmissionBase64(
       request.getSourceCode(),
       request.getLanguageCode(),
-      testInputs
+      testInputs,
+      expectedOutputs
     );
 
     // Gắn từng token với từng test case -> lưu SubmissionResult với verdict = IN_QUEUE
@@ -172,7 +167,7 @@ public class SubmissionsService {
     }
 
     log.info("Submission {} created with {} test cases", submission.getId(), testCases.size());
-    return submission;
+    return submissionMapper.toSubmissionResponseDTO(submission);
   }
 
   /**
@@ -268,7 +263,7 @@ public class SubmissionsService {
   }
 
   @Transactional
-  public Submission calculateTestCasesPassed(String submissionId) {
+  public SubmissionResponseDTO calculateTestCasesPassed(String submissionId) {
     Submission submission = submissionRepository
       .findById(submissionId)
       .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found"));
@@ -308,7 +303,7 @@ public class SubmissionsService {
       allResults.size()
     );
 
-    return submission;
+    return submissionMapper.toSubmissionResponseDTO(submission);
   }
 
   public RunCodeResponseDTO runCode(RunCodeRequest request) {
@@ -420,7 +415,7 @@ public class SubmissionsService {
     return submissionResultRepository
       .findAllBySubmissionId(submissionId)
       .stream()
-      .map(submissionResultMapper::toSubmissionResponseDTO)
+      .map(submissionResultMapper::toSubmissionResultResponseDTO)
       .toList();
   }
 }

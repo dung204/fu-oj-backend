@@ -4,12 +4,10 @@ import static com.example.base.utils.AppRoutes.TOPICS_PREFIX;
 
 import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
-import com.example.modules.auth.annotations.Public;
 import com.example.modules.topics.dtos.CreateTopicDTO;
 import com.example.modules.topics.dtos.TopicResponseDTO;
 import com.example.modules.topics.dtos.TopicsSearchDTO;
 import com.example.modules.topics.dtos.UpdateTopicDTO;
-import com.example.modules.topics.entities.Topic;
 import com.example.modules.topics.services.TopicsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -42,10 +40,10 @@ public class TopicsController {
     summary = "Retrieve all existing topics",
     responses = {
       @ApiResponse(responseCode = "200", description = "Topics retrieved successfully"),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @Public
   @GetMapping
   public PaginatedSuccessResponseDTO<TopicResponseDTO> getAllTopics(
     @ParameterObject @Valid TopicsSearchDTO topicsSearchDTO
@@ -61,11 +59,11 @@ public class TopicsController {
     summary = "Get a topic by ID",
     responses = {
       @ApiResponse(responseCode = "200", description = "Topics retrieved successfully"),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
       @ApiResponse(responseCode = "404", description = "Topic not found", content = @Content),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @Public
   @GetMapping("/{id}")
   public SuccessResponseDTO<TopicResponseDTO> getTopicById(@PathVariable String id) {
     return SuccessResponseDTO.<TopicResponseDTO>builder()
@@ -76,9 +74,15 @@ public class TopicsController {
 
   // TODO: Add @AllowRoles(Roles.ADMIN)
   @Operation(
-    summary = "Create a new Topic",
+    summary = "Create a new Topic (for ADMIN only)",
     responses = {
       @ApiResponse(responseCode = "201", description = "Topic created successfully"),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(
+        responseCode = "403",
+        description = "User's role is not `ADMIN`",
+        content = @Content
+      ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
@@ -97,9 +101,15 @@ public class TopicsController {
 
   // TODO: Add @AllowRoles(Roles.ADMIN)
   @Operation(
-    summary = "Update an existing Topic",
+    summary = "Update an existing topic (for ADMIN only)",
     responses = {
       @ApiResponse(responseCode = "200", description = "Topic is updated successfully"),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(
+        responseCode = "403",
+        description = "User's role is not `ADMIN`",
+        content = @Content
+      ),
       @ApiResponse(responseCode = "404", description = "Topic not found", content = @Content),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
@@ -117,7 +127,7 @@ public class TopicsController {
 
   // TODO: Add @AllowRoles(Roles.ADMIN)
   @Operation(
-    summary = "Delete an existing topic",
+    summary = "Delete an existing topic (for ADMIN only)",
     responses = {
       @ApiResponse(
         responseCode = "204",
@@ -136,9 +146,15 @@ public class TopicsController {
 
   // TODO: Add @AllowRoles(Roles.ADMIN)
   @Operation(
-    summary = "Restore a deleted topic",
+    summary = "Restore a deleted topic (for ADMIN only)",
     responses = {
       @ApiResponse(responseCode = "200", description = "Topic is restored successfully"),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(
+        responseCode = "403",
+        description = "User's role is not `ADMIN`",
+        content = @Content
+      ),
       @ApiResponse(responseCode = "404", description = "Topic not found", content = @Content),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
