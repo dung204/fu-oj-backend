@@ -1,5 +1,7 @@
 package com.example.modules.exercises.dtos;
 
+import com.example.modules.test_cases.dtos.TestCaseRequestDTO;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,4 +29,7 @@ public class ExerciseRequestDTO {
   private Integer maxSubmissions;
 
   private List<String> topicIds;
+
+  @Valid
+  private List<TestCaseRequestDTO> testCases;
 }

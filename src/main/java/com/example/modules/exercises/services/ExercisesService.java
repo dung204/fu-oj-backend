@@ -10,11 +10,14 @@ import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.exercises.utils.ExerciseMapper;
 import com.example.modules.exercises.utils.ExercisesSpecification;
 import com.example.modules.test_cases.dtos.TestCaseResponseDTO;
+import com.example.modules.test_cases.entities.TestCase;
+import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.topics.entities.Topic;
 import com.example.modules.topics.repositories.TopicsRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -29,6 +32,7 @@ public class ExercisesService {
 
   private final ExercisesRepository exercisesRepository;
   private final TopicsRepository topicsRepository;
+  private final TestCasesRepository testCasesRepository;
   private final ExerciseMapper exerciseMapper;
 
   /**
@@ -67,11 +71,30 @@ public class ExercisesService {
     Exercise savedExercise = exercisesRepository.save(exercise);
     log.info("Created exercise: {}", savedExercise.getId());
 
+    // Tạo test cases nếu có trong request
+    if (request.getTestCases() != null && !request.getTestCases().isEmpty()) {
+      List<TestCase> testCases = request
+        .getTestCases()
+        .stream()
+        .map(testCaseRequest ->
+          TestCase.builder()
+            .exercise(savedExercise)
+            .input(testCaseRequest.getInput())
+            .output(testCaseRequest.getOutput())
+            .isPublic(testCaseRequest.getIsPublic())
+            .build()
+        )
+        .collect(Collectors.toList());
+
+      testCasesRepository.saveAll(testCases);
+      log.info("Created {} test cases for exercise: {}", testCases.size(), savedExercise.getId());
+    }
+
     return exerciseMapper.toExerciseResponseDTO(savedExercise);
   }
 
   /**
-   * Lấy exercise theo ID
+   * Lấy exercise theo ID (chỉ lấy public test cases - dành cho student)
    */
   public ExerciseResponseDTO getExerciseById(String id) {
     Exercise exercise = exercisesRepository
@@ -79,6 +102,17 @@ public class ExercisesService {
       .orElseThrow(() -> new EntityNotFoundException("Exercise not found: " + id));
 
     return exerciseMapper.toExerciseResponseDTO(exercise);
+  }
+
+  /**
+   * Lấy exercise theo ID với tất cả test cases (dành cho instructor/admin)
+   */
+  public ExerciseResponseDTO getExerciseByIdWithAllTestCases(String id) {
+    Exercise exercise = exercisesRepository
+      .findById(id)
+      .orElseThrow(() -> new EntityNotFoundException("Exercise not found: " + id));
+
+    return exerciseMapper.toExerciseResponseDTOWithAllTestCases(exercise);
   }
 
   /**
@@ -156,7 +190,42 @@ public class ExercisesService {
     Exercise updatedExercise = exercisesRepository.save(exercise);
     log.info("Updated exercise: {}", updatedExercise.getId());
 
-    return exerciseMapper.toExerciseResponseDTO(updatedExercise);
+    // Xử lý test cases nếu có trong request
+    if (request.getTestCases() != null) {
+      for (var testCaseRequest : request.getTestCases()) {
+        if (testCaseRequest.getId() != null && !testCaseRequest.getId().isEmpty()) {
+          // Update test case hiện có
+          TestCase existingTestCase = testCasesRepository
+            .findById(testCaseRequest.getId())
+            .orElseThrow(() ->
+              new EntityNotFoundException("Test case not found: " + testCaseRequest.getId())
+            );
+
+          // Kiểm tra test case có thuộc exercise này không
+          if (!existingTestCase.getExercise().getId().equals(updatedExercise.getId())) {
+            throw new IllegalArgumentException("Test case does not belong to this exercise");
+          }
+
+          existingTestCase.setInput(testCaseRequest.getInput());
+          existingTestCase.setOutput(testCaseRequest.getOutput());
+          existingTestCase.setIsPublic(testCaseRequest.getIsPublic());
+          testCasesRepository.save(existingTestCase);
+          log.info("Updated test case: {}", existingTestCase.getId());
+        } else {
+          // Tạo mới test case
+          TestCase newTestCase = TestCase.builder()
+            .exercise(updatedExercise)
+            .input(testCaseRequest.getInput())
+            .output(testCaseRequest.getOutput())
+            .isPublic(testCaseRequest.getIsPublic())
+            .build();
+          testCasesRepository.save(newTestCase);
+          log.info("Created new test case for exercise: {}", updatedExercise.getId());
+        }
+      }
+    }
+
+    return exerciseMapper.toExerciseResponseDTOWithAllTestCases(updatedExercise);
   }
 
   /**

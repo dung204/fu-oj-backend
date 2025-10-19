@@ -24,22 +24,28 @@ public abstract class ExerciseMapper {
     target = "testCasesCount",
     expression = "java(exercise.getTestCases() != null ? exercise.getTestCases().size() : 0)"
   )
-  @Mapping(source = "testCases", target = "testCases", qualifiedByName = "mapPrivateTestCases")
+  @Mapping(source = "testCases", target = "testCases", qualifiedByName = "filterPublicTestCases")
   public abstract ExerciseResponseDTO toExerciseResponseDTO(Exercise exercise);
 
-  @Named("mapPrivateTestCases")
-  protected List<TestCaseResponseDTO> mapPrivateTestCases(List<TestCase> testCases) {
+  @Named("toExerciseResponseDTOWithAllTestCases")
+  @Mapping(
+    target = "testCasesCount",
+    expression = "java(exercise.getTestCases() != null ? exercise.getTestCases().size() : 0)"
+  )
+  @Mapping(source = "testCases", target = "testCases", qualifiedByName = "mapAllTestCases")
+  public abstract ExerciseResponseDTO toExerciseResponseDTOWithAllTestCases(Exercise exercise);
+
+  @Named("filterPublicTestCases")
+  protected List<TestCaseResponseDTO> filterPublicTestCases(List<TestCase> testCases) {
     return testCases
       .stream()
-      .map(tc -> {
-        if (!tc.getIsPublic()) {
-          tc.setInput(null);
-          tc.setOutput(null);
-          tc.setNote(null);
-        }
-
-        return testCaseMapper.toTestCaseResponseDTO(tc);
-      })
+      .filter(TestCase::getIsPublic)
+      .map(testCaseMapper::toTestCaseResponseDTO)
       .toList();
+  }
+
+  @Named("mapAllTestCases")
+  protected List<TestCaseResponseDTO> mapAllTestCases(List<TestCase> testCases) {
+    return testCases.stream().map(testCaseMapper::toTestCaseResponseDTO).toList();
   }
 }

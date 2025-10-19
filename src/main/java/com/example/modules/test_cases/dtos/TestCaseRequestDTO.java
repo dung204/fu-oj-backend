@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TestCaseRequestDTO {
 
+  // Optional: nếu có id thì update, không có id thì tạo mới
+  private String id;
+
   @NotBlank
   private String input;
 
