@@ -105,12 +105,12 @@ jobs:
 
             # update image on server
             cd ~/fu-oj-backend
-            docker compose -f docker-compose-deploy.yml pull
+            docker compose -f docker-compose.yml pull
 
             echo "Starting deployment with image tag: $IMAGE_TAG"
-            docker compose -f docker-compose-deploy.yml --env-file .env up -d --remove-orphans || {
+            docker compose -f docker-compose.yml --env-file .env up -d --remove-orphans || {
               echo "Deployment failed. Rolling back..."
-              docker compose -f docker-compose-deploy.yml down
+              docker compose -f docker-compose.yml down
               exit 1
             }
 
