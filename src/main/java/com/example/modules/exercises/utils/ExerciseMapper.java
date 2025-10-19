@@ -27,6 +27,14 @@ public abstract class ExerciseMapper {
   @Mapping(source = "testCases", target = "testCases", qualifiedByName = "filterPublicTestCases")
   public abstract ExerciseResponseDTO toExerciseResponseDTO(Exercise exercise);
 
+  @Named("toExerciseResponseDTOWithAllTestCases")
+  @Mapping(
+    target = "testCasesCount",
+    expression = "java(exercise.getTestCases() != null ? exercise.getTestCases().size() : 0)"
+  )
+  @Mapping(source = "testCases", target = "testCases", qualifiedByName = "mapAllTestCases")
+  public abstract ExerciseResponseDTO toExerciseResponseDTOWithAllTestCases(Exercise exercise);
+
   @Named("filterPublicTestCases")
   protected List<TestCaseResponseDTO> filterPublicTestCases(List<TestCase> testCases) {
     return testCases
@@ -34,5 +42,10 @@ public abstract class ExerciseMapper {
       .filter(TestCase::getIsPublic)
       .map(testCaseMapper::toTestCaseResponseDTO)
       .toList();
+  }
+
+  @Named("mapAllTestCases")
+  protected List<TestCaseResponseDTO> mapAllTestCases(List<TestCase> testCases) {
+    return testCases.stream().map(testCaseMapper::toTestCaseResponseDTO).toList();
   }
 }

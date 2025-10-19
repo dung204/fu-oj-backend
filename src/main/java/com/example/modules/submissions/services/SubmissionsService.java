@@ -4,7 +4,7 @@ import com.example.modules.Judge0.dtos.Judge0CallbackRequestDTO;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.enums.Judge0Status;
 import com.example.modules.Judge0.services.Judge0Service;
-import com.example.modules.Judge0.uitils.Base64Uitils;
+import com.example.modules.Judge0.utils.Base64Utils;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.redis.configs.publishers.SubmissionPublisher;
@@ -25,7 +25,6 @@ import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.users.entities.User;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -196,8 +195,9 @@ public class SubmissionsService {
     int statusId = callback.getStatus().getId();
 
     //2. Decode base64 safely using Base64Utils
-    String decodedStdout = Base64Uitils.decodeBase64Safe(callback.getStdout());
-    String decodedStderr = Base64Uitils.decodeBase64Safe(callback.getStderr());
+    String decodedStdout = Base64Utils.decodeBase64Safe(callback.getStdout());
+    String decodedStderr = Base64Utils.decodeBase64Safe(callback.getStderr());
+    String decodedCompileOutput = Base64Utils.decodeBase64Safe(callback.getCompileOutput());
 
     if (decodedStderr != null && !decodedStderr.isEmpty()) {
       log.error("Decoded stderr: {}", decodedStderr);
@@ -240,24 +240,25 @@ public class SubmissionsService {
     sr.setStderr(decodedStderr);
     submissionResultRepository.save(sr);
 
+    boolean isPublic = sr.getTestCase().getIsPublic();
+
     //6. Publish Redis message -> send WebSocket to FE (via SubmissionSubscriber)
-    Map<String, Object> message = Map.of(
-      "submissionId",
-      sr.getSubmission().getId(),
-      "testCaseId",
-      sr.getTestCase().getId(),
-      "token",
-      token,
-      "verdict",
-      verdict,
-      "actualOutput",
-      actual,
-      "expectedOutput",
-      expected,
-      "userId",
-      sr.getSubmission().getUser().getId()
-    );
-    submissionPublisher.publishSubmissionUpdate(message);
+    TestCaseResultDTO testCaseResult = TestCaseResultDTO.builder()
+      .userId(sr.getSubmission().getUser().getId())
+      .testCaseId(sr.getTestCase().getId())
+      .input(isPublic ? sr.getTestCase().getInput() : null)
+      .expectedOutput(isPublic ? expected : null)
+      .actualOutput(isPublic ? actual : null)
+      .stderr(isPublic ? decodedStderr : null)
+      .compileOutput(decodedCompileOutput)
+      .time(callback.getTime())
+      .memory(callback.getMemory())
+      .status(callback.getStatus())
+      .passed(statusId == Judge0Status.ACCEPTED.getId())
+      .isPublic(isPublic)
+      .build();
+
+    submissionPublisher.publishSubmissionUpdate(testCaseResult);
 
     log.info("Callback for token {} => {}", token, verdict);
   }
@@ -360,21 +361,22 @@ public class SubmissionsService {
       Judge0SubmissionResponseDTO result = results.get(i);
 
       // Decode base64 outputs
-      String decodedStdout = Base64Uitils.decodeBase64Safe(result.getStdout());
-      String decodedStderr = Base64Uitils.decodeBase64Safe(result.getStderr());
-      String decodedCompileOutput = Base64Uitils.decodeBase64Safe(result.getCompileOutput());
+      String decodedStdout = Base64Utils.decodeBase64Safe(result.getStdout());
+      String decodedStderr = Base64Utils.decodeBase64Safe(result.getStderr());
+      String decodedCompileOutput = Base64Utils.decodeBase64Safe(result.getCompileOutput());
 
       // Lấy thông tin status
       int statusId = result.getStatus().getId();
 
       // Kiểm tra kết quả
-      boolean isPassed = statusId == 3; // Status 3 = Accepted
+      boolean isPassed = statusId == Judge0Status.ACCEPTED.getId(); // Status 3 = Accepted
       if (isPassed) {
         passedCount++;
       }
 
       // Build kết quả cho từng test case (dùng input/output đã normalize)
       TestCaseResultDTO testResult = TestCaseResultDTO.builder()
+        .testCaseId(publicTestCases.get(i).getId())
         .testCaseIndex(i + 1)
         .input(testInputs.get(i))
         .expectedOutput(expectedOutputs.get(i))
@@ -385,6 +387,7 @@ public class SubmissionsService {
         .memory(result.getMemory())
         .status(result.getStatus())
         .passed(isPassed)
+        .isPublic(true)
         .build();
 
       processedResults.add(testResult);

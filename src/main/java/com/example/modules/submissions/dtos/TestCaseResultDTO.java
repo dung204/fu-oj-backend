@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class TestCaseResultDTO {
 
+  private String userId;
+
+  private String testCaseId;
+
   private Integer testCaseIndex;
 
   private String input;
@@ -30,4 +34,6 @@ public class TestCaseResultDTO {
   private Judge0StatusDTO status;
 
   private Boolean passed;
+
+  private Boolean isPublic;
 }

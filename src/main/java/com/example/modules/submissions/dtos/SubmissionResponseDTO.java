@@ -3,6 +3,7 @@ package com.example.modules.submissions.dtos;
 import com.example.base.dtos.EntityDTO;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
 import com.example.modules.users.dtos.UserProfileDTO;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;

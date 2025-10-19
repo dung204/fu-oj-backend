@@ -1,6 +1,5 @@
 package com.example.modules.redis.configs.publishers;
 
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,7 +14,7 @@ public class SubmissionPublisher {
   private final RedisTemplate<String, Object> redisTemplate;
   private final ChannelTopic submissionResultTopic;
 
-  public void publishSubmissionUpdate(Map<String, Object> message) {
+  public void publishSubmissionUpdate(Object message) {
     try {
       redisTemplate.convertAndSend(submissionResultTopic.getTopic(), message);
       log.info(

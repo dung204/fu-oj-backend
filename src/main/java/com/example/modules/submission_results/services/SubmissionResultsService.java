@@ -3,7 +3,7 @@ package com.example.modules.submission_results.services;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.enums.Judge0Status;
 import com.example.modules.Judge0.services.Judge0Service;
-import com.example.modules.Judge0.uitils.Base64Uitils;
+import com.example.modules.Judge0.utils.Base64Utils;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
 import java.util.List;
@@ -66,8 +66,8 @@ public class SubmissionResultsService {
         }
 
         // 3. Decode outputs
-        String decodedStdout = Base64Uitils.decodeBase64Safe(response.getStdout());
-        String decodedStderr = Base64Uitils.decodeBase64Safe(response.getStderr());
+        String decodedStdout = Base64Utils.decodeBase64Safe(response.getStdout());
+        String decodedStderr = Base64Utils.decodeBase64Safe(response.getStderr());
 
         // 4. Determine verdict
         String expected = sr.getTestCase().getOutput() != null

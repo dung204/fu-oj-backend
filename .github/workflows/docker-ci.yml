@@ -26,12 +26,12 @@ jobs:
           echo "DB_USERNAME=${{ secrets.DB_USERNAME || 'postgres' }}" >> .env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "" >> .env
-          
+
           echo "# Redis configuration" >> .env
           echo "REDIS_PORT=${{ secrets.REDIS_PORT || '6379' }}" >> .env
           echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
           echo "" >> .env
-          
+
           echo "# MinIO configuration" >> .env
           echo "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY || 'minioadmin' }}" >> .env
           echo "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY || 'minioadmin' }}" >> .env
@@ -39,19 +39,19 @@ jobs:
           echo "MINIO_CONSOLE_PORT=${{ secrets.MINIO_CONSOLE_PORT || '9001' }}" >> .env
           echo "MINIO_BUCKET=${{ secrets.MINIO_BUCKET || 'bucket' }}" >> .env
           echo "" >> .env
-          
+
           echo "# JWT configuration" >> .env
           echo "JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}" >> .env
           echo "JWT_ACCESS_EXPIRATION=${{ secrets.JWT_ACCESS_EXPIRATION || '3600' }}" >> .env
           echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
           echo "JWT_REFRESH_EXPIRATION=${{ secrets.JWT_REFRESH_EXPIRATION || '604800' }}" >> .env
           echo "" >> .env
-          
+
           echo "# Judge0 configuration" >> .env
           echo "JUDGE0_API_URL=${{ secrets.JUDGE0_API_URL }}" >> .env
           echo "CALL_BACK_URL=${{ secrets.CALL_BACK_URL }}" >> .env
           echo "" >> .env
-          
+
           echo "# Turnstile configuration" >> .env
           echo "TURNSTILE_SECRET_KEY=${{ secrets.TURNSTILE_SECRET_KEY }}" >> .env
           echo "TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}" >> .env
@@ -95,7 +95,8 @@ jobs:
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          password: ${{ secrets.SERVER_SSH_PASSWORD }}
+          # key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             set -e  # Stop if any command fails
             export IMAGE_TAG=${{ env.IMAGE_TAG }}
