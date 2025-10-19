@@ -100,7 +100,7 @@ public class SubmissionsController {
     }
   )
   @PostMapping("/base64")
-  @VerifyTurnstile
+  // @VerifyTurnstile
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<SubmissionResponseDTO> createSubmissionBase64(
     @RequestBody SubmissionRequest request,

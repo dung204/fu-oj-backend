@@ -24,15 +24,22 @@ public abstract class ExerciseMapper {
     target = "testCasesCount",
     expression = "java(exercise.getTestCases() != null ? exercise.getTestCases().size() : 0)"
   )
-  @Mapping(source = "testCases", target = "testCases", qualifiedByName = "filterPublicTestCases")
+  @Mapping(source = "testCases", target = "testCases", qualifiedByName = "mapPrivateTestCases")
   public abstract ExerciseResponseDTO toExerciseResponseDTO(Exercise exercise);
 
-  @Named("filterPublicTestCases")
-  protected List<TestCaseResponseDTO> filterPublicTestCases(List<TestCase> testCases) {
+  @Named("mapPrivateTestCases")
+  protected List<TestCaseResponseDTO> mapPrivateTestCases(List<TestCase> testCases) {
     return testCases
       .stream()
-      .filter(TestCase::getIsPublic)
-      .map(testCaseMapper::toTestCaseResponseDTO)
+      .map(tc -> {
+        if (!tc.getIsPublic()) {
+          tc.setInput(null);
+          tc.setOutput(null);
+          tc.setNote(null);
+        }
+
+        return testCaseMapper.toTestCaseResponseDTO(tc);
+      })
       .toList();
   }
 }

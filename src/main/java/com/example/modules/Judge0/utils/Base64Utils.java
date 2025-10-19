@@ -1,9 +1,9 @@
-package com.example.modules.Judge0.uitils;
+package com.example.modules.Judge0.utils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-public class Base64Uitils {
+public class Base64Utils {
 
   /**
    * Mã hóa chuỗi UTF-8 sang Base64.
