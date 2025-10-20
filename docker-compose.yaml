@@ -1,3 +1,9 @@
+x-logging: &default-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 100M
+
 services:
   postgres:
     container_name: postgres
@@ -75,7 +81,7 @@ services:
     networks:
       - fu-oj-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:${MINIO_PORT:-9000}/minio/health/live" ]
+      test: ["CMD", "curl", "-f", "http://localhost:${MINIO_PORT:-9000}/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -93,6 +99,59 @@ services:
       /usr/bin/mc policy set public myminio/${MINIO_BUCKET:-bucket};
       exit 0;
       "
+    networks:
+      - fu-oj-network
+
+  judge0-server:
+    image: mantrilogix/judge0:latest
+    container_name: judge0-server
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${DB_DATABASE_NAME:-postgres}
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "${JUDGE0_PORT:-2358}:2358"
+    privileged: true
+    <<: *default-logging
+    restart: unless-stopped
+    networks:
+      - fu-oj-network
+
+  judge0-workers:
+    image: mantrilogix/judge0:latest
+    container_name: judge0-workers
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["./scripts/workers"]
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${DB_DATABASE_NAME:-postgres}
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    privileged: true
+    <<: *default-logging
+    restart: unless-stopped
     networks:
       - fu-oj-network
 
