@@ -58,7 +58,10 @@ public class SubmissionsController {
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
       @ApiResponse(
         responseCode = "403",
-        description = "User's role is not `STUDENT`",
+        description = """
+        - User's role is not `STUDENT`
+        - Turnstile token is missing
+        """,
         content = @Content
       ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
@@ -136,13 +139,17 @@ public class SubmissionsController {
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
       @ApiResponse(
         responseCode = "403",
-        description = "User's role is not `STUDENT`",
+        description = """
+        - User's role is not `STUDENT`
+        - Turnstile token is missing
+        """,
         content = @Content
       ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
   @PostMapping("/run")
+  @VerifyTurnstile
   @AllowRoles(Role.STUDENT)
   public SuccessResponseDTO<RunCodeResponseDTO> runCode(
     @Valid @RequestBody RunCodeRequest request
