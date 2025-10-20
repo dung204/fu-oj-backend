@@ -38,34 +38,6 @@ public class Judge0Service {
    * còn việc so sánh output với expected output, tính điểm, v.v… là do hệ thống của mình làm
    */
 
-  public List<String> createBatchSubmission(
-    String sourceCode,
-    String languageId,
-    List<String> testInputs
-  ) {
-    String url = JUDGE0_API + "/submissions/batch?base64_encoded=false&wait=false";
-
-    // Build request body
-    List<Map<String, Object>> submissions = new ArrayList<>();
-    for (String input : testInputs) {
-      Map<String, Object> submission = new HashMap<>();
-      submission.put("source_code", sourceCode);
-      submission.put("language_id", Integer.parseInt(languageId));
-      submission.put("stdin", input.replace("\\n", "\n"));
-      log.info("==== ACTUAL STDIN ====");
-      log.info(input);
-      log.info("======================");
-      submission.put("callback_url", CALLBACK_URL);
-      submissions.add(submission);
-    }
-
-    Map<String, Object> requestBody = Map.of("submissions", submissions);
-
-    log.info("Judge0 Batch Request: {}", requestBody);
-
-    return this.requestToJudge0(url, requestBody);
-  }
-
   public List<String> createBatchSubmissionBase64(
     String sourceCode,
     String languageId,
@@ -133,69 +105,6 @@ public class Judge0Service {
    * @param expectedOutput output mong đợi (optional)
    * @return Kết quả từ Judge0
    */
-  public Map<String, Object> runCode(
-    String sourceCode,
-    String languageId,
-    String input,
-    String expectedOutput
-  ) {
-    String url = JUDGE0_API + "/submissions?base64_encoded=true&wait=true";
-
-    // Encode source code và input
-    String encodedSourceCode = Base64.getEncoder().encodeToString(
-      sourceCode.getBytes(StandardCharsets.UTF_8)
-    );
-    String encodedInput = Base64.getEncoder().encodeToString(
-      input.replace("\\n", "\n").getBytes(StandardCharsets.UTF_8)
-    );
-
-    // Build request body
-    Map<String, Object> requestBody = new HashMap<>();
-    requestBody.put("source_code", encodedSourceCode);
-    requestBody.put("language_id", Integer.parseInt(languageId));
-    requestBody.put("stdin", encodedInput);
-
-    // Thêm expected_output nếu có (Judge0 sẽ tự động so sánh)
-    if (expectedOutput != null && !expectedOutput.isEmpty()) {
-      String encodedExpectedOutput = Base64.getEncoder().encodeToString(
-        expectedOutput.replace("\\n", "\n").getBytes(StandardCharsets.UTF_8)
-      );
-      requestBody.put("expected_output", encodedExpectedOutput);
-    }
-
-    log.info(
-      "Judge0 Run Code Request: language={}, inputLength={}, hasExpectedOutput={}",
-      languageId,
-      input.length(),
-      expectedOutput != null
-    );
-
-    try {
-      // Gửi request và đợi kết quả
-      String responseBody = webClient
-        .post()
-        .uri(url)
-        .contentType(MediaType.APPLICATION_JSON)
-        .bodyValue(requestBody)
-        .retrieve()
-        .bodyToMono(String.class)
-        .block();
-
-      log.info("Judge0 Run Code Response: {}", responseBody);
-
-      // Parse response
-      Map<String, Object> result = objectMapper.readValue(
-        responseBody,
-        new TypeReference<Map<String, Object>>() {}
-      );
-
-      return result;
-    } catch (Exception e) {
-      log.error("Failed to run code on Judge0", e);
-      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to run code on Judge0");
-    }
-  }
-
   public List<Judge0SubmissionResponseDTO> runBatchCode(
     String sourceCode,
     String languageId,

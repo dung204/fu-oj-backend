@@ -47,67 +47,6 @@ public class SubmissionsService {
   private final SubmissionLimitService submissionLimitService;
   private final SubmissionMapper submissionMapper;
 
-  @Transactional
-  public SubmissionResponseDTO createSubmission(SubmissionRequest request, User currentUser) {
-    // get user + exercise
-    Exercise exercise = exerciseRepository
-      .findById(String.valueOf(request.getExerciseId()))
-      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
-
-    // check submission limit
-    if (exercise.getMaxSubmissions() != 0) {
-      log.info(
-        "Checking submission limit for user {} on exercise {}",
-        currentUser.getId(),
-        exercise.getId()
-      );
-      submissionLimitService.checkAndIncrease(currentUser.getId(), exercise.getId());
-    }
-
-    // get all test cases of exercise
-    List<TestCase> testCases = testCaseRepository.findAllByExerciseId((exercise.getId()));
-
-    // create submission
-    Submission submission = Submission.builder()
-      .user(currentUser)
-      .exercise(exercise)
-      .sourceCode(request.getSourceCode())
-      .languageCode(request.getLanguageCode())
-      .exerciseItem(exercise.getTitle())
-      .time(null)
-      .memory(null)
-      .passedTestCases(0)
-      .totalTestCases(testCases.size())
-      .build();
-    submission = submissionRepository.save(submission);
-
-    // bàn lại format lưu test case với ae sau
-    List<String> testInputs = testCases.stream().map(TestCase::getInput).toList();
-
-    // Gửi batch lên Judge0 -> nhận list token
-    List<String> tokens = judge0Service.createBatchSubmission(
-      request.getSourceCode(),
-      request.getLanguageCode(),
-      testInputs
-    );
-
-    // Gắn từng token với từng test case -> lưu SubmissionResult với verdict = IN_QUEUE
-    for (int i = 0; i < testCases.size(); i++) {
-      SubmissionResult result = SubmissionResult.builder()
-        .submission(submission)
-        .testCase(testCases.get(i))
-        .token(tokens.get(i))
-        .verdict("IN_QUEUE")
-        .build();
-
-      log.info("Submission {}, result: {} ", i, result.toString());
-      submissionResultRepository.save(result);
-    }
-
-    log.info("Submission {} created with {} test cases", submission.getId(), testCases.size());
-    return submissionMapper.toSubmissionResponseDTO(submission);
-  }
-
   public SubmissionResponseDTO createSubmissionBase64(SubmissionRequest request, User currentUser) {
     Exercise exercise = exerciseRepository
       .findById(String.valueOf(request.getExerciseId()))
