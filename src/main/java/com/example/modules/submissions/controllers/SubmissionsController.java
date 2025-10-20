@@ -149,7 +149,6 @@ public class SubmissionsController {
     }
   )
   @PostMapping("/run")
-  @VerifyTurnstile
   @AllowRoles(Role.STUDENT)
   public SuccessResponseDTO<RunCodeResponseDTO> runCode(
     @Valid @RequestBody RunCodeRequest request
