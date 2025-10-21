@@ -24,7 +24,7 @@ public class UpdateTopicDTO {
   @NotNull
   @Length(max = 255)
   @Builder.Default
-  private JsonNullable<String> title = JsonNullable.undefined();
+  private JsonNullable<String> name = JsonNullable.undefined();
 
   @Schema(description = "The description of the topic", example = SwaggerExamples.DESCRIPTION)
   @NotNull
