@@ -57,7 +57,7 @@ public class ExercisesService {
       .build();
 
     // Gắn topics nếu có
-    if (request.getTopicIds() != null && !request.getTopicIds().isEmpty()) {
+    if (request.getTopicIds() != null) {
       // filter duplicate IDS
       List<String> uniqueTopicIds = request.getTopicIds().stream().distinct().toList();
       // get topics from DB
@@ -72,7 +72,7 @@ public class ExercisesService {
     log.info("Created exercise: {}", savedExercise.getId());
 
     // Tạo test cases nếu có trong request
-    if (request.getTestCases() != null && !request.getTestCases().isEmpty()) {
+    if (request.getTestCases() != null) {
       List<TestCase> testCases = request
         .getTestCases()
         .stream()
@@ -90,7 +90,7 @@ public class ExercisesService {
       log.info("Created {} test cases for exercise: {}", testCases.size(), savedExercise.getId());
     }
 
-    return exerciseMapper.toExerciseResponseDTO(savedExercise);
+    return exerciseMapper.toExerciseResponseDTOWithPrivateTestCasesHidden(savedExercise);
   }
 
   /**
@@ -101,7 +101,7 @@ public class ExercisesService {
       .findById(id)
       .orElseThrow(() -> new EntityNotFoundException("Exercise not found: " + id));
 
-    return exerciseMapper.toExerciseResponseDTO(exercise);
+    return exerciseMapper.toExerciseResponseDTOWithPrivateTestCasesHidden(exercise);
   }
 
   /**
@@ -130,19 +130,9 @@ public class ExercisesService {
     log.info("Found {} exercises", exercisePage.getTotalElements());
 
     // Map to DTO
-    Page<ExerciseResponseDTO> dtoPage = exercisePage.map(exercise -> {
-      ExerciseResponseDTO dto = exerciseMapper.toExerciseResponseDTO(exercise);
-
-      if (dto.getTestCases() != null) {
-        dto.setTestCases(
-          dto.getTestCases().stream().filter(TestCaseResponseDTO::getIsPublic).toList()
-        );
-      } else {
-        dto.setTestCases(new ArrayList<>());
-      }
-
-      return dto;
-    });
+    Page<ExerciseResponseDTO> dtoPage = exercisePage.map(
+      exerciseMapper::toExerciseResponseDTOWithPrivateTestCasesHidden
+    );
 
     return PaginatedSuccessResponseDTO.<ExerciseResponseDTO>builder()
       .message("Exercises retrieved successfully")
