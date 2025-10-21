@@ -103,11 +103,10 @@ services:
       - fu-oj-network
 
   judge0-server:
-    image: mantrilogix/judge0:latest
+    image: judge0/judge0:latest
     container_name: judge0-server
-    command: ["bash", "-c", "sudo mkdir -p /box && sudo chmod 1777 /box && exec ./scripts/server"]
     depends_on:
-      postgres:
+      judge0-postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -117,9 +116,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=${DB_DATABASE_NAME:-postgres}
+      - POSTGRES_HOST=judge0-postgres
+      - POSTGRES_PORT=5433
+      - POSTGRES_DB=judge0
       - POSTGRES_USER=${DB_USERNAME:-postgres}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     ports:
@@ -131,23 +130,23 @@ services:
       - fu-oj-network
 
   judge0-workers:
-    image: mantrilogix/judge0:latest
+    image: judge0/judge0:latest
     container_name: judge0-workers
     depends_on:
-      postgres:
+      judge0-postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: ["bash", "-c", "sudo mkdir -p /box && sudo chmod 1777 /box && exec ./scripts/workers"]
+    command: ["./scripts/workers"]
     volumes:
       - ./judge0.conf:/judge0.conf:ro
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=${DB_DATABASE_NAME:-postgres}
+      - POSTGRES_HOST=judge0-postgres
+      - POSTGRES_PORT=5433
+      - POSTGRES_DB=judge0
       - POSTGRES_USER=${DB_USERNAME:-postgres}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     privileged: true
@@ -155,6 +154,29 @@ services:
     restart: unless-stopped
     networks:
       - fu-oj-network
+
+  judge0-postgres:
+    container_name: judge0-postgres
+    image: postgres:16-alpine
+    ports:
+      - "5433:5433"
+    volumes:
+      - judge0_postgres_data:/var/lib/postgresql/data
+    environment:
+      - PGPORT=5433
+      - POSTGRES_USER=${DB_USERNAME:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=judge0
+      - POSTGRES_INITDB_ARGS=--locale-provider=icu --icu-locale=vi
+      - TZ=Asia/Ho_Chi_Minh
+    restart: unless-stopped
+    networks:
+      - fu-oj-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d judge0 -h localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   fu-oj-network:
@@ -164,3 +186,4 @@ volumes:
   postgresql_data:
   redis_data:
   minio_data:
+  judge0_postgres_data:
