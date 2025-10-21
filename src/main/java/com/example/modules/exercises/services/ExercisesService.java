@@ -86,7 +86,7 @@ public class ExercisesService {
         )
         .collect(Collectors.toList());
 
-      testCasesRepository.saveAll(testCases);
+      savedExercise.setTestCases(testCasesRepository.saveAll(testCases));
       log.info("Created {} test cases for exercise: {}", testCases.size(), savedExercise.getId());
     }
 
