@@ -105,6 +105,7 @@ services:
   judge0-server:
     image: mantrilogix/judge0:latest
     container_name: judge0-server
+    command: ["bash", "-c", "sudo mkdir -p /box && sudo chmod 1777 /box && exec ./scripts/server"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -137,7 +138,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    command: ["./scripts/workers"]
+    command: ["bash", "-c", "sudo mkdir -p /box && sudo chmod 1777 /box && exec ./scripts/workers"]
     volumes:
       - ./judge0.conf:/judge0.conf:ro
     environment:
