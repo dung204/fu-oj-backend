@@ -15,11 +15,13 @@ import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
 import com.example.modules.submissions.dtos.SubmissionResponseDTO;
+import com.example.modules.submissions.dtos.SubmissionsSearchDTO;
 import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.submissions.utils.SubmissionMapper;
 import com.example.modules.submissions.utils.SubmissionResultMapper;
+import com.example.modules.submissions.utils.SubmissionsSpecification;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.users.entities.User;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +41,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class SubmissionsService {
 
   private final Judge0Service judge0Service;
-  private final SubmissionsRepository submissionRepository;
+  private final SubmissionsRepository submissionsRepository;
   private final TestCasesRepository testCaseRepository;
   private final SubmissionResultRepository submissionResultRepository;
   private final ExercisesRepository exerciseRepository;
@@ -46,6 +49,21 @@ public class SubmissionsService {
   private final SubmissionResultMapper submissionResultMapper;
   private final SubmissionLimitService submissionLimitService;
   private final SubmissionMapper submissionMapper;
+
+  public Page<SubmissionResponseDTO> getAllSubmissions(SubmissionsSearchDTO submissionsSearchDTO) {
+    return submissionsRepository
+      .findAll(
+        SubmissionsSpecification.builder()
+          .withStudentId(submissionsSearchDTO.getStudent())
+          .withExerciseId(submissionsSearchDTO.getExercise())
+          .isOneOfStatuses(submissionsSearchDTO.getStatus())
+          .isOneOfLanguageCodes(submissionsSearchDTO.getLanguageCode())
+          .notDeleted()
+          .build(),
+        submissionsSearchDTO.toPageRequest()
+      )
+      .map(submissionMapper::toSubmissionResponseDTO);
+  }
 
   public SubmissionResponseDTO createSubmissionBase64(SubmissionRequest request, User currentUser) {
     Exercise exercise = exerciseRepository
@@ -70,13 +88,10 @@ public class SubmissionsService {
       .exercise(exercise)
       .sourceCode(request.getSourceCode())
       .languageCode(request.getLanguageCode())
-      .exerciseItem(exercise.getTitle())
       .time(null)
       .memory(null)
-      .passedTestCases(0)
-      .totalTestCases(testCases.size())
       .build();
-    submission = submissionRepository.save(submission);
+    submission = submissionsRepository.save(submission);
 
     // bàn lại format lưu test case với ae sau
     List<String> testInputs = testCases.stream().map(TestCase::getInput).toList();
@@ -200,50 +215,6 @@ public class SubmissionsService {
     submissionPublisher.publishSubmissionUpdate(testCaseResult);
 
     log.info("Callback for token {} => {}", token, verdict);
-  }
-
-  @Transactional
-  public SubmissionResponseDTO calculateTestCasesPassed(String submissionId) {
-    Submission submission = submissionRepository
-      .findById(submissionId)
-      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found"));
-
-    List<SubmissionResult> allResults = submissionResultRepository.findAllBySubmission(submission);
-
-    // Đếm số test case đúng
-    long passedCount = allResults
-      .stream()
-      .filter(r -> "ACCEPTED".equals(r.getVerdict()))
-      .count();
-
-    // Xác định verdict cuối cùng
-    String finalVerdict = allResults.stream().allMatch(r -> "ACCEPTED".equals(r.getVerdict()))
-      ? "ACCEPTED"
-      : allResults.stream().anyMatch(r -> r.getVerdict().equals("COMPILATION_ERROR"))
-        ? "COMPILATION_ERROR"
-        : allResults.stream().anyMatch(r -> r.getVerdict().equals("RUNTIME_ERROR"))
-          ? "RUNTIME_ERROR"
-          : allResults.stream().anyMatch(r -> r.getVerdict().equals("TIME_LIMIT_EXCEEDED"))
-            ? "TIME_LIMIT_EXCEEDED"
-            : "WRONG_ANSWER";
-
-    // Cập nhật submission
-    submission.setTime("—");
-    submission.setMemory("—");
-    submission.setExerciseItem(submission.getExercise().getTitle());
-    submission.setPassedTestCases((int) passedCount);
-    submission.setTotalTestCases(allResults.size());
-    submissionRepository.save(submission);
-
-    log.info(
-      "Submission {} finished with {} ({}/{} test cases passed)",
-      submission.getId(),
-      finalVerdict,
-      passedCount,
-      allResults.size()
-    );
-
-    return submissionMapper.toSubmissionResponseDTO(submission);
   }
 
   public RunCodeResponseDTO runCode(RunCodeRequest request) {
