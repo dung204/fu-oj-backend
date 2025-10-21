@@ -43,41 +43,6 @@ public class SubmissionsController {
 
   @AllowRoles(Role.STUDENT)
   @Operation(
-    summary = "Create a new submission (for STUDENT only)",
-    responses = {
-      @ApiResponse(responseCode = "201", description = "Submission created successfully"),
-      @ApiResponse(
-        responseCode = "400",
-        description = """
-        - Exercise ID is empty or invalid
-        - Source code is empty
-        - Language code is empty or not supported
-        """,
-        content = @Content
-      ),
-      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
-      @ApiResponse(
-        responseCode = "403",
-        description = "User's role is not `STUDENT`",
-        content = @Content
-      ),
-      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
-    }
-  )
-  @PostMapping
-  @ResponseStatus(HttpStatus.CREATED)
-  public SuccessResponseDTO<SubmissionResponseDTO> createSubmission(
-    @RequestBody SubmissionRequest request,
-    @CurrentUser User currentUser
-  ) {
-    return SuccessResponseDTO.<SubmissionResponseDTO>builder()
-      .message("Submission created successfully")
-      .data(submissionsService.createSubmission(request, currentUser))
-      .build();
-  }
-
-  @AllowRoles(Role.STUDENT)
-  @Operation(
     summary = "Create a new submission with base64 encoded source code (for STUDENT only)",
     responses = {
       @ApiResponse(responseCode = "201", description = "Submission created successfully"),
@@ -93,14 +58,17 @@ public class SubmissionsController {
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
       @ApiResponse(
         responseCode = "403",
-        description = "User's role is not `STUDENT`",
+        description = """
+        - User's role is not `STUDENT`
+        - Turnstile token is missing
+        """,
         content = @Content
       ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @PostMapping("/base64")
-  // @VerifyTurnstile
+  @PostMapping
+  @VerifyTurnstile
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<SubmissionResponseDTO> createSubmissionBase64(
     @RequestBody SubmissionRequest request,
@@ -171,7 +139,10 @@ public class SubmissionsController {
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
       @ApiResponse(
         responseCode = "403",
-        description = "User's role is not `STUDENT`",
+        description = """
+        - User's role is not `STUDENT`
+        - Turnstile token is missing
+        """,
         content = @Content
       ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
