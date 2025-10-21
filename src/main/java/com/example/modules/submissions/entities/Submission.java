@@ -50,10 +50,6 @@ public class Submission extends BaseEntity {
   @Column
   private String memory;
 
-  // ghi lại tên bài tập
-  @Column
-  private String exerciseItem;
-
   @OneToMany(mappedBy = "submission")
   private List<SubmissionResult> submissionResults;
 }
