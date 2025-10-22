@@ -90,93 +90,17 @@ services:
     container_name: createbuckets
     image: minio/mc
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      sleep 10;
-      /usr/bin/mc config host add myminio http://minio:${MINIO_PORT:-9000} ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin};
+      /usr/bin/mc alias set myminio http://minio:${MINIO_PORT:-9000} ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin};
       /usr/bin/mc mb myminio/${MINIO_BUCKET:-bucket} --ignore-existing;
-      /usr/bin/mc policy set public myminio/${MINIO_BUCKET:-bucket};
+      /usr/bin/mc anonymous set public myminio/${MINIO_BUCKET:-bucket};
       exit 0;
       "
     networks:
       - fu-oj-network
-
-  judge0-server:
-    image: judge0/judge0:latest
-    container_name: judge0-server
-    depends_on:
-      judge0-postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./judge0.conf:/judge0.conf:ro
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=${REDIS_PORT:-6379}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - POSTGRES_HOST=judge0-postgres
-      - POSTGRES_PORT=5433
-      - POSTGRES_DB=judge0
-      - POSTGRES_USER=${DB_USERNAME:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    ports:
-      - "${JUDGE0_PORT:-2358}:2358"
-    privileged: true
-    <<: *default-logging
-    restart: unless-stopped
-    networks:
-      - fu-oj-network
-
-  judge0-workers:
-    image: judge0/judge0:latest
-    container_name: judge0-workers
-    depends_on:
-      judge0-postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    command: ["./scripts/workers"]
-    volumes:
-      - ./judge0.conf:/judge0.conf:ro
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=${REDIS_PORT:-6379}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - POSTGRES_HOST=judge0-postgres
-      - POSTGRES_PORT=5433
-      - POSTGRES_DB=judge0
-      - POSTGRES_USER=${DB_USERNAME:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-    privileged: true
-    <<: *default-logging
-    restart: unless-stopped
-    networks:
-      - fu-oj-network
-
-  judge0-postgres:
-    container_name: judge0-postgres
-    image: postgres:16-alpine
-    ports:
-      - "5433:5433"
-    volumes:
-      - judge0_postgres_data:/var/lib/postgresql/data
-    environment:
-      - PGPORT=5433
-      - POSTGRES_USER=${DB_USERNAME:-postgres}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=judge0
-      - POSTGRES_INITDB_ARGS=--locale-provider=icu --icu-locale=vi
-      - TZ=Asia/Ho_Chi_Minh
-    restart: unless-stopped
-    networks:
-      - fu-oj-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d judge0 -h localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
 networks:
   fu-oj-network:
