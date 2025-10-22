@@ -3,6 +3,7 @@ package com.example.modules.submissions.controllers;
 import static com.example.base.utils.AppRoutes.SUBMISSIONS_PREFIX;
 
 import com.example.base.annotations.VerifyTurnstile;
+import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.Judge0.dtos.Judge0CallbackRequestDTO;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
@@ -16,6 +17,7 @@ import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
 import com.example.modules.submissions.dtos.SubmissionResponseDTO;
+import com.example.modules.submissions.dtos.SubmissionsSearchDTO;
 import com.example.modules.submissions.services.SubmissionsService;
 import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +28,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -40,6 +43,25 @@ public class SubmissionsController {
 
   private final SubmissionsService submissionsService;
   private final Judge0Service judge0Service;
+
+  @Operation(
+    summary = "Retrieve all existing submissions",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Topics retrieved successfully"),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @GetMapping
+  public PaginatedSuccessResponseDTO<SubmissionResponseDTO> getAllTopics(
+    @ParameterObject @Valid SubmissionsSearchDTO submissionsSearchDTO
+  ) {
+    return PaginatedSuccessResponseDTO.<SubmissionResponseDTO>builder()
+      .message("Submissions retrieved successfully.")
+      .page(submissionsService.getAllSubmissions(submissionsSearchDTO))
+      .filters(submissionsSearchDTO.getFilters())
+      .build();
+  }
 
   @AllowRoles(Role.STUDENT)
   @Operation(
@@ -112,17 +134,6 @@ public class SubmissionsController {
       .build();
   }
 
-  @PostMapping("/{submissionId}/calculate")
-  @Public
-  public SuccessResponseDTO<SubmissionResponseDTO> calculateTestCasesPassed(
-    @PathVariable String submissionId
-  ) {
-    return SuccessResponseDTO.<SubmissionResponseDTO>builder()
-      .message("Calculating test cases passed for submission successfully")
-      .data(submissionsService.calculateTestCasesPassed(submissionId))
-      .build();
-  }
-
   @Operation(
     summary = "Run code without saving the result to database (for STUDENT only)",
     responses = {
@@ -182,7 +193,7 @@ public class SubmissionsController {
     List<SubmissionResultResponseDTO> result =
       submissionsService.getAllSubmissionResultBySubmissionId(submissionId);
     return SuccessResponseDTO.<List<SubmissionResultResponseDTO>>builder()
-      .message("Run code successfully")
+      .message("Get all submission results successfully")
       .data(result)
       .build();
   }

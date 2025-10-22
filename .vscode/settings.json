@@ -1,3 +1,16 @@
 {
-  "java.configuration.updateBuildConfiguration": "automatic"
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "sqltools.connections": [
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "localhost",
+      "port": 5432,
+      "askForPassword": true,
+      "driver": "PostgreSQL",
+      "name": "fu-oj-db",
+      "database": "fu_oj_backend",
+      "username": "postgres"
+    }
+  ]
 }
