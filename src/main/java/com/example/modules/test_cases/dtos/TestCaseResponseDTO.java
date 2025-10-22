@@ -1,16 +1,24 @@
 package com.example.modules.test_cases.dtos;
 
 import com.example.base.dtos.EntityDTO;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
 @EqualsAndHashCode(callSuper = true)
-// TODO: After adding fields, uncomment these two lines
-// @NoArgsConstructor
-// @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class TestCaseResponseDTO extends EntityDTO {
-  // TODO: Add fields
+
+  private String input;
+
+  private String output;
+
+  private String note;
+
+  private Boolean isPublic;
 }

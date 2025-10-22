@@ -2,6 +2,7 @@ package com.example.base.handlers;
 
 import com.example.base.dtos.ErrorResponseDTO;
 import io.jsonwebtoken.JwtException;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
@@ -95,6 +96,16 @@ public class GlobalExceptionHandler {
       ErrorResponseDTO.builder()
         .status(HttpStatus.BAD_REQUEST.value())
         .message("Field `%s` %s".formatted(fieldName, errorMessage))
+        .build()
+    );
+  }
+
+  @ExceptionHandler(EntityNotFoundException.class)
+  public ResponseEntity<ErrorResponseDTO> handleEntityNotFoundException(EntityNotFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+      ErrorResponseDTO.builder()
+        .status(HttpStatus.NOT_FOUND.value())
+        .message(e.getMessage())
         .build()
     );
   }

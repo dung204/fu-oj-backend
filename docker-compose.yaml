@@ -1,3 +1,9 @@
+x-logging: &default-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 100M
+
 services:
   postgres:
     container_name: postgres
@@ -84,13 +90,13 @@ services:
     container_name: createbuckets
     image: minio/mc
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      sleep 10;
-      /usr/bin/mc config host add myminio http://minio:${MINIO_PORT:-9000} ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin};
+      /usr/bin/mc alias set myminio http://minio:${MINIO_PORT:-9000} ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin};
       /usr/bin/mc mb myminio/${MINIO_BUCKET:-bucket} --ignore-existing;
-      /usr/bin/mc policy set public myminio/${MINIO_BUCKET:-bucket};
+      /usr/bin/mc anonymous set public myminio/${MINIO_BUCKET:-bucket};
       exit 0;
       "
     networks:
@@ -104,3 +110,4 @@ volumes:
   postgresql_data:
   redis_data:
   minio_data:
+  judge0_postgres_data:

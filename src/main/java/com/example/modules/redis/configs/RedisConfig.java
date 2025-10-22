@@ -1,5 +1,6 @@
 package com.example.modules.redis.configs;
 
+import com.example.modules.redis.configs.subscribers.SubmissionSubscriber;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,6 +9,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.ChannelTopic;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -25,6 +28,8 @@ public class RedisConfig {
   private String password;
 
   private final ObjectMapper objectMapper;
+  private final SubmissionSubscriber submissionSubscriber;
+  private final ChannelTopic submissionTopic;
 
   @Bean
   JedisConnectionFactory jedisConnectionFactory() {
@@ -50,5 +55,13 @@ public class RedisConfig {
     template.setHashValueSerializer(jsonRedisSerializer);
 
     return template;
+  }
+
+  @Bean
+  RedisMessageListenerContainer redisMessageListenerContainer() {
+    RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+    container.setConnectionFactory(jedisConnectionFactory());
+    container.addMessageListener(submissionSubscriber, submissionTopic);
+    return container;
   }
 }

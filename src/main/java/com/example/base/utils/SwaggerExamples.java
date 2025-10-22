@@ -19,4 +19,6 @@ public class SwaggerExamples {
   public static final String DESCRIPTION = "description example";
   public static final String OWNER_ID = "01098e6a-c05f-46f4-9c57-95a922bf24dd";
   public static final String PUBLIC = "true";
+  public static final String TOPIC_NAME = "topic name";
+  public static final String TITLE = "title";
 }

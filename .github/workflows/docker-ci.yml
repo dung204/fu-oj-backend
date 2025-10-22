@@ -1,0 +1,117 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate .env file
+        run: |
+          echo "# Database (PostgreSQL) configuration" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT || '5432' }}" >> .env
+          echo "DB_DATABASE_NAME=${{ secrets.DB_DATABASE_NAME || 'fu_oj_backend' }}" >> .env
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME || 'postgres' }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "" >> .env
+
+          echo "# Redis configuration" >> .env
+          echo "REDIS_PORT=${{ secrets.REDIS_PORT || '6379' }}" >> .env
+          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
+          echo "" >> .env
+
+          echo "# MinIO configuration" >> .env
+          echo "MINIO_ACCESS_KEY=${{ secrets.MINIO_ACCESS_KEY || 'minioadmin' }}" >> .env
+          echo "MINIO_SECRET_KEY=${{ secrets.MINIO_SECRET_KEY || 'minioadmin' }}" >> .env
+          echo "MINIO_PORT=${{ secrets.MINIO_PORT || '9000' }}" >> .env
+          echo "MINIO_CONSOLE_PORT=${{ secrets.MINIO_CONSOLE_PORT || '9001' }}" >> .env
+          echo "MINIO_BUCKET=${{ secrets.MINIO_BUCKET || 'bucket' }}" >> .env
+          echo "" >> .env
+
+          echo "# JWT configuration" >> .env
+          echo "JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}" >> .env
+          echo "JWT_ACCESS_EXPIRATION=${{ secrets.JWT_ACCESS_EXPIRATION || '3600' }}" >> .env
+          echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
+          echo "JWT_REFRESH_EXPIRATION=${{ secrets.JWT_REFRESH_EXPIRATION || '604800' }}" >> .env
+          echo "" >> .env
+
+          echo "# Judge0 configuration" >> .env
+          echo "JUDGE0_API_URL=${{ secrets.JUDGE0_API_URL }}" >> .env
+          echo "CALL_BACK_URL=${{ secrets.CALL_BACK_URL }}" >> .env
+          echo "" >> .env
+
+          echo "# Turnstile configuration" >> .env
+          echo "TURNSTILE_SECRET_KEY=${{ secrets.TURNSTILE_SECRET_KEY }}" >> .env
+          echo "TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}" >> .env
+          echo "TURNSTILE_VERIFY_URL=https://challenges.cloudflare.com/turnstile/v0/siteverify" >> .env
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push Docker Image
+        run: |
+          # Set up variables
+          GIT_SHA=$(git rev-parse --short HEAD)
+          TAG=$(date +'%Y%m%d-%H%M')-$GIT_SHA
+          IMAGE_NAME=giatrong/fu-oj-backend
+
+          echo "Building image: $IMAGE_NAME:$TAG"
+
+          docker build -t $IMAGE_NAME:$TAG -t $IMAGE_NAME:latest .
+
+          docker push $IMAGE_NAME:$TAG
+          docker push $IMAGE_NAME:latest
+
+          # automatically create env tag (prod/dev)
+          if [[ $GITHUB_REF == "refs/heads/main" ]]; then
+            ENV_TAG="prod"
+          else
+            ENV_TAG="dev"
+          fi
+
+          docker tag $IMAGE_NAME:$TAG $IMAGE_NAME:$ENV_TAG
+          docker push $IMAGE_NAME:$ENV_TAG
+
+          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+          echo "ENV_TAG=$ENV_TAG" >> $GITHUB_ENV
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_SSH_PASSWORD }}
+          # key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e  # Stop if any command fails
+            export IMAGE_TAG=${{ env.IMAGE_TAG }}
+
+            echo "Pulling latest image version: giatrong/fu-oj-backend:$IMAGE_TAG"
+
+            # update image on server
+            cd ~/fu-oj-backend
+            docker compose -f docker-compose.yml pull
+
+            echo "Starting deployment with image tag: $IMAGE_TAG"
+            docker compose -f docker-compose.yml --env-file .env up -d --remove-orphans || {
+              echo "Deployment failed. Rolling back..."
+              docker compose -f docker-compose.yml down
+              exit 1
+            }
+
+            echo "Deployment successful!"

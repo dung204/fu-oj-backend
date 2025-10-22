@@ -2,12 +2,15 @@ package com.example.modules.submissions.entities;
 
 import com.example.base.entities.BaseEntity;
 import com.example.modules.exercises.entities.Exercise;
+import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.users.entities.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,13 +34,11 @@ public class Submission extends BaseEntity {
   @JoinColumn(name = "exercise_id", nullable = false)
   private Exercise exercise;
 
+  // code ở đây là code của bài tập, kiểu mã code để phân biệt các bài tập với nhau
   @Column
   private String code;
 
-  @Column
-  private String token;
-
-  @Column
+  @Column(columnDefinition = "TEXT") // text: for long source codes
   private String sourceCode;
 
   @Column
@@ -49,18 +50,6 @@ public class Submission extends BaseEntity {
   @Column
   private String memory;
 
-  @Column
-  private String input;
-
-  @Column
-  private String output;
-
-  @Column
-  private String userOutput;
-
-  @Column
-  private String status;
-
-  @Column
-  private String exerciseItem;
+  @OneToMany(mappedBy = "submission")
+  private List<SubmissionResult> submissionResults;
 }

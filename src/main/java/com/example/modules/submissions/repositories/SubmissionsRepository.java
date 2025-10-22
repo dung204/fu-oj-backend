@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SubmissionsRepository
-  extends JpaRepository<Submission, String>, JpaSpecificationExecutor<Submission> {}
+  extends JpaRepository<Submission, String>, JpaSpecificationExecutor<Submission> {
+  Integer countByUserIdAndExerciseId(String userId, String exerciseId);
+}

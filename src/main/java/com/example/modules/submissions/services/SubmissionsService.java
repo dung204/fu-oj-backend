@@ -1,0 +1,334 @@
+package com.example.modules.submissions.services;
+
+import com.example.modules.Judge0.dtos.Judge0CallbackRequestDTO;
+import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
+import com.example.modules.Judge0.enums.Judge0Status;
+import com.example.modules.Judge0.services.Judge0Service;
+import com.example.modules.Judge0.utils.Base64Utils;
+import com.example.modules.exercises.entities.Exercise;
+import com.example.modules.exercises.repositories.ExercisesRepository;
+import com.example.modules.redis.configs.publishers.SubmissionPublisher;
+import com.example.modules.submission_results.dtos.SubmissionResultResponseDTO;
+import com.example.modules.submission_results.entities.SubmissionResult;
+import com.example.modules.submission_results.repositories.SubmissionResultRepository;
+import com.example.modules.submissions.dtos.RunCodeRequest;
+import com.example.modules.submissions.dtos.RunCodeResponseDTO;
+import com.example.modules.submissions.dtos.SubmissionRequest;
+import com.example.modules.submissions.dtos.SubmissionResponseDTO;
+import com.example.modules.submissions.dtos.SubmissionsSearchDTO;
+import com.example.modules.submissions.dtos.TestCaseResultDTO;
+import com.example.modules.submissions.entities.Submission;
+import com.example.modules.submissions.repositories.SubmissionsRepository;
+import com.example.modules.submissions.utils.SubmissionMapper;
+import com.example.modules.submissions.utils.SubmissionResultMapper;
+import com.example.modules.submissions.utils.SubmissionsSpecification;
+import com.example.modules.test_cases.entities.TestCase;
+import com.example.modules.test_cases.repositories.TestCasesRepository;
+import com.example.modules.users.entities.User;
+import java.util.ArrayList;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class SubmissionsService {
+
+  private final Judge0Service judge0Service;
+  private final SubmissionsRepository submissionsRepository;
+  private final TestCasesRepository testCaseRepository;
+  private final SubmissionResultRepository submissionResultRepository;
+  private final ExercisesRepository exerciseRepository;
+  private final SubmissionPublisher submissionPublisher;
+  private final SubmissionResultMapper submissionResultMapper;
+  private final SubmissionLimitService submissionLimitService;
+  private final SubmissionMapper submissionMapper;
+
+  public Page<SubmissionResponseDTO> getAllSubmissions(SubmissionsSearchDTO submissionsSearchDTO) {
+    return submissionsRepository
+      .findAll(
+        SubmissionsSpecification.builder()
+          .withStudentId(submissionsSearchDTO.getStudent())
+          .withExerciseId(submissionsSearchDTO.getExercise())
+          .isOneOfStatuses(submissionsSearchDTO.getStatus())
+          .isOneOfLanguageCodes(submissionsSearchDTO.getLanguageCode())
+          .notDeleted()
+          .build(),
+        submissionsSearchDTO.toPageRequest()
+      )
+      .map(submissionMapper::toSubmissionResponseDTO);
+  }
+
+  public SubmissionResponseDTO createSubmissionBase64(SubmissionRequest request, User currentUser) {
+    Exercise exercise = exerciseRepository
+      .findById(String.valueOf(request.getExerciseId()))
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
+
+    if (exercise.getMaxSubmissions() != 0) {
+      log.info(
+        "Checking submission limit for user {} on exercise {}",
+        currentUser.getId(),
+        exercise.getId()
+      );
+      submissionLimitService.checkAndIncrease(currentUser.getId(), exercise.getId());
+    }
+
+    // get all test cases of exercise
+    List<TestCase> testCases = testCaseRepository.findAllByExerciseId((exercise.getId()));
+
+    // create submission
+    Submission submission = Submission.builder()
+      .user(currentUser)
+      .exercise(exercise)
+      .sourceCode(request.getSourceCode())
+      .languageCode(request.getLanguageCode())
+      .time(null)
+      .memory(null)
+      .build();
+    submission = submissionsRepository.save(submission);
+
+    // bàn lại format lưu test case với ae sau
+    List<String> testInputs = testCases.stream().map(TestCase::getInput).toList();
+
+    List<String> expectedOutputs = testCases.stream().map(TestCase::getOutput).toList();
+
+    // Gửi batch lên Judge0 -> nhận list token
+    List<String> tokens = judge0Service.createBatchSubmissionBase64(
+      request.getSourceCode(),
+      request.getLanguageCode(),
+      testInputs,
+      expectedOutputs
+    );
+
+    // Gắn từng token với từng test case -> lưu SubmissionResult với verdict = IN_QUEUE
+    for (int i = 0; i < testCases.size(); i++) {
+      SubmissionResult result = SubmissionResult.builder()
+        .submission(submission)
+        .testCase(testCases.get(i))
+        .token(tokens.get(i))
+        .verdict(String.valueOf(Judge0Status.IN_QUEUE))
+        .build();
+
+      log.info("Submission {}, result: {} ", i, result.toString());
+      submissionResultRepository.save(result);
+    }
+
+    log.info("Submission {} created with {} test cases", submission.getId(), testCases.size());
+    return submissionMapper.toSubmissionResponseDTO(submission);
+  }
+
+  /**
+   * Khi Judge0 callback về, update từng test case
+   * <p>
+   * data: {
+   * "stdout": "NQo=\n",
+   * "time": "0.134",
+   * "memory": 13856,
+   * "stderr": null,
+   * "token": "583b7296-9ac6-4136-a654-5904bc549b88",
+   * "compile_output": null,
+   * "message": null,
+   * "status": {
+   * "id": 4,
+   * "description": "Wrong Answer"
+   * }
+   * }
+   */
+  @Transactional
+  public void handleCallback(Judge0CallbackRequestDTO callback) {
+    log.info("Received callback result: {}", callback);
+
+    //1. Extract basic fields
+    String token = callback.getToken();
+    int statusId = callback.getStatus().getId();
+
+    //2. Decode base64 safely using Base64Utils
+    String decodedStdout = Base64Utils.decodeBase64Safe(callback.getStdout());
+    String decodedStderr = Base64Utils.decodeBase64Safe(callback.getStderr());
+    String decodedCompileOutput = Base64Utils.decodeBase64Safe(callback.getCompileOutput());
+
+    if (decodedStderr != null && !decodedStderr.isEmpty()) {
+      log.error("Decoded stderr: {}", decodedStderr);
+      //      throw new RuntimeException("Decoded stderr: " + decodedStderr);
+    }
+
+    //3. Find submission result in DB
+    SubmissionResult sr = submissionResultRepository
+      .findByToken(token)
+      .orElseThrow(() ->
+        new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown token: " + token)
+      );
+
+    String expected = sr.getTestCase().getOutput() != null
+      ? sr.getTestCase().getOutput().trim()
+      : "";
+
+    String actual = decodedStdout != null ? decodedStdout.trim() : "";
+
+    //4. Determine verdict
+    String verdict;
+    switch (statusId) {
+      case 1 -> verdict = String.valueOf(Judge0Status.IN_QUEUE);
+      case 2 -> verdict = String.valueOf(Judge0Status.PROCESSING);
+      //      case 3 -> verdict = String.valueOf(Judge0Status.ACCEPTED);
+      //      case 4 -> verdict = String.valueOf(Judge0Status.WRONG_ANSWER);
+      case 5 -> verdict = String.valueOf(Judge0Status.TIME_LIMIT_EXCEEDED);
+      case 6 -> verdict = String.valueOf(Judge0Status.COMPILATION_ERROR);
+      case 7, 8, 9, 10, 11, 12 -> verdict = String.valueOf(Judge0Status.RUNTIME_ERROR);
+      case 13 -> verdict = String.valueOf(Judge0Status.INTERNAL_ERROR);
+      case 14 -> verdict = String.valueOf(Judge0Status.EXEC_FORMAT_ERROR);
+      default -> verdict = (expected != null && expected.equals(actual))
+        ? String.valueOf(Judge0Status.ACCEPTED)
+        : String.valueOf(Judge0Status.WRONG_ANSWER);
+    }
+
+    //5. Update submission result
+    sr.setVerdict(verdict);
+    sr.setActualOutput(decodedStdout);
+    sr.setStderr(decodedStderr);
+    submissionResultRepository.save(sr);
+
+    boolean isPublic = sr.getTestCase().getIsPublic();
+
+    //6. Publish Redis message -> send WebSocket to FE (via SubmissionSubscriber)
+    TestCaseResultDTO testCaseResult = TestCaseResultDTO.builder()
+      .userId(sr.getSubmission().getUser().getId())
+      .testCaseId(sr.getTestCase().getId())
+      .input(isPublic ? sr.getTestCase().getInput() : null)
+      .expectedOutput(isPublic ? expected : null)
+      .actualOutput(isPublic ? actual : null)
+      .stderr(isPublic ? decodedStderr : null)
+      .compileOutput(decodedCompileOutput)
+      .time(callback.getTime())
+      .memory(callback.getMemory())
+      .status(callback.getStatus())
+      .passed(statusId == Judge0Status.ACCEPTED.getId())
+      .isPublic(isPublic)
+      .build();
+
+    submissionPublisher.publishSubmissionUpdate(testCaseResult);
+
+    log.info("Callback for token {} => {}", token, verdict);
+  }
+
+  public RunCodeResponseDTO runCode(RunCodeRequest request) {
+    log.info("Running code for exercise: {}", request.getExerciseId());
+
+    // 1. Lấy exercise từ DB
+    Exercise exercise = exerciseRepository
+      .findById(request.getExerciseId())
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
+
+    // 2. Lấy tất cả test cases public
+    List<TestCase> publicTestCases = testCaseRepository.findAllByExerciseIdAndIsPublicTrue(
+      exercise.getId()
+    );
+
+    if (publicTestCases.isEmpty()) {
+      throw new ResponseStatusException(
+        HttpStatus.NOT_FOUND,
+        "No public test cases found for this exercise"
+      );
+    }
+
+    log.info(
+      "Found {} public test cases for exercise {}",
+      publicTestCases.size(),
+      exercise.getTitle()
+    );
+
+    // 3. Chuẩn bị inputs và expected outputs (normalize \n)
+    List<String> testInputs = publicTestCases
+      .stream()
+      .map(tc -> tc.getInput() != null ? tc.getInput().replace("\\n", "\n") : "")
+      .toList();
+    List<String> expectedOutputs = publicTestCases
+      .stream()
+      .map(tc -> tc.getOutput() != null ? tc.getOutput().replace("\\n", "\n") : "")
+      .toList();
+
+    // 4. Gửi batch lên Judge0 và đợi kết quả
+    List<Judge0SubmissionResponseDTO> results = judge0Service.runBatchCode(
+      request.getSourceCode(),
+      request.getLanguageCode(),
+      testInputs,
+      expectedOutputs
+    );
+
+    log.info("Received {} results from Judge0", results.size());
+
+    // 5. Decode và xử lý kết quả
+    List<TestCaseResultDTO> processedResults = new ArrayList<>();
+    int passedCount = 0;
+
+    for (int i = 0; i < results.size(); i++) {
+      Judge0SubmissionResponseDTO result = results.get(i);
+
+      // Decode base64 outputs
+      String decodedStdout = Base64Utils.decodeBase64Safe(result.getStdout());
+      String decodedStderr = Base64Utils.decodeBase64Safe(result.getStderr());
+      String decodedCompileOutput = Base64Utils.decodeBase64Safe(result.getCompileOutput());
+
+      // Lấy thông tin status
+      int statusId = result.getStatus().getId();
+
+      // Kiểm tra kết quả
+      boolean isPassed = statusId == Judge0Status.ACCEPTED.getId(); // Status 3 = Accepted
+      if (isPassed) {
+        passedCount++;
+      }
+
+      // Build kết quả cho từng test case (dùng input/output đã normalize)
+      TestCaseResultDTO testResult = TestCaseResultDTO.builder()
+        .testCaseId(publicTestCases.get(i).getId())
+        .testCaseIndex(i + 1)
+        .input(testInputs.get(i))
+        .expectedOutput(expectedOutputs.get(i))
+        .actualOutput(decodedStdout)
+        .stderr(decodedStderr)
+        .compileOutput(decodedCompileOutput)
+        .time(result.getTime())
+        .memory(result.getMemory())
+        .status(result.getStatus())
+        .passed(isPassed)
+        .isPublic(true)
+        .build();
+
+      processedResults.add(testResult);
+    }
+
+    // 6. Build response tổng hợp
+    RunCodeResponseDTO response = RunCodeResponseDTO.builder()
+      .exerciseId(exercise.getId())
+      .exerciseTitle(exercise.getTitle())
+      .totalTestCases(publicTestCases.size())
+      .passedTestCases(passedCount)
+      .results(processedResults)
+      .allPassed(passedCount == publicTestCases.size())
+      .build();
+
+    log.info(
+      "Code execution completed: {}/{} test cases passed",
+      passedCount,
+      publicTestCases.size()
+    );
+
+    return response;
+  }
+
+  public List<SubmissionResultResponseDTO> getAllSubmissionResultBySubmissionId(
+    String submissionId
+  ) {
+    return submissionResultRepository
+      .findAllBySubmissionId(submissionId)
+      .stream()
+      .map(submissionResultMapper::toSubmissionResultResponseDTO)
+      .toList();
+  }
+}
