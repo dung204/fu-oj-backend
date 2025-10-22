@@ -40,7 +40,7 @@ public class Group extends BaseEntity {
   private String description;
 
   @Column
-  private boolean isPublic;
+  private Boolean isPublic;
 
   @ManyToMany
   @JoinTable(

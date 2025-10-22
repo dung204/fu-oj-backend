@@ -17,6 +17,6 @@ public class SwaggerExamples {
   public static final String URL = "https://example.com";
   public static final String GROUP_NAME = "group example name";
   public static final String DESCRIPTION = "description example";
-  public static final String OWNER_ID = "id of owner_id : 01098e6a-c05f-46f4-9c57-95a922bf24dd";
+  public static final String OWNER_ID = "01098e6a-c05f-46f4-9c57-95a922bf24dd";
   public static final String PUBLIC = "true";
 }

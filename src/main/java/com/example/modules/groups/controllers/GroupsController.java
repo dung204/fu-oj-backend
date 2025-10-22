@@ -2,24 +2,24 @@ package com.example.modules.groups.controllers;
 
 import static com.example.base.utils.AppRoutes.GROUPS_PREFIX;
 
+import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.AllowRoles;
 import com.example.modules.auth.annotations.CurrentUser;
-import com.example.modules.auth.annotations.Public;
 import com.example.modules.auth.enums.Role;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.groups.dtos.*;
-import com.example.modules.groups.services.GroupsService;
+import com.example.modules.groups.services.GroupService;
 import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -31,11 +31,37 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class GroupsController {
 
-  private final GroupsService groupsService;
+  private final GroupService groupsService;
+
+  @Operation(
+    summary = "Retrieve a list of groups based on the current authenticated user",
+    description = "Fetches a paginated list of groups. The returned list depends on the role of the authenticated user:\n" +
+      "  * `ADMIN`: Returns all groups in the system (public and private).\n" +
+      "  * `INSTRUCTOR`: Returns all groups created by the instructor (public and private).\n" +
+      "  * `STUDENT`: Behavior depends on the 'filter' parameter:\n" +
+      "    * If `filter=joined`, returns all groups the student is a member of.\n" +
+      "    * Otherwise, returns all public groups in the system.",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Groups retrieved successfully"),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @GetMapping
+  public PaginatedSuccessResponseDTO<GroupResponseDTO> getGroups(
+    @ParameterObject @Valid GroupsSearchDTO groupsSearchDTO,
+    @CurrentUser User user
+  ) {
+    return PaginatedSuccessResponseDTO.<GroupResponseDTO>builder()
+      .status(200)
+      .message("Groups retrieved successfully")
+      .page(groupsService.getGroups(user, groupsSearchDTO))
+      .filters(groupsSearchDTO.getFilters())
+      .build();
+  }
 
   @AllowRoles(Role.INSTRUCTOR)
   @Operation(
-    summary = "Create new group",
+    summary = "Create new group (for INSTRUCTOR only)",
     responses = {
       @ApiResponse(responseCode = "201", description = "Create new group successfully"),
       @ApiResponse(responseCode = "400", description = "Group is error format", content = @Content),
@@ -63,7 +89,7 @@ public class GroupsController {
 
   @AllowRoles(Role.INSTRUCTOR)
   @Operation(
-    summary = "Update group by id",
+    summary = "Update group by ID (for INSTRUCTOR only)",
     responses = {
       @ApiResponse(responseCode = "200", description = "Update group by id successfully"),
       @ApiResponse(
@@ -74,65 +100,22 @@ public class GroupsController {
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @PutMapping
+  @PutMapping("/{id}")
   @ResponseStatus(HttpStatus.OK)
   public SuccessResponseDTO<GroupResponseDTO> updateGroup(
+    @PathVariable String id,
     @RequestBody @Valid GroupUpdateRequestDTO groupUpdateRequestDTO
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(201)
-      .message("update group successfully")
-      .data(groupsService.updateGroup(groupUpdateRequestDTO))
+      .message("Update group successfully")
+      .data(groupsService.updateGroup(id, groupUpdateRequestDTO))
       .build();
   }
 
   @AllowRoles(Role.INSTRUCTOR)
   @Operation(
-    summary = "Get group by ownerId",
-    responses = {
-      @ApiResponse(responseCode = "200", description = "Get group by ownerId successfully"),
-      @ApiResponse(
-        responseCode = "400",
-        description = "Get group by ownerId error",
-        content = @Content
-      ),
-      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
-    }
-  )
-  @GetMapping("/{ownerId}")
-  @ResponseStatus(HttpStatus.OK)
-  public SuccessResponseDTO<List<GroupResponseDTO>> getGroupByInstructorId(
-    @PathVariable @NotNull(message = "User ID cannot be null") String ownerId
-  ) {
-    return SuccessResponseDTO.<List<GroupResponseDTO>>builder()
-      .status(200)
-      .message("Get group by ownerId successfully")
-      .data(groupsService.getGroupByInstructorId(ownerId))
-      .build();
-  }
-
-  @AllowRoles(Role.ADMIN)
-  @Operation(
-    summary = "Get all group",
-    responses = {
-      @ApiResponse(responseCode = "200", description = "Get all group successfully"),
-      @ApiResponse(responseCode = "400", description = "Get all group error", content = @Content),
-      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
-    }
-  )
-  @GetMapping
-  @ResponseStatus(HttpStatus.OK)
-  public SuccessResponseDTO<List<GroupResponseDTO>> getGroups() {
-    return SuccessResponseDTO.<List<GroupResponseDTO>>builder()
-      .status(200)
-      .message("Get group by ownerId successfully")
-      .data(groupsService.getGroups())
-      .build();
-  }
-
-  @AllowRoles(Role.INSTRUCTOR)
-  @Operation(
-    summary = "Delete group",
+    summary = "Delete group (for INSTRUCTOR only)",
     responses = {
       @ApiResponse(responseCode = "201", description = "Delete group successfully"),
       @ApiResponse(
@@ -146,9 +129,7 @@ public class GroupsController {
   )
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.OK)
-  public SuccessResponseDTO<GroupResponseDTO> deleteGroupById(
-    @PathVariable @NotNull(message = "ID must be not null") String id
-  ) {
+  public SuccessResponseDTO<GroupResponseDTO> deleteGroupById(@PathVariable String id) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(200)
       .message("Group delete successfully")
@@ -158,7 +139,7 @@ public class GroupsController {
 
   @AllowRoles(Role.INSTRUCTOR)
   @Operation(
-    summary = "Add exercises to a group",
+    summary = "Add exercises to a group (for INSTRUCTOR only)",
     description = "Add one or more exercises to the specified group by group ID.",
     responses = {
       @ApiResponse(responseCode = "201", description = "Exercises added to group successfully"),
@@ -179,7 +160,7 @@ public class GroupsController {
   @PostMapping("/{id}/exercises")
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<GroupResponseDTO> addExerciseToGroup(
-    @PathVariable @NotNull(message = "ID must be not null") String id,
+    @PathVariable String id,
     @Valid @RequestBody ListExerciseToGroupRequestDTO addExerciseToGroupRequestDTO
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
@@ -191,7 +172,7 @@ public class GroupsController {
 
   @AllowRoles(Role.INSTRUCTOR)
   @Operation(
-    summary = "Remove exercises from a group",
+    summary = "Remove exercises from a group (for INSTRUCTOR only)",
     description = "Remove one or multiple exercises from a specific group by providing the group ID and a list of exercise IDs to remove.",
     responses = {
       @ApiResponse(responseCode = "200", description = "Exercises removed from group successfully"),
@@ -216,7 +197,7 @@ public class GroupsController {
   @DeleteMapping("/{id}/exercises")
   @ResponseStatus(HttpStatus.OK)
   public SuccessResponseDTO<GroupResponseDTO> removeExercisesFromGroup(
-    @PathVariable @NotNull(message = "ID must be not null") String id,
+    @PathVariable String id,
     @Valid @RequestBody ListExerciseToGroupRequestDTO removeExerciseToGroupRequestDTO
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
@@ -257,9 +238,7 @@ public class GroupsController {
   )
   @GetMapping("/{id}/exercises")
   @ResponseStatus(HttpStatus.OK)
-  public SuccessResponseDTO<List<Exercise>> getExerciseByGroupId(
-    @PathVariable @NotNull(message = "Group ID cannot be null") String id
-  ) {
+  public SuccessResponseDTO<List<Exercise>> getExerciseByGroupId(@PathVariable String id) {
     return SuccessResponseDTO.<List<Exercise>>builder()
       .status(200)
       .message("Get exercise by id successfully")
@@ -290,7 +269,7 @@ public class GroupsController {
   @PostMapping("/{id}/students")
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<GroupResponseDTO> addStudentsToGroup(
-    @PathVariable @NotNull(message = "ID must be not null") String id,
+    @PathVariable String id,
     @Valid @RequestBody ListStudentToGroupRequestDTO addStudentToGroupRequestDTO
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
@@ -329,9 +308,7 @@ public class GroupsController {
   )
   @GetMapping("/{id}/students")
   @ResponseStatus(HttpStatus.OK)
-  public SuccessResponseDTO<List<User>> getStudentsByGroupId(
-    @PathVariable @NotNull(message = "Group ID cannot be null") String id
-  ) {
+  public SuccessResponseDTO<List<User>> getStudentsByGroupId(@PathVariable String id) {
     return SuccessResponseDTO.<List<User>>builder()
       .status(200)
       .message("Get students by groupId successfully")
@@ -366,7 +343,7 @@ public class GroupsController {
   @DeleteMapping("/{id}/students")
   @ResponseStatus(HttpStatus.OK)
   public SuccessResponseDTO<GroupResponseDTO> removeStudentsFromGroup(
-    @PathVariable @NotNull(message = "ID must be not null") String id,
+    @PathVariable String id,
     @Valid @RequestBody ListStudentToGroupRequestDTO removeStudentToGroupRequestDTO
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()

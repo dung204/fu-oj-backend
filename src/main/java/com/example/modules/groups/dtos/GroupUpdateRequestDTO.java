@@ -14,15 +14,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GroupUpdateRequestDTO {
 
-  @Schema(description = "The Id of group", example = SwaggerExamples.UUID)
-  private String id;
-
   @Schema(description = "The name of group", example = SwaggerExamples.GROUP_NAME)
   @NotBlank
   private String name;
 
   @Schema(description = "The access modifier of group", example = SwaggerExamples.PUBLIC)
-  private boolean isPublic;
+  private Boolean isPublic;
 
   @Schema(description = "The description of group", example = SwaggerExamples.DESCRIPTION)
   private String description;
