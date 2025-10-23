@@ -1,6 +1,8 @@
 package com.example.modules.groups.dtos;
 
 import com.example.base.dtos.EntityDTO;
+import com.example.modules.users.dtos.UserProfileDTO;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,5 +20,10 @@ public class GroupResponseDTO extends EntityDTO {
   private String name;
   private String description;
   private boolean isPublic;
-  private String ownerId;
+  private UserProfileDTO owner;
+  private Integer studentsCount;
+
+  // This field should be null for ADMIN & INSTRUCTOR, true/false for STUDENT
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private Boolean joined;
 }

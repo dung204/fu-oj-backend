@@ -23,8 +23,4 @@ public class GroupRequestDTO {
 
   @Schema(description = "The access modifier of group", example = SwaggerExamples.PUBLIC)
   private boolean isPublic;
-
-  @Schema(description = "The id of instructor created group", example = SwaggerExamples.OWNER_ID)
-  @NotBlank
-  private String ownerId;
 }

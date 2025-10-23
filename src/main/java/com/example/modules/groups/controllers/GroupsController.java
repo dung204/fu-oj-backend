@@ -79,11 +79,10 @@ public class GroupsController {
     @RequestBody @Valid GroupRequestDTO groupRequestDTO,
     @CurrentUser User user
   ) {
-    groupRequestDTO.setOwnerId(user.getId());
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(201)
       .message("Group created successfully")
-      .data(groupsService.addGroup(groupRequestDTO))
+      .data(groupsService.addGroup(user, groupRequestDTO))
       .build();
   }
 
@@ -352,6 +351,46 @@ public class GroupsController {
       .data(
         groupsService.removeStudentsFromGroup(id, removeStudentToGroupRequestDTO.getStudentIds())
       )
+      .build();
+  }
+
+  @Operation(
+    summary = "Join a group using a join code (for STUDENT only)",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Successfully joined the group"),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid join code provided",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "403",
+        description = "Only students can join groups",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Group with the provided code not found",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "409",
+        description = "Student is already a member of this group",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @AllowRoles(Role.STUDENT)
+  @PostMapping("/join")
+  public SuccessResponseDTO<GroupResponseDTO> joinGroupByCode(
+    @RequestBody @Valid JoinGroupRequestDTO joinGroupRequestDTO,
+    @CurrentUser User currentUser
+  ) {
+    return SuccessResponseDTO.<GroupResponseDTO>builder()
+      .status(200)
+      .message("Joined group successfully!")
+      .data(groupsService.joinGroupByCode(currentUser, joinGroupRequestDTO))
       .build();
   }
 }

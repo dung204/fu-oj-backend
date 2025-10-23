@@ -21,4 +21,5 @@ public class SwaggerExamples {
   public static final String PUBLIC = "true";
   public static final String TOPIC_NAME = "topic name";
   public static final String TITLE = "title";
+  public static final String JOIN_CODE = "abcd1234";
 }

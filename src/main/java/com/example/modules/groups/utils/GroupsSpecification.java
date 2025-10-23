@@ -54,4 +54,13 @@ public class GroupsSpecification extends SpecificationBuilder<Group> {
     }
     return this;
   }
+
+  public GroupsSpecification withCode(String code) {
+    if (code != null && !code.trim().isEmpty()) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("code"), code)
+      );
+    }
+    return this;
+  }
 }

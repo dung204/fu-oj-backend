@@ -7,8 +7,10 @@ import com.example.modules.groups.dtos.GroupRequestDTO;
 import com.example.modules.groups.dtos.GroupResponseDTO;
 import com.example.modules.groups.dtos.GroupUpdateRequestDTO;
 import com.example.modules.groups.dtos.GroupsSearchDTO;
+import com.example.modules.groups.dtos.JoinGroupRequestDTO;
 import com.example.modules.groups.entities.Group;
-import com.example.modules.groups.exeptions.GroupHasAlreadyBeenUsedException;
+import com.example.modules.groups.exeptions.AlreadyJoinedGroupException;
+import com.example.modules.groups.exeptions.GroupNotFoundException;
 import com.example.modules.groups.repositories.GroupsRepository;
 import com.example.modules.groups.utils.GroupMapper;
 import com.example.modules.groups.utils.GroupsSpecification;
@@ -18,7 +20,6 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -91,7 +92,12 @@ public class GroupService {
             .build(),
           groupsSearchDTO.toPageRequest()
         );
-        break;
+
+        return groupsPage.map(group -> {
+          GroupResponseDTO dto = groupMapper.toGroupResponseDTO(group);
+          dto.setJoined(group.getStudents().contains(currentUser));
+          return dto;
+        });
     }
 
     return groupsPage.map(groupMapper::toGroupResponseDTO);
@@ -99,7 +105,7 @@ public class GroupService {
 
   @Transactional
   public GroupResponseDTO addStudentsToGroup(String groupId, List<String> studentIds) {
-    Group group = groupsRepository.findGroupById(groupId);
+    Group group = groupsRepository.findGroupById(groupId).orElseThrow(GroupNotFoundException::new);
     List<User> students = usersRepository.findAllById(studentIds);
     if (group.getStudents() == null) {
       group.setStudents(new ArrayList<>());
@@ -110,7 +116,7 @@ public class GroupService {
   }
 
   public List<User> getStudentsByGroupId(String groupId) {
-    Group group = groupsRepository.findGroupById(groupId);
+    Group group = groupsRepository.findGroupById(groupId).orElseThrow(GroupNotFoundException::new);
     List<User> students = group.getStudents();
     if (students == null) {
       students = new ArrayList<>();
@@ -120,7 +126,7 @@ public class GroupService {
 
   @Transactional
   public GroupResponseDTO removeStudentsFromGroup(String groupId, List<String> studentIds) {
-    Group group = groupsRepository.findGroupById(groupId);
+    Group group = groupsRepository.findGroupById(groupId).orElseThrow(GroupNotFoundException::new);
     List<User> studentsToRemove = group
       .getStudents()
       .stream()
@@ -134,7 +140,7 @@ public class GroupService {
 
   @Transactional
   public GroupResponseDTO removeExercisesFromGroup(String groupId, List<String> exerciseIds) {
-    Group group = groupsRepository.findGroupById(groupId);
+    Group group = groupsRepository.findGroupById(groupId).orElseThrow(GroupNotFoundException::new);
     List<Exercise> exercisesToRemove = group
       .getExercises()
       .stream()
@@ -146,7 +152,7 @@ public class GroupService {
   }
 
   public List<Exercise> getExerciseByGroupId(String groupId) {
-    Group group = groupsRepository.findGroupById(groupId);
+    Group group = groupsRepository.findGroupById(groupId).orElseThrow(GroupNotFoundException::new);
     List<Exercise> exercises = group.getExercises();
     if (exercises == null) {
       exercises = new ArrayList<>();
@@ -156,7 +162,7 @@ public class GroupService {
 
   @Transactional
   public GroupResponseDTO addExerciseToGroup(String groupId, List<String> exerciseIds) {
-    Group group = groupsRepository.findGroupById(groupId);
+    Group group = groupsRepository.findGroupById(groupId).orElseThrow(GroupNotFoundException::new);
     List<Exercise> exercises = exercisesRepository.findAllById(exerciseIds);
     group.getExercises().addAll(exercises);
     groupsRepository.save(group);
@@ -164,14 +170,14 @@ public class GroupService {
   }
 
   public GroupResponseDTO deleteGroup(String id) {
-    Group group = groupsRepository.getGroupById(id);
+    Group group = groupsRepository.findGroupById(id).orElseThrow(GroupNotFoundException::new);
     group.softDelete();
     groupsRepository.save(group);
     return groupMapper.toGroupResponseDTO(group);
   }
 
   public GroupResponseDTO updateGroup(String groupId, GroupUpdateRequestDTO requestDTO) {
-    Group group = groupsRepository.getGroupById(groupId);
+    Group group = groupsRepository.findGroupById(groupId).orElseThrow(GroupNotFoundException::new);
     group.setName(requestDTO.getName());
     group.setDescription(requestDTO.getDescription());
     group.setIsPublic(requestDTO.getIsPublic());
@@ -180,27 +186,33 @@ public class GroupService {
     return groupMapper.toGroupResponseDTO(group);
   }
 
-  public GroupResponseDTO addGroup(GroupRequestDTO groupRequestDTO) {
-    final String nameGroup = groupRequestDTO.getName();
-    final Optional<Group> existingGroup = groupsRepository.existsGroupByName(nameGroup);
-    if (existingGroup.isPresent()) {
-      throw new GroupHasAlreadyBeenUsedException();
-    }
-    User instructor = usersRepository.findUserById(groupRequestDTO.getOwnerId());
-
+  public GroupResponseDTO addGroup(User currentUser, GroupRequestDTO groupRequestDTO) {
     Group group = Group.builder()
       .name(groupRequestDTO.getName())
       .description(groupRequestDTO.getDescription())
       .isPublic(groupRequestDTO.isPublic())
       .code(generateUniqueClassCode())
-      .instructor(instructor)
+      .instructor(currentUser)
       .build();
-    if (!groupRequestDTO.isPublic()) {
-      group.setCode("");
-    }
 
     groupsRepository.save(group);
-    return groupMapper.toGroupResponseDTO(group);
+    GroupResponseDTO responseDTO = groupMapper.toGroupResponseDTO(group);
+    responseDTO.setJoined(true);
+
+    return responseDTO;
+  }
+
+  public GroupResponseDTO joinGroupByCode(User currentUser, JoinGroupRequestDTO dto) {
+    Group group = this.groupsRepository.findOne(
+      GroupsSpecification.builder().withCode(dto.getCode()).notDeleted().build()
+    ).orElseThrow(GroupNotFoundException::new);
+
+    if (group.getStudents().contains(currentUser)) {
+      throw new AlreadyJoinedGroupException();
+    }
+
+    group.getStudents().add(currentUser);
+    return groupMapper.toGroupResponseDTO(groupsRepository.save(group));
   }
 
   @Transactional
