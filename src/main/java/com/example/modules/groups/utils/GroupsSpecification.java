@@ -4,6 +4,7 @@ import com.example.base.utils.SpecificationBuilder;
 import com.example.modules.groups.entities.Group;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class GroupsSpecification extends SpecificationBuilder<Group> {
@@ -60,6 +61,36 @@ public class GroupsSpecification extends SpecificationBuilder<Group> {
       specifications.add((root, query, criteriaBuilder) ->
         criteriaBuilder.equal(root.get("code"), code)
       );
+    }
+    return this;
+  }
+
+  public GroupsSpecification joinedByOrPublicOnly(String studentId) {
+    if (studentId != null && !studentId.trim().isEmpty()) {
+      Specification<Group> isPublicSpec = (root, query, criteriaBuilder) ->
+        criteriaBuilder.isTrue(root.get("isPublic"));
+
+      Specification<Group> joinedBySpec = (root, query, criteriaBuilder) -> {
+        query.distinct(true);
+        return criteriaBuilder.equal(root.join("students").get("id"), studentId);
+      };
+
+      specifications.add(isPublicSpec.or(joinedBySpec));
+    }
+    return this;
+  }
+
+  public GroupsSpecification ownedByOrPublicOnly(String instructorId) {
+    if (instructorId != null && !instructorId.trim().isEmpty()) {
+      Specification<Group> isPublicSpec = (root, query, criteriaBuilder) ->
+        criteriaBuilder.isTrue(root.get("isPublic"));
+
+      Specification<Group> ownedBySpec = (root, query, criteriaBuilder) -> {
+        query.distinct(true);
+        return criteriaBuilder.equal(root.join("instructor").get("id"), instructorId);
+      };
+
+      specifications.add(isPublicSpec.or(ownedBySpec));
     }
     return this;
   }

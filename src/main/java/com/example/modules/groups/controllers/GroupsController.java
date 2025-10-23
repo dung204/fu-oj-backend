@@ -59,6 +59,35 @@ public class GroupsController {
       .build();
   }
 
+  @Operation(
+    summary = "Retrieve a single group by its ID",
+    description = "Fetches a single group by its unique ID. Access is determined by the user's role:\n" +
+      "  * `ADMIN`: Can retrieve any group.\n" +
+      "  * `INSTRUCTOR`: Can retrieve any public group or any private group they own.\n" +
+      "  * `STUDENT`: Can retrieve any public group or any private group they are a member of.\n\n" +
+      "If a user is not authorized to view a group, a 404 Not Found error is returned to prevent information leakage.",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Group retrieved successfully"),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Group not found or user is not authorized to view it",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @GetMapping("/{id}")
+  public SuccessResponseDTO<GroupResponseDTO> getGroupById(
+    @PathVariable String id,
+    @CurrentUser User user
+  ) {
+    return SuccessResponseDTO.<GroupResponseDTO>builder()
+      .status(200)
+      .message("Group retrieved successfully")
+      .data(groupsService.getGroupById(id, user))
+      .build();
+  }
+
   @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Create new group (for INSTRUCTOR only)",

@@ -103,6 +103,32 @@ public class GroupService {
     return groupsPage.map(groupMapper::toGroupResponseDTO);
   }
 
+  public GroupResponseDTO getGroupById(String id, User currentUser) {
+    Group group = groupsRepository
+      .findOne(
+        GroupsSpecification.builder()
+          .withId(id)
+          .<GroupsSpecification>conditionally(
+            currentUser.getAccount().getRole() == Role.STUDENT,
+            spec -> spec.joinedByOrPublicOnly(currentUser.getId())
+          )
+          .<GroupsSpecification>conditionally(
+            currentUser.getAccount().getRole() == Role.INSTRUCTOR,
+            spec -> spec.ownedByOrPublicOnly(currentUser.getId())
+          )
+          .notDeleted()
+          .build()
+      )
+      .orElseThrow(GroupNotFoundException::new);
+    GroupResponseDTO responseDTO = groupMapper.toGroupResponseDTO(group);
+
+    if (currentUser.getAccount().getRole().equals(Role.STUDENT)) {
+      responseDTO.setJoined(group.getStudents().contains(currentUser));
+    }
+
+    return responseDTO;
+  }
+
   @Transactional
   public GroupResponseDTO addStudentsToGroup(String groupId, List<String> studentIds) {
     Group group = groupsRepository.findGroupById(groupId).orElseThrow(GroupNotFoundException::new);
