@@ -90,7 +90,7 @@ public class SubmissionsController {
     }
   )
   @PostMapping
-  @VerifyTurnstile
+  //  @VerifyTurnstile
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<SubmissionResponseDTO> createSubmissionBase64(
     @RequestBody SubmissionRequest request,

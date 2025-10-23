@@ -90,6 +90,10 @@ public class SubmissionsService {
       .languageCode(request.getLanguageCode())
       .time(null)
       .memory(null)
+      .passedTestCases(0)
+      .totalTestCases(testCases.size())
+      .isAccepted(false)
+      .score(0.0)
       .build();
     submission = submissionsRepository.save(submission);
 
