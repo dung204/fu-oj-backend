@@ -39,6 +39,9 @@ public class Group extends BaseEntity {
   @Column
   private String description;
 
+  @Column
+  private Boolean isPublic;
+
   @ManyToMany
   @JoinTable(
     name = "group_students",

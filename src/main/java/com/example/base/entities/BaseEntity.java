@@ -1,11 +1,6 @@
 package com.example.base.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.EntityListeners;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.*;
 import java.time.Instant;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,7 +20,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  *   <li>Automatic audit trail with creation and modification timestamps</li>
  *   <li>Soft delete support through {@code deletedTimestamp} field</li>
  * </ul>
- *
  */
 @SuperBuilder
 @NoArgsConstructor
@@ -48,4 +42,12 @@ public class BaseEntity {
 
   @Column(nullable = true)
   protected Instant deletedTimestamp;
+
+  public void softDelete() {
+    this.deletedTimestamp = Instant.now();
+  }
+
+  public boolean isDelete() {
+    return this.deletedTimestamp != null;
+  }
 }
