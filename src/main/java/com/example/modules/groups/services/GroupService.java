@@ -1,8 +1,12 @@
 package com.example.modules.groups.services;
 
 import com.example.modules.auth.enums.Role;
+import com.example.modules.exercises.dtos.ExerciseQueryDTO;
+import com.example.modules.exercises.dtos.ExerciseResponseDTO;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
+import com.example.modules.exercises.utils.ExerciseMapper;
+import com.example.modules.exercises.utils.ExercisesSpecification;
 import com.example.modules.groups.dtos.GroupRequestDTO;
 import com.example.modules.groups.dtos.GroupResponseDTO;
 import com.example.modules.groups.dtos.GroupUpdateRequestDTO;
@@ -14,8 +18,12 @@ import com.example.modules.groups.exeptions.GroupNotFoundException;
 import com.example.modules.groups.repositories.GroupsRepository;
 import com.example.modules.groups.utils.GroupMapper;
 import com.example.modules.groups.utils.GroupsSpecification;
+import com.example.modules.users.dtos.StudentsSearchDTO;
+import com.example.modules.users.dtos.UserProfileDTO;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.repositories.UsersRepository;
+import com.example.modules.users.utils.UserMapper;
+import com.example.modules.users.utils.UsersSpecification;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,6 +47,8 @@ public class GroupService {
   private final UsersRepository usersRepository;
   private final GroupMapper groupMapper;
   private final ExercisesRepository exercisesRepository;
+  private final UserMapper userMapper;
+  private final ExerciseMapper exerciseMapper;
 
   public Page<GroupResponseDTO> getGroups(User currentUser, GroupsSearchDTO groupsSearchDTO) {
     Page<Group> groupsPage = null;
@@ -141,13 +151,25 @@ public class GroupService {
     return groupMapper.toGroupResponseDTO(group);
   }
 
-  public List<User> getStudentsByGroupId(String groupId) {
-    Group group = groupsRepository.findGroupById(groupId).orElseThrow(GroupNotFoundException::new);
-    List<User> students = group.getStudents();
-    if (students == null) {
-      students = new ArrayList<>();
-    }
-    return students;
+  public Page<UserProfileDTO> getStudentsByGroupId(
+    String groupId,
+    StudentsSearchDTO studentsSearchDTO,
+    User currentUser
+  ) {
+    // If the group is not found or currentUser does not have access to the group,
+    // throw a 404 Not Found
+    getGroupById(groupId, currentUser);
+
+    return usersRepository
+      .findAll(
+        UsersSpecification.builder()
+          .inGroup(groupId)
+          .containsFullNameOrContainsRollNumberOrContainsEmail(studentsSearchDTO.getQuery())
+          .notDeleted()
+          .build(),
+        studentsSearchDTO.toPageRequest()
+      )
+      .map(userMapper::toUserProfileDTO);
   }
 
   @Transactional
@@ -177,13 +199,23 @@ public class GroupService {
     return groupMapper.toGroupResponseDTO(group);
   }
 
-  public List<Exercise> getExerciseByGroupId(String groupId) {
-    Group group = groupsRepository.findGroupById(groupId).orElseThrow(GroupNotFoundException::new);
-    List<Exercise> exercises = group.getExercises();
-    if (exercises == null) {
-      exercises = new ArrayList<>();
-    }
-    return exercises;
+  public Page<ExerciseResponseDTO> getExercisesByGroupId(
+    String groupId,
+    ExerciseQueryDTO queryDTO,
+    User currentUser
+  ) {
+    getGroupById(groupId, currentUser);
+
+    return exercisesRepository
+      .findAll(
+        ExercisesSpecification.builder()
+          .withGroupId(groupId)
+          .containsCodeOrContainsTitle(queryDTO.getQuery())
+          .hasOneOfTopics(queryDTO.getTopic())
+          .build(),
+        queryDTO.toPageRequest()
+      )
+      .map(exerciseMapper::toExerciseResponseDTOWithPrivateTestCasesHidden);
   }
 
   @Transactional

@@ -2,10 +2,8 @@ package com.example.modules.exercises.utils;
 
 import com.example.base.utils.SpecificationBuilder;
 import com.example.modules.exercises.entities.Exercise;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Join;
-import java.util.List;
-import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
+import java.util.Collection;
 
 public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
 
@@ -45,60 +43,33 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
     return this;
   }
 
-  public static Specification<Exercise> buildOrFilters(
-    String code,
-    String title,
-    List<String> topicIds,
-    String groupId
-  ) {
-    return (root, query, cb) -> {
-      var searchPredicates = cb.disjunction(); // OR cho các điều kiện tìm kiếm
-      boolean hasSearchCriteria = false;
+  public ExercisesSpecification containsCodeOrContainsTitle(String query) {
+    if (query != null && !query.isEmpty()) {
+      specifications.add((root, criteriaQuery, criteriaBuilder) -> {
+        String pattern = "%" + query.toLowerCase() + "%";
 
-      if (code != null && !code.isEmpty()) {
-        searchPredicates
-          .getExpressions()
-          .add(cb.like(cb.lower(root.get("code")), "%" + code.toLowerCase() + "%"));
-        hasSearchCriteria = true;
-      }
-
-      if (title != null && !title.isEmpty()) {
-        searchPredicates
-          .getExpressions()
-          .add(cb.like(cb.lower(root.get("title")), "%" + title.toLowerCase() + "%"));
-        hasSearchCriteria = true;
-      }
-
-      if (groupId != null) {
-        Join<Object, Object> groupJoin = root.join(
-          "groups",
-          jakarta.persistence.criteria.JoinType.LEFT
+        Predicate codePredicate = criteriaBuilder.like(
+          criteriaBuilder.lower(root.get("code")),
+          pattern
         );
-        searchPredicates.getExpressions().add(cb.equal(groupJoin.get("id"), groupId));
-        hasSearchCriteria = true;
-      }
-
-      if (topicIds != null && !topicIds.isEmpty()) {
-        Join<Object, Object> topicJoin = root.join(
-          "topics",
-          jakarta.persistence.criteria.JoinType.LEFT
+        Predicate titlePredicate = criteriaBuilder.like(
+          criteriaBuilder.lower(root.get("title")),
+          pattern
         );
-        CriteriaBuilder.In<Object> inClause = cb.in(topicJoin.get("id"));
-        topicIds.forEach(inClause::value);
-        searchPredicates.getExpressions().add(inClause);
-        hasSearchCriteria = true;
-      }
 
-      // Luôn filter deletedTimestamp == null và kết hợp với các điều kiện tìm kiếm bằng AND
-      var notDeletedPredicate = cb.isNull(root.get("deletedTimestamp"));
+        return criteriaBuilder.or(codePredicate, titlePredicate);
+      });
+    }
+    return this;
+  }
 
-      if (hasSearchCriteria) {
-        // (code LIKE ... OR title LIKE ... OR ...) AND deletedTimestamp == null
-        return cb.and(searchPredicates, notDeletedPredicate);
-      } else {
-        // Nếu không có filter nào, chỉ trả về exercise chưa bị xóa
-        return notDeletedPredicate;
-      }
-    };
+  public ExercisesSpecification hasOneOfTopics(Collection<String> topicIds) {
+    if (topicIds != null && !topicIds.isEmpty()) {
+      specifications.add((root, query, criteriaBuilder) -> {
+        query.distinct(true);
+        return root.join("topics").get("id").in(topicIds);
+      });
+    }
+    return this;
   }
 }

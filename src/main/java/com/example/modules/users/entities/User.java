@@ -3,6 +3,7 @@ package com.example.modules.users.entities;
 import com.example.base.entities.BaseEntity;
 import com.example.modules.auth.entities.Account;
 import com.example.modules.certifications.entities.Certification;
+import com.example.modules.groups.entities.Group;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,7 +28,7 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "users")
 public class User extends BaseEntity {
 
-  @Column
+  @Column(unique = true)
   private String rollNumber;
 
   @Column
@@ -48,6 +49,9 @@ public class User extends BaseEntity {
   @OneToOne(cascade = CascadeType.ALL)
   @JoinColumn(name = "account_id", nullable = false)
   private Account account;
+
+  @ManyToMany(mappedBy = "students")
+  private List<Group> joinedGroups;
 
   @ManyToMany
   @JoinTable(

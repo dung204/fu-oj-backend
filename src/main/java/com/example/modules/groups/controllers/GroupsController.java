@@ -7,16 +7,18 @@ import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.AllowRoles;
 import com.example.modules.auth.annotations.CurrentUser;
 import com.example.modules.auth.enums.Role;
-import com.example.modules.exercises.entities.Exercise;
+import com.example.modules.exercises.dtos.ExerciseQueryDTO;
+import com.example.modules.exercises.dtos.ExerciseResponseDTO;
 import com.example.modules.groups.dtos.*;
 import com.example.modules.groups.services.GroupService;
+import com.example.modules.users.dtos.StudentsSearchDTO;
+import com.example.modules.users.dtos.UserProfileDTO;
 import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
@@ -237,10 +239,10 @@ public class GroupsController {
       .build();
   }
 
-  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Get exercises by group ID",
-    description = "Retrieve all exercises that belong to a specific group using the group ID.",
+    description = "Retrieve all exercises that belong to a specific group using the group ID.\n\n" +
+      "The access to the group is the same as in the get group by ID endpoint.",
     responses = {
       @ApiResponse(
         responseCode = "200",
@@ -266,11 +268,16 @@ public class GroupsController {
   )
   @GetMapping("/{id}/exercises")
   @ResponseStatus(HttpStatus.OK)
-  public SuccessResponseDTO<List<Exercise>> getExerciseByGroupId(@PathVariable String id) {
-    return SuccessResponseDTO.<List<Exercise>>builder()
+  public PaginatedSuccessResponseDTO<ExerciseResponseDTO> getExerciseByGroupId(
+    @PathVariable String id,
+    @ParameterObject @Valid ExerciseQueryDTO exerciseQueryDTO,
+    @CurrentUser User currentUser
+  ) {
+    return PaginatedSuccessResponseDTO.<ExerciseResponseDTO>builder()
       .status(200)
-      .message("Get exercise by id successfully")
-      .data(groupsService.getExerciseByGroupId(id))
+      .message("Get exercises by group ID successfully")
+      .page(groupsService.getExercisesByGroupId(id, exerciseQueryDTO, currentUser))
+      .filters(exerciseQueryDTO.getFilters())
       .build();
   }
 
@@ -307,10 +314,10 @@ public class GroupsController {
       .build();
   }
 
-  @AllowRoles(Role.INSTRUCTOR)
   @Operation(
     summary = "Get students by group ID",
-    description = "Retrieve all students that belong to a specific group using the group ID.",
+    description = "Retrieve all students that belong to a specific group using the group ID.\n\n" +
+      "The access to the group is the same as in the get group by ID endpoint.",
     responses = {
       @ApiResponse(
         responseCode = "200",
@@ -328,7 +335,7 @@ public class GroupsController {
       ),
       @ApiResponse(
         responseCode = "404",
-        description = "Group not found or no students available",
+        description = "Group not found or user is not authorized to access the group",
         content = @Content
       ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
@@ -336,11 +343,16 @@ public class GroupsController {
   )
   @GetMapping("/{id}/students")
   @ResponseStatus(HttpStatus.OK)
-  public SuccessResponseDTO<List<User>> getStudentsByGroupId(@PathVariable String id) {
-    return SuccessResponseDTO.<List<User>>builder()
+  public PaginatedSuccessResponseDTO<UserProfileDTO> getStudentsByGroupId(
+    @PathVariable String id,
+    @ParameterObject @Valid StudentsSearchDTO studentsSearchDTO,
+    @CurrentUser User currentUser
+  ) {
+    return PaginatedSuccessResponseDTO.<UserProfileDTO>builder()
       .status(200)
       .message("Get students by groupId successfully")
-      .data(groupsService.getStudentsByGroupId(id))
+      .page(groupsService.getStudentsByGroupId(id, studentsSearchDTO, currentUser))
+      .filters(studentsSearchDTO.getFilters())
       .build();
   }
 
