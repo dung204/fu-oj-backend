@@ -17,6 +17,12 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class UserProfileDTO extends EntityDTO {
 
+  @Schema(
+    description = "The roll number of the student, `null` for INSTRUCTOR & ADMIN",
+    example = SwaggerExamples.EMAIL
+  )
+  private String rollNumber;
+
   @Schema(description = "The email of the user", example = SwaggerExamples.EMAIL)
   private String email;
 

@@ -12,17 +12,13 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class ExerciseQueryDTO extends PaginatedQueryDTO {
 
-  @Parameter(description = "Filter by exercise code")
-  private String code;
-
-  @Parameter(description = "Filter by exercise title (partial match)")
-  private String title;
+  @Parameter(
+    description = "Filter by exercise code (partial match) or exercise title (partial match)"
+  )
+  private String query;
 
   @Parameter(description = "Filter by topic ID")
-  private List<String> topicIds;
-
-  @Parameter(description = "Filter by group ID - get exercises of a specific group")
-  private String groupId;
+  private List<String> topic;
 
   @Parameter(
     description = "Sorting fields. Allowed: code, title, maxSubmissions, createdTimestamp, updatedTimestamp"

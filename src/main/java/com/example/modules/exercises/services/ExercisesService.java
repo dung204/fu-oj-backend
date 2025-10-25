@@ -118,27 +118,18 @@ public class ExercisesService {
   /**
    * Lấy danh sách exercises với pagination và filter
    */
-  public PaginatedSuccessResponseDTO<ExerciseResponseDTO> getExercises(ExerciseQueryDTO query) {
-    Specification<Exercise> spec = ExercisesSpecification.buildOrFilters(
-      query.getCode(),
-      query.getTitle(),
-      query.getTopicIds(),
-      query.getGroupId()
+  public Page<ExerciseResponseDTO> getExercises(ExerciseQueryDTO dto) {
+    Page<Exercise> exercisePage = exercisesRepository.findAll(
+      ExercisesSpecification.builder()
+        .containsCodeOrContainsTitle(dto.getQuery())
+        .hasOneOfTopics(dto.getTopic())
+        .build(),
+      dto.toPageRequest()
     );
-
-    Page<Exercise> exercisePage = exercisesRepository.findAll(spec, query.toPageRequest());
     log.info("Found {} exercises", exercisePage.getTotalElements());
 
     // Map to DTO
-    Page<ExerciseResponseDTO> dtoPage = exercisePage.map(
-      exerciseMapper::toExerciseResponseDTOWithPrivateTestCasesHidden
-    );
-
-    return PaginatedSuccessResponseDTO.<ExerciseResponseDTO>builder()
-      .message("Exercises retrieved successfully")
-      .page(dtoPage)
-      .filters(query.getFilters())
-      .build();
+    return exercisePage.map(exerciseMapper::toExerciseResponseDTOWithPrivateTestCasesHidden);
   }
 
   /**

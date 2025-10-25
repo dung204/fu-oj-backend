@@ -44,7 +44,11 @@ public class ExercisesController {
   public PaginatedSuccessResponseDTO<ExerciseResponseDTO> getExercises(
     @ParameterObject @Valid ExerciseQueryDTO query
   ) {
-    return exercisesService.getExercises(query);
+    return PaginatedSuccessResponseDTO.<ExerciseResponseDTO>builder()
+      .message("Exercises retrieved successfully")
+      .page(exercisesService.getExercises(query))
+      .filters(query.getFilters())
+      .build();
   }
 
   @Operation(
