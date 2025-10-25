@@ -63,7 +63,7 @@ public class SubmissionsController {
       .build();
   }
 
-  @AllowRoles(Role.STUDENT)
+  //  @AllowRoles(Role.STUDENT)
   @Operation(
     summary = "Create a new submission with base64 encoded source code (for STUDENT only)",
     responses = {
@@ -90,7 +90,7 @@ public class SubmissionsController {
     }
   )
   @PostMapping
-  @VerifyTurnstile
+  //  @VerifyTurnstile
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<SubmissionResponseDTO> createSubmissionBase64(
     @RequestBody SubmissionRequest request,
