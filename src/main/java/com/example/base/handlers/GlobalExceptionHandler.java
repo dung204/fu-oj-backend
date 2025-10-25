@@ -114,12 +114,6 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorResponseDTO> handleHttpException(ResponseStatusException e) {
     if (e.getStatusCode().value() >= 500) {
       log.error("Unknown error: {}", e);
-      return ResponseEntity.status(e.getStatusCode()).body(
-        ErrorResponseDTO.builder()
-          .status(e.getStatusCode().value())
-          .message("Unknown error")
-          .build()
-      );
     }
 
     return ResponseEntity.status(e.getStatusCode()).body(
@@ -133,7 +127,7 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
       ErrorResponseDTO.builder()
         .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-        .message("Unknown error")
+        .message(e.getMessage())
         .build()
     );
   }
