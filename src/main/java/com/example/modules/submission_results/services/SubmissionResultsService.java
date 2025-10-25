@@ -141,16 +141,13 @@ public class SubmissionResultsService {
   }
 
   /**
-   * Part 2: Tìm các Submission chưa có điểm (score = 0 hoặc null)
+   * Part 2: Tìm các Submission chưa có điểm (score is null)
    * và đã hoàn thành tất cả test cases → tính điểm
    */
   private void updateSubmissionsWithoutScore() {
-    // Tìm các submission chưa có điểm (score = 0 hoặc null)
+    // Tìm các submission chưa có điểm (score is null)
     List<Submission> submissionsWithoutScore = submissionsRepository.findAll((root, query, cb) ->
-      cb.and(
-        cb.or(cb.isNull(root.get("score")), cb.equal(root.get("score"), 0.0)),
-        cb.isNull(root.get("deletedTimestamp"))
-      )
+      cb.and(cb.isNull(root.get("score")), cb.isNull(root.get("deletedTimestamp")))
     );
 
     if (submissionsWithoutScore.isEmpty()) {
@@ -219,8 +216,8 @@ public class SubmissionResultsService {
           score
         );
 
-        // Cập nhật tổng điểm user
-        scoresService.updateUserTotalScore(submission.getUser().getId());
+        // Cập nhật điểm user (cộng dần)
+        scoresService.updateUserScoreBySubmission(submission);
       } catch (Exception e) {
         log.error("Error updating score for submission {}", submission.getId(), e);
       }

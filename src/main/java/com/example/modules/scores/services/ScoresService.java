@@ -1,8 +1,12 @@
 package com.example.modules.scores.services;
 
 import com.example.modules.exercises.enums.Difficulty;
+import com.example.modules.scores.dtos.ScoreResponseDTO;
+import com.example.modules.scores.dtos.ScoresSearchDTO;
 import com.example.modules.scores.entities.Score;
 import com.example.modules.scores.repositories.ScoresRepository;
+import com.example.modules.scores.utils.ScoresMapper;
+import com.example.modules.scores.utils.ScoresSpecification;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.users.entities.User;
@@ -13,6 +17,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +29,30 @@ public class ScoresService {
   private final ScoresRepository scoresRepository;
   private final SubmissionsRepository submissionsRepository;
   private final UsersRepository usersRepository;
+  private final ScoresMapper scoresMapper;
+
+  /**
+   * Lấy tất cả scores với pagination và filter
+   *
+   * @param scoresSearchDTO DTO chứa các tham số tìm kiếm và pagination
+   * @return Page of ScoreResponseDTO
+   */
+  public Page<ScoreResponseDTO> getAllScores(ScoresSearchDTO scoresSearchDTO) {
+    log.info("Lấy danh sách scores với filter: {}", scoresSearchDTO);
+
+    return scoresRepository
+      .findAll(
+        ScoresSpecification.builder()
+          .withUserId(scoresSearchDTO.getUserId())
+          .withUserEmail(scoresSearchDTO.getUserEmail())
+          .withMinScore(scoresSearchDTO.getMinScore())
+          .withMaxScore(scoresSearchDTO.getMaxScore())
+          .notDeleted()
+          .build(),
+        scoresSearchDTO.toPageRequest()
+      )
+      .map(scoresMapper::toScoreResponseDTO);
+  }
 
   /**
    * Tính điểm cho 1 submission
@@ -89,14 +118,136 @@ public class ScoresService {
   }
 
   /**
-   * Cập nhật tổng điểm cho User
+   * Cập nhật điểm cho User dựa trên submission mới (cộng dần)
+   * Tổng điểm User = Tổng điểm cao nhất mỗi bài
+   *
+   * @param newSubmission Submission vừa hoàn thành
+   */
+  @Transactional
+  public void updateUserScoreBySubmission(Submission newSubmission) {
+    String userId = newSubmission.getUser().getId();
+    String exerciseId = newSubmission.getExercise().getId();
+    double newScore = newSubmission.getScore();
+    boolean isNewAccepted = newSubmission.getIsAccepted();
+
+    log.info(
+      "Cập nhật điểm cho user {} với submission mới (exercise: {}, score: {}, AC: {})",
+      userId,
+      exerciseId,
+      newScore,
+      isNewAccepted
+    );
+
+    // 1. Lấy hoặc tạo Score cho user
+    Score score = scoresRepository
+      .findByUserId(userId)
+      .orElseGet(() ->
+        Score.builder()
+          .user(newSubmission.getUser())
+          .totalScore(0.0)
+          .solvedEasy(0)
+          .solvedMedium(0)
+          .solvedHard(0)
+          .build()
+      );
+
+    // 2. Lấy tất cả submission CŨ của exercise này (không bao gồm submission hiện tại)
+    List<Submission> previousSubmissions = submissionsRepository.findAll((root, query, cb) ->
+      cb.and(
+        cb.equal(root.get("user").get("id"), userId),
+        cb.equal(root.get("exercise").get("id"), exerciseId),
+        cb.notEqual(root.get("id"), newSubmission.getId()),
+        cb.isNull(root.get("deletedTimestamp"))
+      )
+    );
+
+    // 3. Tính toán cập nhật điểm
+    if (previousSubmissions.isEmpty()) {
+      // CASE 1: Lần đầu làm bài này
+      log.info("Lần đầu làm bài {} -> cộng {} điểm", exerciseId, newScore);
+      score.setTotalScore(score.getTotalScore() + newScore);
+
+      // Nếu AC thì tăng solved count
+      if (isNewAccepted) {
+        incrementSolvedCount(score, newSubmission.getExercise().getDifficulty());
+      }
+    } else {
+      // CASE 2: Đã làm bài này rồi
+      // Lấy điểm cao nhất và trạng thái AC của các submission cũ
+      double oldHighestScore = previousSubmissions
+        .stream()
+        .mapToDouble(Submission::getScore)
+        .max()
+        .orElse(0.0);
+
+      boolean wasAcceptedBefore = previousSubmissions.stream().anyMatch(Submission::getIsAccepted);
+
+      log.info(
+        "Đã làm bài {} trước đó - điểm cao nhất cũ: {}, đã AC: {}",
+        exerciseId,
+        oldHighestScore,
+        wasAcceptedBefore
+      );
+
+      // Nếu điểm mới cao hơn điểm cũ -> cộng thêm phần chênh lệch
+      if (newScore > oldHighestScore) {
+        double scoreDiff = newScore - oldHighestScore;
+        log.info("Điểm mới cao hơn -> cộng thêm {} điểm", scoreDiff);
+        score.setTotalScore(score.getTotalScore() + scoreDiff);
+      }
+
+      // Nếu chưa từng AC mà bây giờ AC -> tăng solved count
+      if (!wasAcceptedBefore && isNewAccepted) {
+        log.info("Lần đầu AC bài {} -> tăng solved count", exerciseId);
+        incrementSolvedCount(score, newSubmission.getExercise().getDifficulty());
+      }
+    }
+
+    // 4. Lưu Score
+    scoresRepository.save(score);
+
+    log.info(
+      "Đã cập nhật điểm cho user {}: totalScore={}, easy={}, medium={}, hard={}",
+      userId,
+      score.getTotalScore(),
+      score.getSolvedEasy(),
+      score.getSolvedMedium(),
+      score.getSolvedHard()
+    );
+  }
+
+  /**
+   * Tăng solved count theo độ khó
+   */
+  private void incrementSolvedCount(Score score, Difficulty difficulty) {
+    switch (difficulty) {
+      case EASY -> score.setSolvedEasy(score.getSolvedEasy() + 1);
+      case MEDIUM -> score.setSolvedMedium(score.getSolvedMedium() + 1);
+      case HARD -> score.setSolvedHard(score.getSolvedHard() + 1);
+    }
+    log.info("Tăng solved {} -> {}", difficulty, getSolvedCountByDifficulty(score, difficulty));
+  }
+
+  /**
+   * Lấy solved count theo độ khó
+   */
+  private int getSolvedCountByDifficulty(Score score, Difficulty difficulty) {
+    return switch (difficulty) {
+      case EASY -> score.getSolvedEasy();
+      case MEDIUM -> score.getSolvedMedium();
+      case HARD -> score.getSolvedHard();
+    };
+  }
+
+  /**
+   * Tính toán lại toàn bộ điểm cho User (dùng khi cần recalculate)
    * Tổng điểm User = Tổng điểm cao nhất mỗi bài
    *
    * @param userId ID của user
    */
   @Transactional
-  public void updateUserTotalScore(String userId) {
-    log.info("Cập nhật tổng điểm cho user {}", userId);
+  public void recalculateUserTotalScore(String userId) {
+    log.info("Tính toán lại toàn bộ điểm cho user {}", userId);
 
     // 1. Lấy User
     User user = usersRepository.findById(userId).orElseThrow(() -> new UserNotFoundException());
@@ -176,7 +327,7 @@ public class ScoresService {
     scoresRepository.save(score);
 
     log.info(
-      "Đã cập nhật điểm cho user {}: totalScore={}, easy={}, medium={}, hard={}",
+      "Đã tính toán lại điểm cho user {}: totalScore={}, easy={}, medium={}, hard={}",
       userId,
       totalScore,
       solvedEasy,

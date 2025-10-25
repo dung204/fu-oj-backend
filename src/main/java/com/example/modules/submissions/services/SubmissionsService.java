@@ -93,7 +93,7 @@ public class SubmissionsService {
       .passedTestCases(0)
       .totalTestCases(testCases.size())
       .isAccepted(false)
-      .score(0.0)
+      .score(null)
       .build();
     submission = submissionsRepository.save(submission);
 
