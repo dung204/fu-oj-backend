@@ -92,6 +92,12 @@ public class ScoresService {
       log.info("Bonus +5: Không có Wrong Answer cho submission {}", submission.getId());
     }
 
+    // tôi nghĩ là bonus thêm nữa: +10 nếu thời gian submit nhỏ hơn thời gian yêu cầu của đề bài
+    // if(submission.getTime() < submission.getExercise().get)) {
+    //   bonus += 10;
+    //   log.info("Bonus +10: Thời gian submit nhỏ hơn thời gian yêu cầu của đề bài cho submission {}", submission.getId());
+    // }
+
     // 4. Tính finalScore
     double finalScore = baseScore * accuracy + bonus;
 
