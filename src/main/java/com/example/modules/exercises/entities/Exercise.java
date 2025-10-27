@@ -32,6 +32,8 @@ public class Exercise extends BaseEntity {
   @Column(nullable = false)
   private Integer maxSubmissions;
 
+  private Double timeLimit; // in seconds
+
   @Column(
     nullable = false,
     columnDefinition = "varchar(255) default 'EASY' check (difficulty in ('EASY','MEDIUM','HARD'))"

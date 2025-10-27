@@ -66,6 +66,8 @@ public class SubmissionResultsService {
         // Gọi Judge0 để lấy kết quả
         Judge0SubmissionResponseDTO response = judge0Service.getSubmission(sr.getToken());
 
+        log.info("Submission time: {}", response.getTime());
+
         if (response == null || response.getStatus() == null) {
           log.warn("No result returned for token: {}", sr.getToken());
           continue;
@@ -196,10 +198,20 @@ public class SubmissionResultsService {
           .filter(sr -> String.valueOf(Judge0Status.ACCEPTED).equals(sr.getVerdict()))
           .count();
 
+        // calculate time average base on time of all submission results
+        Double averageTime = results
+          .stream()
+          .map(SubmissionResult::getTime)
+          .filter(time -> time != null)
+          .mapToDouble(time -> Double.parseDouble(time))
+          .average()
+          .orElse(0.0);
+
         // Cập nhật submission
         submission.setPassedTestCases((int) passedCount);
         submission.setTotalTestCases(results.size());
         submission.setIsAccepted(passedCount == results.size());
+        submission.setTime(String.valueOf(averageTime));
 
         // Tính điểm
         double score = scoresService.calculateSubmissionScore(submission);
