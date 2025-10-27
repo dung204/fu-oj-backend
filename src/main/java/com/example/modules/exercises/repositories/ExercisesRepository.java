@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ExercisesRepository
-  extends JpaRepository<Exercise, String>, JpaSpecificationExecutor<Exercise> {}
+  extends JpaRepository<Exercise, String>, JpaSpecificationExecutor<Exercise> {
+  Exercise findExerciseById(String id);
+}
