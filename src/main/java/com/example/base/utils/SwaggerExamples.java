@@ -15,7 +15,11 @@ public class SwaggerExamples {
   public static final String FIRST_NAME = "John";
   public static final String LAST_NAME = "Doe";
   public static final String URL = "https://example.com";
+  public static final String GROUP_NAME = "group example name";
+  public static final String DESCRIPTION = "description example";
+  public static final String OWNER_ID = "01098e6a-c05f-46f4-9c57-95a922bf24dd";
+  public static final String PUBLIC = "true";
   public static final String TOPIC_NAME = "topic name";
   public static final String TITLE = "title";
-  public static final String DESCRIPTION = "description";
+  public static final String JOIN_CODE = "abcd1234";
 }

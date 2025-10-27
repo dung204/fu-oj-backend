@@ -63,7 +63,7 @@ public class SubmissionsController {
       .build();
   }
 
-  @AllowRoles(Role.STUDENT)
+  //  @AllowRoles(Role.STUDENT)
   @Operation(
     summary = "Create a new submission with base64 encoded source code (for STUDENT only)",
     responses = {
