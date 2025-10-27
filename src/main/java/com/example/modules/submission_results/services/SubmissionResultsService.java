@@ -207,11 +207,21 @@ public class SubmissionResultsService {
           .average()
           .orElse(0.0);
 
+        // caculate average memory of all submission results
+        Double averageMemory = results
+          .stream()
+          .map(SubmissionResult::getMemory)
+          .filter(memory -> memory != null)
+          .mapToDouble(time -> Double.parseDouble(time))
+          .average()
+          .orElse(0.0);
+
         // Cập nhật submission
         submission.setPassedTestCases((int) passedCount);
         submission.setTotalTestCases(results.size());
         submission.setIsAccepted(passedCount == results.size());
         submission.setTime(String.valueOf(averageTime));
+        submission.setMemory(String.valueOf(averageMemory));
 
         // Tính điểm
         double score = scoresService.calculateSubmissionScore(submission);
