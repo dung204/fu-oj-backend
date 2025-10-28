@@ -50,6 +50,14 @@ public class Submission extends BaseEntity {
   @Column
   private String memory;
 
+  private Integer passedTestCases;
+
+  private Integer totalTestCases;
+
+  private Boolean isAccepted;
+
+  private Double score;
+
   @OneToMany(mappedBy = "submission")
   private List<SubmissionResult> submissionResults;
 }
