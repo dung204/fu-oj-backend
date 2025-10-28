@@ -90,7 +90,7 @@ public class ExercisesService {
       log.info("Created {} test cases for exercise: {}", testCases.size(), savedExercise.getId());
     }
 
-    return exerciseMapper.toExerciseResponseDTOWithPrivateTestCasesHidden(savedExercise);
+    return exerciseMapper.toExerciseResponseDTOWithAllTestCases(savedExercise);
   }
 
   /**

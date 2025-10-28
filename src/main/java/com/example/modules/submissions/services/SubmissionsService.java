@@ -15,9 +15,12 @@ import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
 import com.example.modules.submissions.dtos.SubmissionResponseDTO;
+import com.example.modules.submissions.dtos.SubmissionStatisticsRequestDTO;
+import com.example.modules.submissions.dtos.SubmissionStatisticsResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionsSearchDTO;
 import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.example.modules.submissions.entities.Submission;
+import com.example.modules.submissions.enums.Verdict;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.submissions.utils.SubmissionMapper;
 import com.example.modules.submissions.utils.SubmissionResultMapper;
@@ -334,5 +337,126 @@ public class SubmissionsService {
       .stream()
       .map(submissionResultMapper::toSubmissionResultResponseDTO)
       .toList();
+  }
+
+  public SubmissionStatisticsResponseDTO getSubmissionStatistics(
+    SubmissionStatisticsRequestDTO requestDTO
+  ) {
+    return SubmissionStatisticsResponseDTO.builder()
+      .accepted(
+        requestDTO.getStatus() != null &&
+            !requestDTO.getStatus().contains(Verdict.ACCEPTED.getValue())
+          ? 0
+          : submissionsRepository.count(
+            SubmissionsSpecification.builder()
+              .withExerciseId(requestDTO.getExercise())
+              .withStudentId(requestDTO.getStudent())
+              .isOneOfLanguageCodes(requestDTO.getLanguageCode())
+              .isOneOfStatuses(List.of(Verdict.ACCEPTED.getValue()))
+              .build()
+          )
+      )
+      .wrongAnswer(
+        requestDTO.getStatus() != null &&
+            !requestDTO.getStatus().contains(Verdict.WRONG_ANSWER.getValue())
+          ? 0
+          : submissionsRepository.count(
+            SubmissionsSpecification.builder()
+              .withExerciseId(requestDTO.getExercise())
+              .withStudentId(requestDTO.getStudent())
+              .isOneOfLanguageCodes(requestDTO.getLanguageCode())
+              .isOneOfStatuses(List.of(Verdict.WRONG_ANSWER.getValue()))
+              .build()
+          )
+      )
+      .timeLimitExceeded(
+        requestDTO.getStatus() != null &&
+            !requestDTO.getStatus().contains(Verdict.TIME_LIMIT_EXCEEDED.getValue())
+          ? 0
+          : submissionsRepository.count(
+            SubmissionsSpecification.builder()
+              .withExerciseId(requestDTO.getExercise())
+              .withStudentId(requestDTO.getStudent())
+              .isOneOfLanguageCodes(requestDTO.getLanguageCode())
+              .isOneOfStatuses(List.of(Verdict.TIME_LIMIT_EXCEEDED.getValue()))
+              .build()
+          )
+      )
+      .compilationError(
+        requestDTO.getStatus() != null &&
+            !requestDTO.getStatus().contains(Verdict.COMPILATION_ERROR.getValue())
+          ? 0
+          : submissionsRepository.count(
+            SubmissionsSpecification.builder()
+              .withExerciseId(requestDTO.getExercise())
+              .withStudentId(requestDTO.getStudent())
+              .isOneOfLanguageCodes(requestDTO.getLanguageCode())
+              .isOneOfStatuses(List.of(Verdict.COMPILATION_ERROR.getValue()))
+              .build()
+          )
+      )
+      .runtimeError(
+        requestDTO.getStatus() != null &&
+            !requestDTO.getStatus().contains(Verdict.RUNTIME_ERROR.getValue())
+          ? 0
+          : submissionsRepository.count(
+            SubmissionsSpecification.builder()
+              .withExerciseId(requestDTO.getExercise())
+              .withStudentId(requestDTO.getStudent())
+              .isOneOfLanguageCodes(requestDTO.getLanguageCode())
+              .isOneOfStatuses(List.of(Verdict.RUNTIME_ERROR.getValue()))
+              .build()
+          )
+      )
+      .memoryLimitExceeded(
+        requestDTO.getStatus() != null &&
+            !requestDTO.getStatus().contains(Verdict.MEMORY_LIMIT_EXCEEDED.getValue())
+          ? 0
+          : submissionsRepository.count(
+            SubmissionsSpecification.builder()
+              .withExerciseId(requestDTO.getExercise())
+              .withStudentId(requestDTO.getStudent())
+              .isOneOfLanguageCodes(requestDTO.getLanguageCode())
+              .isOneOfStatuses(List.of(Verdict.MEMORY_LIMIT_EXCEEDED.getValue()))
+              .build()
+          )
+      )
+      .returnError(
+        requestDTO.getStatus() != null &&
+            !requestDTO.getStatus().contains(Verdict.RETURN_ERROR.getValue())
+          ? 0
+          : submissionsRepository.count(
+            SubmissionsSpecification.builder()
+              .withExerciseId(requestDTO.getExercise())
+              .withStudentId(requestDTO.getStudent())
+              .isOneOfLanguageCodes(requestDTO.getLanguageCode())
+              .isOneOfStatuses(List.of(Verdict.RETURN_ERROR.getValue()))
+              .build()
+          )
+      )
+      .invalidReturn(
+        requestDTO.getStatus() != null &&
+            !requestDTO.getStatus().contains(Verdict.INVALID_RETURN.getValue())
+          ? 0
+          : submissionsRepository.count(
+            SubmissionsSpecification.builder()
+              .withExerciseId(requestDTO.getExercise())
+              .withStudentId(requestDTO.getStudent())
+              .isOneOfLanguageCodes(requestDTO.getLanguageCode())
+              .isOneOfStatuses(List.of(Verdict.INVALID_RETURN.getValue()))
+              .build()
+          )
+      )
+      .totalCount(
+        submissionsRepository.count(
+          SubmissionsSpecification.builder()
+            .withExerciseId(requestDTO.getExercise())
+            .withStudentId(requestDTO.getStudent())
+            .isOneOfLanguageCodes(requestDTO.getLanguageCode())
+            .isOneOfStatuses(requestDTO.getStatus())
+            .build()
+        )
+      )
+      .build();
   }
 }
