@@ -6,6 +6,8 @@ import com.example.modules.exercises.dtos.ExerciseQueryDTO;
 import com.example.modules.exercises.dtos.ExerciseRequestDTO;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
 import com.example.modules.exercises.entities.Exercise;
+import com.example.modules.exercises.enums.Difficulty;
+import com.example.modules.exercises.enums.Visibility;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.exercises.utils.ExerciseMapper;
 import com.example.modules.exercises.utils.ExercisesSpecification;
@@ -55,6 +57,10 @@ public class ExercisesService {
       .title(request.getTitle())
       .description(request.getDescription())
       .maxSubmissions(request.getMaxSubmissions())
+      .difficulty(Difficulty.valueOf(request.getDifficulty()))
+      .visibility(Visibility.valueOf(request.getVisibility()))
+      .timeLimit(request.getTimeLimit())
+      .memory(request.getMemory())
       .build();
 
     // Gắn topics nếu có
