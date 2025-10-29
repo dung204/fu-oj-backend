@@ -32,6 +32,9 @@ public class BaseEntity {
   @GeneratedValue(strategy = GenerationType.UUID)
   protected String id;
 
+  @Column(name = "created_by", nullable = true)
+  protected String createdBy;
+
   @Column(nullable = false)
   @CreatedDate
   protected Instant createdTimestamp;

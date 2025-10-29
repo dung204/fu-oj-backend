@@ -6,6 +6,8 @@ import com.example.modules.exercises.dtos.ExerciseQueryDTO;
 import com.example.modules.exercises.dtos.ExerciseRequestDTO;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
 import com.example.modules.exercises.entities.Exercise;
+import com.example.modules.exercises.enums.Difficulty;
+import com.example.modules.exercises.enums.Visibility;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.exercises.utils.ExerciseMapper;
 import com.example.modules.exercises.utils.ExercisesSpecification;
@@ -14,6 +16,7 @@ import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.topics.entities.Topic;
 import com.example.modules.topics.repositories.TopicsRepository;
+import com.example.modules.users.entities.User;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +42,7 @@ public class ExercisesService {
    * Tạo mới exercise
    */
   @Transactional
-  public ExerciseResponseDTO createExercise(ExerciseRequestDTO request) {
+  public ExerciseResponseDTO createExercise(ExerciseRequestDTO request, User currentUser) {
     // Kiểm tra code đã tồn tại chưa
     Specification<Exercise> codeSpec = ExercisesSpecification.builder()
       .withCode(request.getCode())
@@ -54,6 +57,10 @@ public class ExercisesService {
       .title(request.getTitle())
       .description(request.getDescription())
       .maxSubmissions(request.getMaxSubmissions())
+      .difficulty(Difficulty.valueOf(request.getDifficulty()))
+      .visibility(Visibility.valueOf(request.getVisibility()))
+      .timeLimit(request.getTimeLimit())
+      .memory(request.getMemory())
       .build();
 
     // Gắn topics nếu có
@@ -67,6 +74,9 @@ public class ExercisesService {
       }
       exercise.setTopics(topics);
     }
+
+    // assign id createdBy
+    exercise.setCreatedBy(currentUser.getId());
 
     Exercise savedExercise = exercisesRepository.save(exercise);
     log.info("Created exercise: {}", savedExercise.getId());
