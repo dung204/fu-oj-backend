@@ -24,8 +24,13 @@ public class ExerciseRequestDTO {
   @NotBlank(message = "Description is required")
   private String description;
 
-  @NotBlank(message = "TimeLimit is required")
+  private String visibility;
+
   private Double timeLimit;
+
+  private Double memory;
+
+  private String difficulty;
 
   @NotNull(message = "Max submissions is required")
   @Min(value = 1, message = "Max submissions must be at least 1")

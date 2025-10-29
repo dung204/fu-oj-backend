@@ -14,6 +14,7 @@ import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.topics.entities.Topic;
 import com.example.modules.topics.repositories.TopicsRepository;
+import com.example.modules.users.entities.User;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +40,7 @@ public class ExercisesService {
    * Tạo mới exercise
    */
   @Transactional
-  public ExerciseResponseDTO createExercise(ExerciseRequestDTO request) {
+  public ExerciseResponseDTO createExercise(ExerciseRequestDTO request, User currentUser) {
     // Kiểm tra code đã tồn tại chưa
     Specification<Exercise> codeSpec = ExercisesSpecification.builder()
       .withCode(request.getCode())
@@ -67,6 +68,9 @@ public class ExercisesService {
       }
       exercise.setTopics(topics);
     }
+
+    // assign id createdBy
+    exercise.setCreatedBy(currentUser.getId());
 
     Exercise savedExercise = exercisesRepository.save(exercise);
     log.info("Created exercise: {}", savedExercise.getId());
