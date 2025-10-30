@@ -1,13 +1,13 @@
 package com.example.modules.submission_results.services;
 
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
-import com.example.modules.Judge0.enums.Judge0Status;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.Judge0.utils.Base64Utils;
 import com.example.modules.scores.services.ScoresService;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
 import com.example.modules.submissions.entities.Submission;
+import com.example.modules.submissions.enums.Verdict;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -50,7 +50,7 @@ public class SubmissionResultsService {
    */
   private void updatePendingSubmissionResults() {
     List<SubmissionResult> pendingResults = submissionResultRepository.findByVerdictIn(
-      List.of(String.valueOf(Judge0Status.IN_QUEUE), String.valueOf(Judge0Status.PROCESSING))
+      List.of(Verdict.IN_QUEUE.getValue(), Verdict.PROCESSING.getValue())
     );
 
     if (pendingResults.isEmpty()) {
@@ -88,29 +88,10 @@ public class SubmissionResultsService {
         String decodedStderr = Base64Utils.decodeBase64Safe(response.getStderr());
 
         // Determine verdict
-        String expected = sr.getTestCase().getOutput() != null
-          ? sr.getTestCase().getOutput().trim()
-          : "";
-        String actual = decodedStdout != null ? decodedStdout.trim() : "";
-
-        String verdict;
-        switch (statusId) {
-          case 3 -> verdict = expected.equals(actual)
-            ? String.valueOf(Judge0Status.ACCEPTED)
-            : String.valueOf(Judge0Status.WRONG_ANSWER);
-          case 4 -> verdict = String.valueOf(Judge0Status.WRONG_ANSWER);
-          case 5 -> verdict = String.valueOf(Judge0Status.TIME_LIMIT_EXCEEDED);
-          case 6 -> verdict = String.valueOf(Judge0Status.COMPILATION_ERROR);
-          case 7, 8, 9, 10, 11, 12 -> verdict = String.valueOf(Judge0Status.RUNTIME_ERROR);
-          case 13 -> verdict = String.valueOf(Judge0Status.INTERNAL_ERROR);
-          case 14 -> verdict = String.valueOf(Judge0Status.EXEC_FORMAT_ERROR);
-          default -> verdict = expected.equals(actual)
-            ? String.valueOf(Judge0Status.ACCEPTED)
-            : String.valueOf(Judge0Status.WRONG_ANSWER);
-        }
+        Verdict verdict = Verdict.getVerdictFromJudge0Response(response);
 
         // Update submission result
-        sr.setVerdict(verdict);
+        sr.setVerdict(verdict.getValue());
         sr.setActualOutput(decodedStdout);
         sr.setStderr(decodedStderr);
         sr.setTime(response.getTime());
@@ -123,7 +104,7 @@ public class SubmissionResultsService {
           "Updated submission result {} - Token: {}, Verdict: {}",
           sr.getId(),
           sr.getToken(),
-          verdict
+          verdict.getValue()
         );
       } catch (Exception e) {
         log.error(
@@ -183,8 +164,8 @@ public class SubmissionResultsService {
           .stream()
           .noneMatch(
             sr ->
-              String.valueOf(Judge0Status.IN_QUEUE).equals(sr.getVerdict()) ||
-              String.valueOf(Judge0Status.PROCESSING).equals(sr.getVerdict())
+              Verdict.IN_QUEUE.getValue().equals(sr.getVerdict()) ||
+              Verdict.PROCESSING.getValue().equals(sr.getVerdict())
           );
 
         if (!allCompleted) {
@@ -195,7 +176,7 @@ public class SubmissionResultsService {
         // Tính passedTestCases
         long passedCount = results
           .stream()
-          .filter(sr -> String.valueOf(Judge0Status.ACCEPTED).equals(sr.getVerdict()))
+          .filter(sr -> Verdict.ACCEPTED.getValue().equals(sr.getVerdict()))
           .count();
 
         // calculate time average base on time of all submission results

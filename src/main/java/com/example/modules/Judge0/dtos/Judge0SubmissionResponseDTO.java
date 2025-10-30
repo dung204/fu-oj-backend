@@ -39,4 +39,7 @@ public class Judge0SubmissionResponseDTO {
 
   @JsonProperty("expected_output")
   private String expectedOutput;
+
+  @JsonProperty("exit_code")
+  private Integer exitCode;
 }

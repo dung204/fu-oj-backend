@@ -2,6 +2,7 @@ package com.example.modules.redis.configs.publishers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
@@ -9,17 +10,19 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SubmissionPublisher {
+public class SubmissionResultUpdatesPublisher {
 
   private final RedisTemplate<String, Object> redisTemplate;
-  private final ChannelTopic submissionResultTopic;
 
-  public void publishSubmissionUpdate(Object message) {
+  @Qualifier("submissionResultUpdatesTopic")
+  private final ChannelTopic submissionResultUpdatesTopic;
+
+  public void publishSubmissionResultUpdate(Object message) {
     try {
-      redisTemplate.convertAndSend(submissionResultTopic.getTopic(), message);
+      redisTemplate.convertAndSend(submissionResultUpdatesTopic.getTopic(), message);
       log.info(
         "Published message to Redis topic [{}]: {}",
-        submissionResultTopic.getTopic(),
+        submissionResultUpdatesTopic.getTopic(),
         message
       );
     } catch (Exception e) {

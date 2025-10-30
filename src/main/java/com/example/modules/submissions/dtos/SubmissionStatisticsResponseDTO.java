@@ -26,11 +26,5 @@ public class SubmissionStatisticsResponseDTO {
   @JsonProperty("MEMORY_LIMIT_EXCEEDED")
   private Long memoryLimitExceeded;
 
-  @JsonProperty("RETURN_ERROR")
-  private Long returnError;
-
-  @JsonProperty("INVALID_RETURN")
-  private Long invalidReturn;
-
   private Long totalCount;
 }

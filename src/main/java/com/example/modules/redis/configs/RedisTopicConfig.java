@@ -8,8 +8,12 @@ import org.springframework.data.redis.listener.ChannelTopic;
 public class RedisTopicConfig {
 
   @Bean
-  public ChannelTopic submissionTopic() {
-    // tên kênh để publish/subcribe
+  ChannelTopic submissionResultUpdatesTopic() {
     return new ChannelTopic("submission-result-updates"); // bắn message về kênh này
+  }
+
+  @Bean
+  ChannelTopic newSubmissionsTopic() {
+    return new ChannelTopic("new-submissions");
   }
 }
