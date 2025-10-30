@@ -4,14 +4,14 @@ import com.example.base.entities.BaseEntity;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.users.entities.User;
 import jakarta.persistence.*;
-import java.time.Instant;
-import java.time.LocalDateTime;
 import lombok.*;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = true, exclude = { "exam", "user", "exercise" })
+@ToString(exclude = { "exam", "user", "exercise" })
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -34,5 +34,4 @@ public class ExamSubmission extends BaseEntity {
   private String submissionId; // FK đến submission hệ thống chấm
 
   private Double score;
-  private Instant createdAt;
 }

@@ -8,4 +8,8 @@ public class ExerciseNotFoundException extends ResponseStatusException {
   public ExerciseNotFoundException() {
     super(HttpStatus.NOT_FOUND, "Exercise not found");
   }
+
+  public ExerciseNotFoundException(String message) {
+    super(HttpStatus.NOT_FOUND, message);
+  }
 }

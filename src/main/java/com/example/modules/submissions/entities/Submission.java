@@ -15,11 +15,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = { "user", "exercise", "submissionResults" })
+@ToString(exclude = { "user", "exercise", "submissionResults" })
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity

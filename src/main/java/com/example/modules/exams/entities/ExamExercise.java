@@ -6,7 +6,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = true, exclude = { "exam", "exercise" })
+@ToString(exclude = { "exam", "exercise" })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

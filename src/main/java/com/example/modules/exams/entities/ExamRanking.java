@@ -10,7 +10,8 @@ import lombok.experimental.SuperBuilder;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = { "exam", "user" })
+@ToString(exclude = { "exam", "user" })
 @Entity
 @Table(name = "exam_rankings")
 public class ExamRanking extends BaseEntity {

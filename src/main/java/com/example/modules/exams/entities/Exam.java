@@ -11,7 +11,11 @@ import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(
+  callSuper = true,
+  exclude = { "group", "examExercises", "examSubmissions", "rankings" }
+)
+@ToString(exclude = { "group", "examExercises", "examSubmissions", "rankings" })
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity

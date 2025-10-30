@@ -122,7 +122,7 @@ public class SubmissionsService {
         .verdict(String.valueOf(Judge0Status.IN_QUEUE))
         .build();
 
-      log.info("Submission {}, result: {} ", i, result.toString());
+      log.info("Submission {}, token: {}, verdict: {}", i, tokens.get(i), Judge0Status.IN_QUEUE);
       submissionResultRepository.save(result);
     }
 
