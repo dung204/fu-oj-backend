@@ -11,11 +11,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
@@ -59,6 +55,10 @@ public class Submission extends BaseEntity {
   private Boolean isAccepted;
 
   private Double score;
+
+  @Column(name = "is_examination", columnDefinition = "BOOLEAN DEFAULT false")
+  @Builder.Default
+  private Boolean isExamination = false;
 
   @OneToMany(mappedBy = "submission")
   private List<SubmissionResult> submissionResults;
