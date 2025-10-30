@@ -12,4 +12,9 @@ public class RedisTopicConfig {
     // tên kênh để publish/subcribe
     return new ChannelTopic("submission-result-updates"); // bắn message về kênh này
   }
+
+  @Bean
+  public ChannelTopic commentsTopic() {
+    return new ChannelTopic("comments-events");
+  }
 }

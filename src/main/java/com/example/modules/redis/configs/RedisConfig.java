@@ -1,5 +1,6 @@
 package com.example.modules.redis.configs;
 
+import com.example.modules.redis.configs.subscribers.CommentSubscriber;
 import com.example.modules.redis.configs.subscribers.SubmissionSubscriber;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,8 @@ public class RedisConfig {
   private final ObjectMapper objectMapper;
   private final SubmissionSubscriber submissionSubscriber;
   private final ChannelTopic submissionTopic;
+  private final CommentSubscriber commentSubscriber;
+  private final ChannelTopic commentsTopic;
 
   @Bean
   JedisConnectionFactory jedisConnectionFactory() {
@@ -62,6 +65,7 @@ public class RedisConfig {
     RedisMessageListenerContainer container = new RedisMessageListenerContainer();
     container.setConnectionFactory(jedisConnectionFactory());
     container.addMessageListener(submissionSubscriber, submissionTopic);
+    container.addMessageListener(commentSubscriber, commentsTopic);
     return container;
   }
 }

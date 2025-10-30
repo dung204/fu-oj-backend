@@ -9,30 +9,25 @@ import com.example.modules.comments.utils.CommentMapper;
 import com.example.modules.comments.utils.CommentsSpecification;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
+import com.example.modules.redis.configs.publishers.CommentPublisher;
+import com.example.modules.redis.event_type.comment.CommentEvent;
+import com.example.modules.redis.event_type.comment.CommentEventType;
 import com.example.modules.users.entities.User;
-import com.example.modules.users.repositories.UsersRepository;
 import java.time.Instant;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class CommentsService implements ICommentsService {
 
   private final CommentsRepository commentsRepository;
   private final ExercisesRepository exercisesRepository;
   private final CommentMapper commentMapper;
-
-  public CommentsService(
-    CommentsRepository commentsRepository,
-    ExercisesRepository exercisesRepository,
-    CommentMapper commentMapper
-  ) {
-    this.commentsRepository = commentsRepository;
-    this.exercisesRepository = exercisesRepository;
-    this.commentMapper = commentMapper;
-  }
+  private final CommentPublisher commentPublisher;
 
   @Override
   public CommentResponseDTO createComment(User user, CommentRequestDTO commentRequestDTO) {
@@ -51,7 +46,20 @@ public class CommentsService implements ICommentsService {
       .content(commentRequestDTO.getContent())
       .build();
     commentsRepository.save(commentCreate);
-    return commentMapper.toCommentResponseDTO(commentCreate);
+    CommentResponseDTO dto = commentMapper.toCommentResponseDTO(commentCreate);
+
+    //publish event to redis
+    commentPublisher.publishCommentEvent(
+      CommentEvent.builder()
+        .type(CommentEventType.CREATED)
+        .exerciseId(dto.getExerciseId())
+        .parentId(dto.getParentId())
+        .commentId(dto.getId())
+        .data(dto)
+        .timestamp(System.currentTimeMillis())
+        .build()
+    );
+    return dto;
   }
 
   @Override
@@ -75,7 +83,20 @@ public class CommentsService implements ICommentsService {
     Comment comment = commentsRepository.findCommentById(commentId);
     comment.setDeletedTimestamp(Instant.now());
     commentsRepository.save(comment);
-    return commentMapper.toCommentResponseDTO(comment);
+    CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
+
+    //publish event to redis
+    commentPublisher.publishCommentEvent(
+      CommentEvent.builder()
+        .type(CommentEventType.DELETED)
+        .exerciseId(dto.getExerciseId())
+        .parentId(dto.getParentId())
+        .commentId(dto.getId())
+        .data(null)
+        .timestamp(System.currentTimeMillis())
+        .build()
+    );
+    return dto;
   }
 
   @Override
@@ -84,7 +105,20 @@ public class CommentsService implements ICommentsService {
     comment.setContent(content);
     comment.setUpdatedTimestamp(Instant.now());
     commentsRepository.save(comment);
-    return commentMapper.toCommentResponseDTO(comment);
+    CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
+
+    //publish event to redis
+    commentPublisher.publishCommentEvent(
+      CommentEvent.builder()
+        .type(CommentEventType.UPDATED)
+        .exerciseId(dto.getExerciseId())
+        .parentId(dto.getParentId())
+        .commentId(dto.getId())
+        .data(dto)
+        .timestamp(System.currentTimeMillis())
+        .build()
+    );
+    return dto;
   }
 
   @Override
@@ -94,9 +128,32 @@ public class CommentsService implements ICommentsService {
     if (comment.getCountReport() == 10) {
       comment.setDeletedTimestamp(Instant.now());
       commentsRepository.save(comment);
-      return commentMapper.toCommentResponseDTO(comment);
+      CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
+      //publish event to redis
+      commentPublisher.publishCommentEvent(
+        CommentEvent.builder()
+          .type(CommentEventType.DELETED)
+          .exerciseId(dto.getExerciseId())
+          .parentId(dto.getParentId())
+          .commentId(dto.getId())
+          .data(null)
+          .timestamp(System.currentTimeMillis())
+          .build()
+      );
     }
     commentsRepository.save(comment);
-    return commentMapper.toCommentResponseDTO(comment);
+    CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
+    //publish event to redis
+    commentPublisher.publishCommentEvent(
+      CommentEvent.builder()
+        .type(CommentEventType.UPDATED)
+        .exerciseId(dto.getExerciseId())
+        .parentId(dto.getParentId())
+        .commentId(dto.getId())
+        .data(dto)
+        .timestamp(System.currentTimeMillis())
+        .build()
+    );
+    return dto;
   }
 }
