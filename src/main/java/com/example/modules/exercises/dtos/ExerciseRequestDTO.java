@@ -1,19 +1,18 @@
 package com.example.modules.exercises.dtos;
 
+import com.example.base.dtos.PaginatedQueryDTO;
 import com.example.modules.test_cases.dtos.TestCaseRequestDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class ExerciseRequestDTO {
+@EqualsAndHashCode(callSuper = true)
+public class ExerciseRequestDTO extends PaginatedQueryDTO {
 
   @NotBlank(message = "Code is required")
   private String code;
