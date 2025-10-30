@@ -30,10 +30,12 @@ import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.users.entities.User;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -52,6 +54,95 @@ public class SubmissionsService {
   private final SubmissionResultMapper submissionResultMapper;
   private final SubmissionLimitService submissionLimitService;
   private final SubmissionMapper submissionMapper;
+
+  @Transactional
+  public Submission createPendingSubmission(SubmissionRequest request, User currentUser) {
+    // Lấy exercise
+    Exercise exercise = exerciseRepository
+      .findById(request.getExerciseId())
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
+
+    // Kiểm tra giới hạn nộp
+    if (exercise.getMaxSubmissions() != 0) {
+      log.info(
+        "Checking submission limit for user {} on exercise {}",
+        currentUser.getId(),
+        exercise.getId()
+      );
+      submissionLimitService.checkAndIncrease(currentUser.getId(), exercise.getId());
+    }
+
+    // Lấy test cases
+    List<TestCase> testCases = testCaseRepository.findAllByExerciseId(exercise.getId());
+    if (testCases.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Exercise has no test cases");
+    }
+
+    Submission submission = Submission.builder()
+      .user(currentUser)
+      .exercise(exercise)
+      .sourceCode(request.getSourceCode())
+      .languageCode(request.getLanguageCode())
+      .totalTestCases(testCases.size())
+      .passedTestCases(0)
+      .isAccepted(false)
+      .score(null)
+      .time(null)
+      .memory(null)
+      .build();
+
+    submission = submissionsRepository.save(submission);
+    log.info("Created PENDING submission {} for user {}", submission.getId(), currentUser.getId());
+    return submission;
+  }
+
+  @Async("submissionExecutor")
+  @Transactional
+  public CompletableFuture<Void> processSubmissionAsync(String submissionId) {
+    log.info("Processing submission {} asynchronously...", submissionId);
+
+    Submission submission = submissionsRepository
+      .findById(submissionId)
+      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Submission not found"));
+
+    List<TestCase> testCases = testCaseRepository.findAllByExerciseId(
+      submission.getExercise().getId()
+    );
+    List<String> testInputs = testCases.stream().map(TestCase::getInput).toList();
+    List<String> expectedOutputs = testCases.stream().map(TestCase::getOutput).toList();
+
+    try {
+      // Cập nhật trạng thái sang RUNNING
+      submissionsRepository.save(submission);
+
+      // Gửi batch lên Judge0
+      List<String> tokens = judge0Service.createBatchSubmissionBase64(
+        submission.getSourceCode(),
+        submission.getLanguageCode(),
+        testInputs,
+        expectedOutputs
+      );
+
+      // Lưu SubmissionResult với verdict = IN_QUEUE
+      for (int i = 0; i < testCases.size(); i++) {
+        SubmissionResult result = SubmissionResult.builder()
+          .submission(submission)
+          .testCase(testCases.get(i))
+          .token(tokens.get(i))
+          .verdict(String.valueOf(Judge0Status.IN_QUEUE))
+          .build();
+        submissionResultRepository.save(result);
+      }
+
+      log.info("Submission {} queued {} test cases to Judge0", submissionId, testCases.size());
+
+      return CompletableFuture.completedFuture(null);
+    } catch (Exception e) {
+      log.error("Error processing submission {}: {}", submissionId, e.getMessage(), e);
+      submissionsRepository.save(submission);
+      return CompletableFuture.failedFuture(e);
+    }
+  }
 
   public Page<SubmissionResponseDTO> getAllSubmissions(SubmissionsSearchDTO submissionsSearchDTO) {
     return submissionsRepository

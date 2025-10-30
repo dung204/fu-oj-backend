@@ -20,7 +20,9 @@ import com.example.modules.submissions.dtos.SubmissionResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionStatisticsRequestDTO;
 import com.example.modules.submissions.dtos.SubmissionStatisticsResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionsSearchDTO;
+import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.services.SubmissionsService;
+import com.example.modules.submissions.utils.SubmissionMapper;
 import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -45,6 +47,7 @@ public class SubmissionsController {
 
   private final SubmissionsService submissionsService;
   private final Judge0Service judge0Service;
+  private final SubmissionMapper submissionMapper;
 
   @Operation(
     summary = "Retrieve all existing submissions",
@@ -101,6 +104,47 @@ public class SubmissionsController {
     return SuccessResponseDTO.<SubmissionResponseDTO>builder()
       .message("Submission created successfully")
       .data(submissionsService.createSubmissionBase64(request, currentUser))
+      .build();
+  }
+
+  @Operation(
+    summary = "Create a new submission use @Async (for STUDENT only)",
+    responses = {
+      @ApiResponse(responseCode = "201", description = "Submission created successfully"),
+      @ApiResponse(
+        responseCode = "400",
+        description = """
+        - Exercise ID is empty or invalid
+        - Source code is empty
+        - Language code is empty or not supported
+        """,
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(
+        responseCode = "403",
+        description = """
+        - User's role is not `STUDENT`
+        - Turnstile token is missing
+        """,
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @PostMapping
+  //  @VerifyTurnstile
+  @ResponseStatus(HttpStatus.CREATED)
+  public SuccessResponseDTO<SubmissionResponseDTO> createSubmissionAsync(
+    @RequestBody SubmissionRequest request,
+    @CurrentUser User currentUser
+  ) {
+    Submission submission = submissionsService.createPendingSubmission(request, currentUser);
+    submissionsService.processSubmissionAsync(submission.getId());
+
+    return SuccessResponseDTO.<SubmissionResponseDTO>builder()
+      .message("Submission accepted, processing asynchronously")
+      .data(submissionMapper.toSubmissionResponseDTO(submission))
       .build();
   }
 
