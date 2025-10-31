@@ -1,5 +1,6 @@
 package com.example.modules.exams.dtos;
 
+import com.example.modules.exams.enums.Status;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
@@ -22,7 +23,7 @@ public class ExamCreateDto {
   @NotBlank(message = "Description is required")
   private String description;
 
-  private String status;
+  private Status status = Status.UPCOMING; // or whatever default value you need
 
   @NotNull(message = "Start time is required")
   private Instant startTime;

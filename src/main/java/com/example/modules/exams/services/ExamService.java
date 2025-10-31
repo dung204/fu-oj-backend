@@ -59,14 +59,7 @@ public class ExamService {
     }
 
     // Parse status
-    Status status = Status.UPCOMING;
-    if (dto.getStatus() != null && !dto.getStatus().trim().isEmpty()) {
-      try {
-        status = Status.valueOf(dto.getStatus().toUpperCase());
-      } catch (IllegalArgumentException e) {
-        log.warn("Invalid status: {}, using default UPCOMING", dto.getStatus());
-      }
-    }
+    Status status = dto.getStatus();
 
     // Tạo exam cho mỗi group
     for (Group group : groups) {

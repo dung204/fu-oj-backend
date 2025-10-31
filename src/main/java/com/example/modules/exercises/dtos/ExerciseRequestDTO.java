@@ -32,7 +32,7 @@ public class ExerciseRequestDTO extends PaginatedQueryDTO {
   private String difficulty;
 
   @NotNull(message = "Max submissions is required")
-  @Min(value = 1, message = "Max submissions must be at least 1")
+  @Min(value = 0, message = "Max submissions must be at least 0")
   private Integer maxSubmissions;
 
   private List<String> topicIds;

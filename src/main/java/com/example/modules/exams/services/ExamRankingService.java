@@ -7,6 +7,7 @@ import com.example.modules.exams.entities.ExamRanking;
 import com.example.modules.exams.entities.ExamSubmission;
 import com.example.modules.exams.repositories.ExamRankingRepository;
 import com.example.modules.exams.repositories.ExamSubmissionRepository;
+import com.example.modules.exams.utils.ExamRankingMapper;
 import com.example.modules.exams.utils.ExamRankingSpecification;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submissions.entities.Submission;
@@ -28,6 +29,7 @@ public class ExamRankingService {
   private final SubmissionsRepository submissionsRepository;
   private final ExamSubmissionRepository examSubmissionRepository;
   private final ExamRankingRepository examRankingRepository;
+  private final ExamRankingMapper examRankingMapper;
 
   /**
    * Scheduled task chạy mỗi 1 phút để:
@@ -37,35 +39,37 @@ public class ExamRankingService {
   @Scheduled(fixedRate = 60000) // 60000ms = 1 phút
   @Transactional
   public void calculateExamSubmissionsScore() {
-    log.info("=== Starting scheduled check for exam submissions without score ===");
+    log.info("=== Starting scheduled check for ExamSubmission without score ===");
 
-    // Tìm các submission là bài kiểm tra chưa có điểm
-    List<Submission> examSubmissionsWithoutScore = submissionsRepository.findAll(
+    // Tìm các ExamSubmission chưa có điểm
+    List<ExamSubmission> examSubmissionsWithoutScore = examSubmissionRepository.findAll(
       (root, query, cb) ->
-        cb.and(
-          cb.isNull(root.get("score")),
-          cb.isTrue(root.get("isExamination")),
-          cb.isNull(root.get("deletedTimestamp"))
-        )
+        cb.and(cb.isNull(root.get("score")), cb.isNull(root.get("deletedTimestamp")))
     );
 
     if (examSubmissionsWithoutScore.isEmpty()) {
-      log.info("No exam submissions without score found");
+      log.info("No ExamSubmission without score found");
       return;
     }
 
     log.info(
-      "Found {} exam submissions without score to process",
+      "Found {} ExamSubmission without score to process",
       examSubmissionsWithoutScore.size()
     );
 
     int processedCount = 0;
-    for (Submission submission : examSubmissionsWithoutScore) {
+    for (ExamSubmission examSubmission : examSubmissionsWithoutScore) {
       try {
-        // Refresh submission để lấy đầy đủ submission results
-        submission = submissionsRepository.findById(submission.getId()).orElse(null);
+        // Lấy Submission gốc theo submissionId
+        Submission submission = submissionsRepository
+          .findById(examSubmission.getSubmissionId())
+          .orElse(null);
 
         if (submission == null) {
+          log.warn(
+            "Linked Submission not found for submissionId {}",
+            examSubmission.getSubmissionId()
+          );
           continue;
         }
 
@@ -100,84 +104,82 @@ public class ExamRankingService {
         int totalTestCases = results.size();
         double score = totalTestCases > 0 ? ((double) passedCount / totalTestCases) * 100 : 0.0;
 
-        // Tính thời gian trung bình
-        Double averageTime = results
-          .stream()
-          .map(SubmissionResult::getTime)
-          .filter(time -> time != null && !time.isEmpty())
-          .mapToDouble(Double::parseDouble)
-          .average()
-          .orElse(0.0);
+        // Cập nhật điểm cho ExamSubmission (không cập nhật Submission)
+        examSubmission.setScore(score);
+        examSubmissionRepository.save(examSubmission);
 
-        // Tính memory trung bình
-        Double averageMemory = results
-          .stream()
-          .map(SubmissionResult::getMemory)
-          .filter(memory -> memory != null && !memory.isEmpty())
-          .mapToDouble(Double::parseDouble)
-          .average()
-          .orElse(0.0);
-
-        // Cập nhật submission
-        submission.setPassedTestCases((int) passedCount);
-        submission.setTotalTestCases(totalTestCases);
-        submission.setIsAccepted(passedCount == totalTestCases);
-        submission.setTime(String.format("%.3f", averageTime));
-        submission.setMemory(String.format("%.0f", averageMemory));
-        submission.setScore(score);
-
-        submissionsRepository.save(submission);
-
-        // Cập nhật ExamSubmission
-        updateExamSubmission(submission.getId(), score);
+        // Upsert ExamRanking theo (exam, user)
+        upsertExamRanking(examSubmission);
 
         processedCount++;
-        log.info(
-          "Processed exam submission {}: passed={}/{}, score={:.2f}",
-          submission.getId(),
-          passedCount,
-          totalTestCases,
-          score
-        );
+        log.info("Processed ExamSubmission {}: score={}", examSubmission.getId(), score);
       } catch (Exception e) {
-        log.error("Error processing exam submission {}", submission.getId(), e);
+        log.error("Error processing ExamSubmission {}", examSubmission.getId(), e);
       }
     }
 
-    log.info(
-      "=== Scheduled check completed: {}/{} exam submissions processed ===",
-      processedCount,
-      examSubmissionsWithoutScore.size()
-    );
+    log.info("=== Scheduled check completed: {} ExamSubmission processed ===", processedCount);
   }
 
   /**
    * Cập nhật điểm cho ExamSubmission dựa trên submissionId
    */
-  private void updateExamSubmission(String submissionId, Double score) {
+  private void upsertExamRanking(ExamSubmission updatedExamSubmission) {
     try {
-      // Tìm ExamSubmission theo submissionId
-      List<ExamSubmission> examSubmissions = examSubmissionRepository.findAll((root, query, cb) ->
-        cb.equal(root.get("submissionId"), submissionId)
+      String examId = updatedExamSubmission.getExam().getId();
+      String userId = updatedExamSubmission.getUser().getId();
+
+      // Tính tổng điểm từ tất cả ExamSubmission của (exam, user)
+      List<ExamSubmission> userExamSubmissions = examSubmissionRepository.findByExamIdAndUserId(
+        examId,
+        userId
+      );
+      double totalScore = userExamSubmissions
+        .stream()
+        .map(ExamSubmission::getScore)
+        .filter(s -> s != null)
+        .mapToDouble(Double::doubleValue)
+        .sum();
+
+      // Mỗi bài chỉ nộp 1 lần -> tính trực tiếp theo danh sách ExamSubmission
+      double numberOfExercises = (double) userExamSubmissions.size();
+      double numberOfCompletedExercises = (double) userExamSubmissions
+        .stream()
+        .map(ExamSubmission::getScore)
+        .filter(s -> s != null && s >= 100.0)
+        .count();
+
+      // Tìm hoặc tạo ExamRanking
+      List<ExamRanking> existing = examRankingRepository.findAll((root, query, cb) ->
+        cb.and(
+          cb.equal(root.get("exam").get("id"), examId),
+          cb.equal(root.get("user").get("id"), userId)
+        )
       );
 
-      if (examSubmissions.isEmpty()) {
-        log.warn("No ExamSubmission found for submissionId: {}", submissionId);
-        return;
+      ExamRanking ranking;
+      if (existing.isEmpty()) {
+        ranking = ExamRanking.builder()
+          .exam(updatedExamSubmission.getExam())
+          .user(updatedExamSubmission.getUser())
+          .totalScore(totalScore)
+          .numberOfExercises(numberOfExercises)
+          .numberOfCompletedExercises(numberOfCompletedExercises)
+          .build();
+      } else {
+        ranking = existing.get(0);
+        ranking.setTotalScore(totalScore);
+        ranking.setNumberOfExercises(numberOfExercises);
+        ranking.setNumberOfCompletedExercises(numberOfCompletedExercises);
       }
 
-      for (ExamSubmission examSubmission : examSubmissions) {
-        examSubmission.setScore(score);
-        examSubmissionRepository.save(examSubmission);
-        log.info(
-          "Updated ExamSubmission {} with score {} for submissionId {}",
-          examSubmission.getId(),
-          score,
-          submissionId
-        );
-      }
+      examRankingRepository.save(ranking);
     } catch (Exception e) {
-      log.error("Error updating ExamSubmission for submissionId {}", submissionId, e);
+      log.error(
+        "Error upserting ExamRanking for ExamSubmission {}",
+        updatedExamSubmission.getId(),
+        e
+      );
     }
   }
 
@@ -204,13 +206,7 @@ public class ExamRankingService {
 
     return rankings
       .stream()
-      .map(er ->
-        ExamRankingResponseDto.builder()
-          .exam(er.getExam())
-          .user(er.getUser())
-          .totalScore(er.getTotalScore())
-          .build()
-      )
+      .map(examRankingMapper::toExamRankingResponseDto)
       .collect(Collectors.toList());
   }
 }

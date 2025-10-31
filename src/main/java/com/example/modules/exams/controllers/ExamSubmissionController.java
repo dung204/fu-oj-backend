@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @Slf4j
 @RestController
@@ -145,7 +146,7 @@ public class ExamSubmissionController {
       currentUser.getAccount().getRole() == Role.STUDENT &&
       !currentUser.getId().equals(dto.getUserId())
     ) {
-      throw new org.springframework.web.server.ResponseStatusException(
+      throw new ResponseStatusException(
         HttpStatus.FORBIDDEN,
         "Students can only view their own exam results"
       );

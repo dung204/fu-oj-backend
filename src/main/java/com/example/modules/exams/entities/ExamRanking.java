@@ -24,6 +24,20 @@ public class ExamRanking extends BaseEntity {
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
 
-  @Column(nullable = false, columnDefinition = "double precision default 0")
+  @Column(nullable = false, name = "total_score", columnDefinition = "double precision default 0")
   private Double totalScore;
+
+  @Column(
+    nullable = false,
+    name = "number_of_completed_execises",
+    columnDefinition = "double precision default 0"
+  )
+  private Double numberOfCompletedExercises;
+
+  @Column(
+    nullable = false,
+    name = "number_of_execises",
+    columnDefinition = "double precision default 0"
+  )
+  private Double numberOfExercises;
 }

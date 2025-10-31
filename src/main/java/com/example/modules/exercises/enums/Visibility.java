@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 public enum Visibility {
   PUBLIC("PUBLIC", "PUBLIC"),
   PRIVATE("PRIVATE", "PRIVATE"),
-  DRAFT("HARD", "DRAFT");
+  DRAFT("DRAFT", "DRAFT");
 
   private final String visibility;
   private final String value;

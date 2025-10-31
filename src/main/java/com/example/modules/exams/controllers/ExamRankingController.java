@@ -8,7 +8,6 @@ import com.example.modules.auth.annotations.CurrentUser;
 import com.example.modules.auth.enums.Role;
 import com.example.modules.exams.dtos.ExamRankingRequestDto;
 import com.example.modules.exams.dtos.ExamRankingResponseDto;
-import com.example.modules.exams.dtos.ExamSubmissionResponseDto;
 import com.example.modules.exams.services.ExamRankingService;
 import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,14 +21,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
-@RequestMapping(path = EXAMS_PREFIX + "/{examId}/submissions")
+@RequestMapping(path = EXAMS_PREFIX + "/submissions/rank")
 @RequiredArgsConstructor
 @Tag(name = "Exam Rankings", description = "API to list all submissions (scores) for an exam")
 public class ExamRankingController {

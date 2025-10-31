@@ -32,7 +32,7 @@ public class Exercise extends BaseEntity {
   private String description;
 
   @Builder.Default
-  private Integer maxSubmissions = 10;
+  private Integer maxSubmissions = 999999;
 
   @Column(columnDefinition = "double precision default 0.2 check (time_limit > 0)")
   @Builder.Default

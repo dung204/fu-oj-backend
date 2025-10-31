@@ -9,6 +9,8 @@ import com.example.modules.exams.entities.ExamSubmission;
 import com.example.modules.exams.exceptions.*;
 import com.example.modules.exams.repositories.ExamRepository;
 import com.example.modules.exams.repositories.ExamSubmissionRepository;
+import com.example.modules.exams.utils.ExamResultMapper;
+import com.example.modules.exams.utils.ExamSubmissionSpecification;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.exceptions.ExerciseNotFoundException;
 import com.example.modules.exercises.repositories.ExercisesRepository;
@@ -39,6 +41,7 @@ public class ExamSubmissionService {
   private final SubmissionsService submissionsService;
   private final SubmissionsRepository submissionsRepository;
   private final UsersRepository usersRepository;
+  private final ExamResultMapper examResultMapper;
 
   /**
    * Nộp bài cho exam (từng bài 1)
@@ -142,7 +145,7 @@ public class ExamSubmissionService {
   }
 
   /**
-   * Xem lại kết quả exam của student
+   * lấy tất cả exercise submission của user trong exam
    */
   @Transactional(readOnly = true)
   public ExamResultResponseDto getExamResult(ExamResultRequestDto dto) {
@@ -160,11 +163,13 @@ public class ExamSubmissionService {
         new UserNotFoundException("User with id " + dto.getUserId() + " not found")
       );
 
-    // 3. Get all exam submissions for this user
-    List<ExamSubmission> examSubmissions = examSubmissionRepository.findByExamIdAndUserId(
-      dto.getExamId(),
-      dto.getUserId()
-    );
+    var spec = ExamSubmissionSpecification.builder()
+      .withExamId(dto.getExamId())
+      .withUserId(dto.getUserId())
+      .notDeleted()
+      .build();
+
+    List<ExamSubmission> examSubmissions = examSubmissionRepository.findAll(spec);
 
     // 4. Build submission details
     List<ExamResultResponseDto.ExamSubmissionDetail> submissionDetails = new ArrayList<>();

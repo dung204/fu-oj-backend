@@ -1,8 +1,7 @@
 package com.example.modules.exams.dtos;
 
 import com.example.base.dtos.EntityDTO;
-import com.example.modules.exams.entities.Exam;
-import com.example.modules.users.entities.User;
+import com.example.modules.users.dtos.UserProfileDtoV2;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -16,9 +15,9 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class ExamRankingResponseDto extends EntityDTO {
 
-  private User user;
+  private UserProfileDtoV2 user;
 
-  private Exam exam;
+  private ExamResultResponseDto exam;
 
   private Double totalScore;
 }
