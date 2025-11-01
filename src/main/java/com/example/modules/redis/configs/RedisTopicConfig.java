@@ -13,6 +13,11 @@ public class RedisTopicConfig {
   }
 
   @Bean
+  public ChannelTopic commentsTopic() {
+    return new ChannelTopic("comments-events");
+  }
+
+  @Bean
   ChannelTopic newSubmissionsTopic() {
     return new ChannelTopic("new-submissions");
   }

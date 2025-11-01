@@ -1,5 +1,6 @@
 package com.example.modules.redis.configs;
 
+import com.example.modules.redis.configs.subscribers.CommentSubscriber;
 import com.example.modules.redis.configs.subscribers.NewSubmissionsSubscriber;
 import com.example.modules.redis.configs.subscribers.SubmissionResultUpdatesSubscriber;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,6 +31,8 @@ public class RedisConfig {
   private String password;
 
   private final ObjectMapper objectMapper;
+  private final CommentSubscriber commentSubscriber;
+  private final ChannelTopic commentsTopic;
   private final SubmissionResultUpdatesSubscriber submissionResultUpdatesSubscriber;
   private final NewSubmissionsSubscriber newSubmissionsSubscriber;
 
@@ -69,7 +72,7 @@ public class RedisConfig {
   RedisMessageListenerContainer redisMessageListenerContainer() {
     RedisMessageListenerContainer container = new RedisMessageListenerContainer();
     container.setConnectionFactory(jedisConnectionFactory());
-
+    container.addMessageListener(commentSubscriber, commentsTopic);
     container.addMessageListener(submissionResultUpdatesSubscriber, submissionResultUpdatesTopic);
     container.addMessageListener(newSubmissionsSubscriber, newSubmissionsTopic);
 
