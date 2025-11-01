@@ -38,8 +38,8 @@ public class ExerciseRequestDTO {
   @AllowedStrings(values = { "EASY", "MEDIUM", "HARD" })
   private String difficulty = Difficulty.EASY.getName();
 
-  @Min(value = 1, message = "Max submissions must be at least 1")
-  private Integer maxSubmissions = 10;
+  @Min(value = 0, message = "Max submissions must be at least 1")
+  private Integer maxSubmissions = 0;
 
   private List<String> topicIds;
 
