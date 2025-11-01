@@ -109,7 +109,7 @@ public class ExamSubmissionService {
     submissionRequest.setExerciseId(dto.getExerciseId());
     submissionRequest.setSourceCode(dto.getSourceCode());
     submissionRequest.setLanguageCode(dto.getLanguageCode());
-    submissionRequest.setIsExamination(true);
+    submissionRequest.setExamination(true);
 
     SubmissionResponseDTO submissionResponse = submissionsService.createSubmissionBase64(
       submissionRequest,

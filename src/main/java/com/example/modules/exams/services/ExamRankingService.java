@@ -1,6 +1,5 @@
 package com.example.modules.exams.services;
 
-import com.example.modules.Judge0.enums.Judge0Status;
 import com.example.modules.exams.dtos.ExamRankingRequestDto;
 import com.example.modules.exams.dtos.ExamRankingResponseDto;
 import com.example.modules.exams.entities.ExamRanking;
@@ -11,6 +10,7 @@ import com.example.modules.exams.utils.ExamRankingMapper;
 import com.example.modules.exams.utils.ExamRankingSpecification;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submissions.entities.Submission;
+import com.example.modules.submissions.enums.Verdict;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.users.entities.User;
 import java.util.List;
@@ -85,8 +85,8 @@ public class ExamRankingService {
           .stream()
           .noneMatch(
             sr ->
-              String.valueOf(Judge0Status.IN_QUEUE).equals(sr.getVerdict()) ||
-              String.valueOf(Judge0Status.PROCESSING).equals(sr.getVerdict())
+              String.valueOf(Verdict.IN_QUEUE).equals(sr.getVerdict()) ||
+              String.valueOf(Verdict.PROCESSING).equals(sr.getVerdict())
           );
 
         if (!allCompleted) {
@@ -97,7 +97,7 @@ public class ExamRankingService {
         // Tính passedTestCases
         long passedCount = results
           .stream()
-          .filter(sr -> String.valueOf(Judge0Status.ACCEPTED).equals(sr.getVerdict()))
+          .filter(sr -> String.valueOf(Verdict.ACCEPTED).equals(sr.getVerdict()))
           .count();
 
         // Tính điểm dựa trên tỷ lệ passed/total
