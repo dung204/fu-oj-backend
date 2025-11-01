@@ -2,12 +2,12 @@ package com.example.modules.submissions.services;
 
 import com.example.modules.Judge0.dtos.Judge0CallbackRequestDTO;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
-import com.example.modules.Judge0.enums.Judge0Status;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.Judge0.utils.Base64Utils;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
-import com.example.modules.redis.configs.publishers.SubmissionPublisher;
+import com.example.modules.redis.configs.publishers.NewSubmissionsPublisher;
+import com.example.modules.redis.configs.publishers.SubmissionResultUpdatesPublisher;
 import com.example.modules.submission_results.dtos.SubmissionResultResponseDTO;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
@@ -30,7 +30,9 @@ import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.users.entities.User;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -41,17 +43,19 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SubmissionsService {
 
-  private final Judge0Service judge0Service;
-  private final SubmissionsRepository submissionsRepository;
-  private final TestCasesRepository testCaseRepository;
-  private final SubmissionResultRepository submissionResultRepository;
-  private final ExercisesRepository exerciseRepository;
-  private final SubmissionPublisher submissionPublisher;
-  private final SubmissionResultMapper submissionResultMapper;
-  private final SubmissionLimitService submissionLimitService;
-  private final SubmissionMapper submissionMapper;
+  Judge0Service judge0Service;
+  SubmissionsRepository submissionsRepository;
+  TestCasesRepository testCaseRepository;
+  SubmissionResultRepository submissionResultRepository;
+  ExercisesRepository exerciseRepository;
+  SubmissionResultMapper submissionResultMapper;
+  SubmissionLimitService submissionLimitService;
+  SubmissionMapper submissionMapper;
+  SubmissionResultUpdatesPublisher submissionResultUpdatesPublisher;
+  NewSubmissionsPublisher newSubmissionsPublisher;
 
   public Page<SubmissionResponseDTO> getAllSubmissions(SubmissionsSearchDTO submissionsSearchDTO) {
     return submissionsRepository
@@ -119,7 +123,7 @@ public class SubmissionsService {
         .submission(submission)
         .testCase(testCases.get(i))
         .token(tokens.get(i))
-        .verdict(String.valueOf(Judge0Status.IN_QUEUE))
+        .verdict(Verdict.IN_QUEUE.getValue())
         .build();
 
       log.info("Submission {}, token: {}, verdict: {}", i, tokens.get(i), Judge0Status.IN_QUEUE);
@@ -127,7 +131,9 @@ public class SubmissionsService {
     }
 
     log.info("Submission {} created with {} test cases", submission.getId(), testCases.size());
-    return submissionMapper.toSubmissionResponseDTO(submission);
+    SubmissionResponseDTO responseDTO = submissionMapper.toSubmissionResponseDTO(submission);
+    newSubmissionsPublisher.publishNewSubmission(responseDTO);
+    return responseDTO;
   }
 
   /**
@@ -153,7 +159,6 @@ public class SubmissionsService {
 
     //1. Extract basic fields
     String token = callback.getToken();
-    int statusId = callback.getStatus().getId();
 
     //2. Decode base64 safely using Base64Utils
     String decodedStdout = Base64Utils.decodeBase64Safe(callback.getStdout());
@@ -179,24 +184,11 @@ public class SubmissionsService {
     String actual = decodedStdout != null ? decodedStdout.trim() : "";
 
     //4. Determine verdict
-    String verdict;
-    switch (statusId) {
-      case 1 -> verdict = String.valueOf(Judge0Status.IN_QUEUE);
-      case 2 -> verdict = String.valueOf(Judge0Status.PROCESSING);
-      //      case 3 -> verdict = String.valueOf(Judge0Status.ACCEPTED);
-      //      case 4 -> verdict = String.valueOf(Judge0Status.WRONG_ANSWER);
-      case 5 -> verdict = String.valueOf(Judge0Status.TIME_LIMIT_EXCEEDED);
-      case 6 -> verdict = String.valueOf(Judge0Status.COMPILATION_ERROR);
-      case 7, 8, 9, 10, 11, 12 -> verdict = String.valueOf(Judge0Status.RUNTIME_ERROR);
-      case 13 -> verdict = String.valueOf(Judge0Status.INTERNAL_ERROR);
-      case 14 -> verdict = String.valueOf(Judge0Status.EXEC_FORMAT_ERROR);
-      default -> verdict = (expected != null && expected.equals(actual))
-        ? String.valueOf(Judge0Status.ACCEPTED)
-        : String.valueOf(Judge0Status.WRONG_ANSWER);
-    }
+    Judge0SubmissionResponseDTO judge0SubmissionResponse = judge0Service.getSubmission(token);
+    Verdict verdict = Verdict.getVerdictFromJudge0Response(judge0SubmissionResponse);
 
     //5. Update submission result
-    sr.setVerdict(verdict);
+    sr.setVerdict(verdict.getValue());
     sr.setActualOutput(decodedStdout);
     sr.setStderr(decodedStderr);
     submissionResultRepository.save(sr);
@@ -205,6 +197,8 @@ public class SubmissionsService {
 
     //6. Publish Redis message -> send WebSocket to FE (via SubmissionSubscriber)
     TestCaseResultDTO testCaseResult = TestCaseResultDTO.builder()
+      .submissionId(sr.getSubmission().getId())
+      .token(sr.getToken())
       .userId(sr.getSubmission().getUser().getId())
       .testCaseId(sr.getTestCase().getId())
       .input(isPublic ? sr.getTestCase().getInput() : null)
@@ -214,12 +208,12 @@ public class SubmissionsService {
       .compileOutput(decodedCompileOutput)
       .time(callback.getTime())
       .memory(callback.getMemory())
-      .status(callback.getStatus())
-      .passed(statusId == Judge0Status.ACCEPTED.getId())
+      .verdict(verdict)
+      .passed(verdict == Verdict.ACCEPTED)
       .isPublic(isPublic)
       .build();
 
-    submissionPublisher.publishSubmissionUpdate(testCaseResult);
+    submissionResultUpdatesPublisher.publishSubmissionResultUpdate(testCaseResult);
 
     log.info("Callback for token {} => {}", token, verdict);
   }
@@ -282,11 +276,10 @@ public class SubmissionsService {
       String decodedStderr = Base64Utils.decodeBase64Safe(result.getStderr());
       String decodedCompileOutput = Base64Utils.decodeBase64Safe(result.getCompileOutput());
 
-      // Lấy thông tin status
-      int statusId = result.getStatus().getId();
-
       // Kiểm tra kết quả
-      boolean isPassed = statusId == Judge0Status.ACCEPTED.getId(); // Status 3 = Accepted
+      Verdict verdict = Verdict.getVerdictFromJudge0Response(result);
+
+      boolean isPassed = verdict == Verdict.ACCEPTED;
       if (isPassed) {
         passedCount++;
       }
@@ -302,7 +295,7 @@ public class SubmissionsService {
         .compileOutput(decodedCompileOutput)
         .time(result.getTime())
         .memory(result.getMemory())
-        .status(result.getStatus())
+        .verdict(verdict)
         .passed(isPassed)
         .isPublic(true)
         .build();
@@ -418,32 +411,6 @@ public class SubmissionsService {
               .withStudentId(requestDTO.getStudent())
               .isOneOfLanguageCodes(requestDTO.getLanguageCode())
               .isOneOfStatuses(List.of(Verdict.MEMORY_LIMIT_EXCEEDED.getValue()))
-              .build()
-          )
-      )
-      .returnError(
-        requestDTO.getStatus() != null &&
-            !requestDTO.getStatus().contains(Verdict.RETURN_ERROR.getValue())
-          ? 0
-          : submissionsRepository.count(
-            SubmissionsSpecification.builder()
-              .withExerciseId(requestDTO.getExercise())
-              .withStudentId(requestDTO.getStudent())
-              .isOneOfLanguageCodes(requestDTO.getLanguageCode())
-              .isOneOfStatuses(List.of(Verdict.RETURN_ERROR.getValue()))
-              .build()
-          )
-      )
-      .invalidReturn(
-        requestDTO.getStatus() != null &&
-            !requestDTO.getStatus().contains(Verdict.INVALID_RETURN.getValue())
-          ? 0
-          : submissionsRepository.count(
-            SubmissionsSpecification.builder()
-              .withExerciseId(requestDTO.getExercise())
-              .withStudentId(requestDTO.getStudent())
-              .isOneOfLanguageCodes(requestDTO.getLanguageCode())
-              .isOneOfStatuses(List.of(Verdict.INVALID_RETURN.getValue()))
               .build()
           )
       )

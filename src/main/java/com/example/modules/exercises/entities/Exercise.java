@@ -38,7 +38,7 @@ public class Exercise extends BaseEntity {
   @Builder.Default
   private Double timeLimit = 0.2; // in seconds
 
-  @Column(columnDefinition = "double precision default 65536 check (memory > 0)")
+  @Column(columnDefinition = "double precision default 65536 check (memory >= 2048)")
   @Builder.Default
   private Double memory = 65536d; // kilobytes
 

@@ -1,5 +1,6 @@
 package com.example.modules.submissions.dtos;
 
+import com.example.modules.submissions.enums.Verdict;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,6 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TestCaseResultDTO {
+
+  private String submissionId;
+
+  private String token;
 
   private String userId;
 
@@ -31,7 +36,7 @@ public class TestCaseResultDTO {
 
   private Integer memory;
 
-  private Judge0StatusDTO status;
+  private Verdict verdict;
 
   private Boolean passed;
 

@@ -7,16 +7,15 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum Visibility {
-  PUBLIC("PUBLIC", "PUBLIC"),
-  PRIVATE("PRIVATE", "PRIVATE"),
-  DRAFT("DRAFT", "DRAFT");
+  PUBLIC("PUBLIC"),
+  PRIVATE("PRIVATE"),
+  DRAFT("DRAFT");
 
-  private final String visibility;
   private final String value;
 
   public static Visibility getValue(String visibility) {
     for (Visibility d : Visibility.values()) {
-      if (d.getVisibility().equals(visibility)) {
+      if (d.getValue().equals(visibility)) {
         return d;
       }
     }

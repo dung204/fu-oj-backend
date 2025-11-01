@@ -4,7 +4,6 @@ import com.example.base.dtos.EntityDTO;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
 import com.example.modules.submission_results.dtos.SubmissionResultResponseDTO;
 import com.example.modules.users.dtos.UserProfileDTO;
-import java.util.Collections;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -29,5 +28,5 @@ public class SubmissionResponseDTO extends EntityDTO {
   private Boolean isAccepted;
 
   @Builder.Default
-  private List<SubmissionResultResponseDTO> submissionResults = Collections.emptyList();
+  private List<SubmissionResultResponseDTO> submissionResults = List.of();
 }

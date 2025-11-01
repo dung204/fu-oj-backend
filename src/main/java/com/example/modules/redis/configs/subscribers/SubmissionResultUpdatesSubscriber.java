@@ -1,7 +1,7 @@
 package com.example.modules.redis.configs.subscribers;
 
+import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SubmissionSubscriber implements MessageListener {
+public class SubmissionResultUpdatesSubscriber implements MessageListener {
 
   private final SimpMessagingTemplate messagingTemplate;
   private final ObjectMapper objectMapper;
@@ -21,20 +21,19 @@ public class SubmissionSubscriber implements MessageListener {
   public void onMessage(Message message, byte[] pattern) {
     try {
       String body = new String(message.getBody());
-      log.info("Received Redis pub/sub message: {}", body);
+      log.debug("Received Redis pub/sub message: {}", body);
 
-      Map<String, Object> payload = objectMapper.readValue(body, Map.class);
-      String userId;
-      if (payload.containsKey("userId")) {
-        userId = String.valueOf(String.valueOf(payload.get("userId")));
-      } else {
-        log.error("Payload does not contain userId: {}", payload);
-        return;
-      }
+      TestCaseResultDTO payload = objectMapper.readValue(body, TestCaseResultDTO.class);
 
-      // gửi socket đến FE (ví dụ: /topic/submission-result-updates/1)
-      messagingTemplate.convertAndSend("/topic/submission-result-updates/" + userId, payload);
-      log.info("Sent WebSocket to /topic/submission-result-updates/{} -> {}", userId, payload);
+      messagingTemplate.convertAndSend(
+        "/topic/submission-result-updates/" + payload.getSubmissionId(),
+        payload
+      );
+      log.debug(
+        "Sent WebSocket to /topic/submission-result-updates/{} -> {}",
+        payload.getSubmissionId(),
+        payload
+      );
     } catch (Exception e) {
       log.error("Error processing Redis pub/sub message", e);
     }

@@ -11,12 +11,12 @@ public enum Difficulty {
   MEDIUM("MEDIUM", 200),
   HARD("HARD", 300);
 
-  private final String difficulty;
+  private final String name;
   private final int value;
 
   public static Difficulty getValue(String difficulty) {
     for (Difficulty d : Difficulty.values()) {
-      if (d.getDifficulty().equals(difficulty)) {
+      if (d.getName().equals(difficulty)) {
         return d;
       }
     }
