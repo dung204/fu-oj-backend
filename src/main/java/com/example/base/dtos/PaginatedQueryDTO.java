@@ -66,7 +66,14 @@ public class PaginatedQueryDTO {
   public List<String> getOrder() {
     try {
       Class<?> currentClass = this.getClass();
-      Field orderField = currentClass.getField("order");
+      Field orderField;
+
+      try {
+        orderField = currentClass.getDeclaredField("order");
+      } catch (Exception e) {
+        orderField = currentClass.getSuperclass().getDeclaredField("order");
+      }
+
       orderField.setAccessible(true);
       List<String> orderValue = (List<String>) orderField.get(this);
       orderField.setAccessible(false);
@@ -79,7 +86,14 @@ public class PaginatedQueryDTO {
   public void setOrder(List<String> order) {
     try {
       Class<?> currentClass = this.getClass();
-      Field orderField = currentClass.getField("order");
+      Field orderField;
+
+      try {
+        orderField = currentClass.getDeclaredField("order");
+      } catch (Exception e) {
+        orderField = currentClass.getSuperclass().getDeclaredField("order");
+      }
+
       orderField.setAccessible(true);
       orderField.set(this, order);
       orderField.setAccessible(false);
@@ -138,24 +152,14 @@ public class PaginatedQueryDTO {
   }
 
   public PageRequest toPageRequest() {
-    // This prevent field shadowing when re-declaring `order` field in subclasses
-    try {
-      Field orderField = this.getClass().getDeclaredField("order");
-      orderField.setAccessible(true);
-      List<String> orderValue = (List<String>) orderField.get(this);
-      orderField.setAccessible(false);
-      if (orderValue.isEmpty()) {
-        return PageRequest.of(page - 1, pageSize);
-      }
-
-      Sort sort = Sort.by(
-        orderValue.stream().map(this::parseOrderString).toArray(Sort.Order[]::new)
-      );
-
-      return PageRequest.of(page - 1, pageSize, sort);
-    } catch (Exception e) {
+    List<String> orderValue = this.getOrder();
+    if (orderValue.isEmpty()) {
       return PageRequest.of(page - 1, pageSize);
     }
+
+    Sort sort = Sort.by(orderValue.stream().map(this::parseOrderString).toArray(Sort.Order[]::new));
+
+    return PageRequest.of(page - 1, pageSize, sort);
   }
 
   private Sort.Order parseOrderString(String orderStr) {

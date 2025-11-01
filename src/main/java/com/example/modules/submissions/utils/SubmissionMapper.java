@@ -45,7 +45,7 @@ public abstract class SubmissionMapper {
 
     // --- Calculate Verdict (your existing logic) ---
     if (results == null || results.isEmpty()) {
-      dto.setVerdict("PENDING"); // Or some other default status
+      dto.setVerdict(Verdict.PROCESSING.getValue()); // Or some other default status
       return;
     }
 

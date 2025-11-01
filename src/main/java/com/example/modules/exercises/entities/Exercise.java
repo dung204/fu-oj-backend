@@ -1,16 +1,12 @@
 package com.example.modules.exercises.entities;
 
 import com.example.base.entities.BaseEntity;
+import com.example.modules.exercises.enums.Difficulty;
+import com.example.modules.exercises.enums.Visibility;
 import com.example.modules.groups.entities.Group;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.topics.entities.Topic;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import java.util.List;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -34,8 +30,30 @@ public class Exercise extends BaseEntity {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String description;
 
-  @Column(nullable = false)
-  private Integer maxSubmissions;
+  @Builder.Default
+  private Integer maxSubmissions = 10;
+
+  @Column(columnDefinition = "double precision default 0.2 check (time_limit > 0)")
+  @Builder.Default
+  private Double timeLimit = 0.2; // in seconds
+
+  @Column(columnDefinition = "double precision default 65536 check (memory >= 2048)")
+  @Builder.Default
+  private Double memory = 65536d; // kilobytes
+
+  @Column(
+    columnDefinition = "varchar(255) default 'EASY' check (difficulty in ('EASY','MEDIUM','HARD'))"
+  )
+  @Enumerated(EnumType.STRING)
+  @Builder.Default
+  private Difficulty difficulty = Difficulty.EASY;
+
+  @Column(
+    columnDefinition = "varchar(255) default 'DRAFT' check (visibility in ('PUBLIC','PRIVATE','DRAFT'))"
+  )
+  @Enumerated(EnumType.STRING)
+  @Builder.Default
+  private Visibility visibility = Visibility.DRAFT;
 
   @ManyToMany
   @JoinTable(

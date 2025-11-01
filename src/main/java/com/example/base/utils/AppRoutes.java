@@ -35,6 +35,7 @@ public final class AppRoutes {
   public static final String COMMENTS_PREFIX = API_PREFIX + "/comments";
   public static final String EXERCISES_PREFIX = API_PREFIX + "/exercises";
   public static final String GROUPS_PREFIX = API_PREFIX + "/groups";
+  public static final String SCORES_PREFIX = API_PREFIX + "/scores";
   public static final String SUBMISSIONS_PREFIX = API_PREFIX + "/submissions";
   public static final String TEST_CASES_PREFIX = API_PREFIX + "/test-cases";
   public static final String TOPICS_PREFIX = API_PREFIX + "/topics";

@@ -1,9 +1,11 @@
 package com.example.modules.redis.configs;
 
 import com.example.modules.redis.configs.subscribers.CommentSubscriber;
-import com.example.modules.redis.configs.subscribers.SubmissionSubscriber;
+import com.example.modules.redis.configs.subscribers.NewSubmissionsSubscriber;
+import com.example.modules.redis.configs.subscribers.SubmissionResultUpdatesSubscriber;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,10 +31,16 @@ public class RedisConfig {
   private String password;
 
   private final ObjectMapper objectMapper;
-  private final SubmissionSubscriber submissionSubscriber;
-  private final ChannelTopic submissionTopic;
   private final CommentSubscriber commentSubscriber;
   private final ChannelTopic commentsTopic;
+  private final SubmissionResultUpdatesSubscriber submissionResultUpdatesSubscriber;
+  private final NewSubmissionsSubscriber newSubmissionsSubscriber;
+
+  @Qualifier("submissionResultUpdatesTopic")
+  private final ChannelTopic submissionResultUpdatesTopic;
+
+  @Qualifier("newSubmissionsTopic")
+  private final ChannelTopic newSubmissionsTopic;
 
   @Bean
   JedisConnectionFactory jedisConnectionFactory() {
@@ -64,8 +72,10 @@ public class RedisConfig {
   RedisMessageListenerContainer redisMessageListenerContainer() {
     RedisMessageListenerContainer container = new RedisMessageListenerContainer();
     container.setConnectionFactory(jedisConnectionFactory());
-    container.addMessageListener(submissionSubscriber, submissionTopic);
     container.addMessageListener(commentSubscriber, commentsTopic);
+    container.addMessageListener(submissionResultUpdatesSubscriber, submissionResultUpdatesTopic);
+    container.addMessageListener(newSubmissionsSubscriber, newSubmissionsTopic);
+
     return container;
   }
 }

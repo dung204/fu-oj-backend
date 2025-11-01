@@ -1,6 +1,7 @@
 package com.example.base.dtos;
 
 import com.example.base.utils.SwaggerExamples;
+import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -23,6 +24,9 @@ public class EntityDTO {
 
   @Schema(description = "The UUID of the entity", example = SwaggerExamples.UUID)
   protected String id;
+
+  @Schema(description = "The createdBy when the entity is created", example = SwaggerExamples.UUID)
+  protected String createdBy;
 
   @Schema(
     description = "The timestamp indicating when the entity is created",

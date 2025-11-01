@@ -5,6 +5,7 @@ import static com.example.base.utils.AppRoutes.EXERCISES_PREFIX;
 import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.AllowRoles;
+import com.example.modules.auth.annotations.CurrentUser;
 import com.example.modules.auth.enums.Role;
 import com.example.modules.exercises.dtos.ExerciseQueryDTO;
 import com.example.modules.exercises.dtos.ExerciseRequestDTO;
@@ -14,6 +15,7 @@ import com.example.modules.test_cases.dtos.TestCaseQueryDTO;
 import com.example.modules.test_cases.dtos.TestCaseRequestDTO;
 import com.example.modules.test_cases.dtos.TestCaseResponseDTO;
 import com.example.modules.test_cases.services.TestCasesService;
+import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -94,7 +96,7 @@ public class ExercisesController {
       .build();
   }
 
-  @AllowRoles(Role.INSTRUCTOR)
+  @AllowRoles({ Role.INSTRUCTOR, Role.ADMIN })
   @Operation(
     summary = "Create new exercise (for INSTRUCTOR only)",
     responses = {
@@ -117,9 +119,10 @@ public class ExercisesController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<ExerciseResponseDTO> createExercise(
-    @Valid @RequestBody ExerciseRequestDTO request
+    @Valid @RequestBody ExerciseRequestDTO request,
+    @CurrentUser User currentUser
   ) {
-    ExerciseResponseDTO exercise = exercisesService.createExercise(request);
+    ExerciseResponseDTO exercise = exercisesService.createExercise(request, currentUser);
     return SuccessResponseDTO.<ExerciseResponseDTO>builder()
       .message("Exercise created successfully")
       .data(exercise)

@@ -17,6 +17,8 @@ import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
 import com.example.modules.submissions.dtos.SubmissionResponseDTO;
+import com.example.modules.submissions.dtos.SubmissionStatisticsRequestDTO;
+import com.example.modules.submissions.dtos.SubmissionStatisticsResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionsSearchDTO;
 import com.example.modules.submissions.services.SubmissionsService;
 import com.example.modules.users.entities.User;
@@ -195,6 +197,16 @@ public class SubmissionsController {
     return SuccessResponseDTO.<List<SubmissionResultResponseDTO>>builder()
       .message("Get all submission results successfully")
       .data(result)
+      .build();
+  }
+
+  @GetMapping("/statistics")
+  public SuccessResponseDTO<SubmissionStatisticsResponseDTO> getSubmissionStatistics(
+    @ParameterObject @Valid SubmissionStatisticsRequestDTO requestDTO
+  ) {
+    return SuccessResponseDTO.<SubmissionStatisticsResponseDTO>builder()
+      .message("Get submission statistics successfully")
+      .data(submissionsService.getSubmissionStatistics(requestDTO))
       .build();
   }
 }

@@ -1,10 +1,12 @@
 package com.example.modules.exercises.dtos;
 
+import com.example.base.annotations.AllowedStrings;
+import com.example.modules.exercises.enums.Difficulty;
+import com.example.modules.exercises.enums.Visibility;
 import com.example.modules.test_cases.dtos.TestCaseRequestDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,9 +26,20 @@ public class ExerciseRequestDTO {
   @NotBlank(message = "Description is required")
   private String description;
 
-  @NotNull(message = "Max submissions is required")
+  @AllowedStrings(values = { "PUBLIC", "PRIVATE", "DRAFT" })
+  private String visibility = Visibility.DRAFT.getValue();
+
+  @Min(value = 0, message = "Time limit must be at least 0s")
+  private Double timeLimit = 0.2;
+
+  @Min(value = 2048, message = "Memory must be at least 2048KB")
+  private Double memory = 65536D;
+
+  @AllowedStrings(values = { "EASY", "MEDIUM", "HARD" })
+  private String difficulty = Difficulty.EASY.getName();
+
   @Min(value = 1, message = "Max submissions must be at least 1")
-  private Integer maxSubmissions;
+  private Integer maxSubmissions = 10;
 
   private List<String> topicIds;
 

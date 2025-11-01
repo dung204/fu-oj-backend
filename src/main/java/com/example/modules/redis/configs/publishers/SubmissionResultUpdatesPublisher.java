@@ -10,19 +10,19 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SubmissionPublisher {
+public class SubmissionResultUpdatesPublisher {
 
   private final RedisTemplate<String, Object> redisTemplate;
 
-  @Qualifier("submissionTopic")
-  private final ChannelTopic submissionResultTopic;
+  @Qualifier("submissionResultUpdatesTopic")
+  private final ChannelTopic submissionResultUpdatesTopic;
 
-  public void publishSubmissionUpdate(Object message) {
+  public void publishSubmissionResultUpdate(Object message) {
     try {
-      redisTemplate.convertAndSend(submissionResultTopic.getTopic(), message);
+      redisTemplate.convertAndSend(submissionResultUpdatesTopic.getTopic(), message);
       log.info(
         "Published message to Redis topic [{}]: {}",
-        submissionResultTopic.getTopic(),
+        submissionResultUpdatesTopic.getTopic(),
         message
       );
     } catch (Exception e) {

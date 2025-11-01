@@ -1,7 +1,7 @@
 package com.example.modules.submissions.enums;
 
+import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import java.util.List;
-import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -42,5 +42,39 @@ public enum Verdict {
       .stream()
       .map(Verdict::getValue)
       .toList();
+  }
+
+  public static Verdict getVerdictFromJudge0Response(Judge0SubmissionResponseDTO response) {
+    if (response.getExitCode() == 137) {
+      return Verdict.MEMORY_LIMIT_EXCEEDED;
+    }
+
+    switch (response.getStatus().getId()) {
+      case 1:
+        return Verdict.IN_QUEUE;
+      case 2:
+        return Verdict.PROCESSING;
+      case 3:
+        return Verdict.ACCEPTED;
+      case 4:
+        return Verdict.WRONG_ANSWER;
+      case 5:
+        return Verdict.TIME_LIMIT_EXCEEDED;
+      case 6:
+        return Verdict.COMPILATION_ERROR;
+      case 7:
+      case 8:
+      case 9:
+      case 10:
+      case 11:
+      case 12:
+        return Verdict.RUNTIME_ERROR;
+      case 13:
+        return Verdict.INTERNAL_ERROR;
+      case 14:
+        return Verdict.EXEC_FORMAT_ERROR;
+      default:
+        return Verdict.UNKNOWN;
+    }
   }
 }

@@ -2,7 +2,7 @@ package com.example.modules.Judge0.services;
 
 import com.example.modules.Judge0.dtos.Judge0BatchResponseDTO;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
-import com.example.modules.Judge0.enums.Judge0Status;
+import com.example.modules.submissions.enums.Verdict;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
@@ -128,7 +128,7 @@ public class Judge0Service {
   }
 
   private List<Judge0SubmissionResponseDTO> pollBatchResults(List<String> tokens) {
-    String baseUrl = JUDGE0_API + "/submissions/batch?base64_encoded=true&tokens=";
+    String baseUrl = JUDGE0_API + "/submissions/batch?base64_encoded=true&fields=*&tokens=";
     String tokensParam = String.join(",", tokens);
     String pollUrl = baseUrl + tokensParam;
 
@@ -191,7 +191,7 @@ public class Judge0Service {
   }
 
   public Judge0SubmissionResponseDTO getSubmission(String token) {
-    String url = JUDGE0_API + "/submissions/" + token + "?base64_encoded=false";
+    String url = JUDGE0_API + "/submissions/" + token + "?base64_encoded=false&fields=*";
 
     log.info("Fetching Judge0 Submission with token: {}", token);
 
@@ -209,16 +209,16 @@ public class Judge0Service {
 
       // Lấy thông tin status
       int statusId = response.getStatus().getId();
-      Judge0Status status = Judge0Status.fromId(statusId);
+      Verdict verdict = Verdict.getVerdictFromJudge0Response(response);
 
       // Log trạng thái
-      log.info("Judge0 Status: {} ({})", statusId, status.getDescription());
+      log.info("Judge0 Status: {} ({})", statusId, verdict.getValue());
 
       // Kiểm tra kết quả thực thi
-      if (status == Judge0Status.ACCEPTED) {
+      if (verdict == Verdict.ACCEPTED) {
         log.info("Judge0 submission accepted");
       } else {
-        log.warn("Judge0 execution error: {}", status.getDescription());
+        log.warn("Judge0 execution error: {}", verdict.getValue());
       }
 
       return response;
