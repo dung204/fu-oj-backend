@@ -422,7 +422,7 @@ public class GroupsController {
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @AllowRoles(Role.STUDENT)
+  @AllowRoles({ Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN })
   @PostMapping("/join")
   public SuccessResponseDTO<GroupResponseDTO> joinGroupByCode(
     @RequestBody @Valid JoinGroupRequestDTO joinGroupRequestDTO,
