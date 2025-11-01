@@ -8,4 +8,6 @@ public class SubmissionRequest {
   private String exerciseId;
   private String sourceCode;
   private String languageCode;
+
+  private boolean isExamination = false;
 }

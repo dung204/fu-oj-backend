@@ -1,6 +1,7 @@
 package com.example.modules.exercises.entities;
 
 import com.example.base.entities.BaseEntity;
+import com.example.modules.exams.entities.ExamExercise;
 import com.example.modules.exercises.enums.Difficulty;
 import com.example.modules.exercises.enums.Visibility;
 import com.example.modules.groups.entities.Group;
@@ -31,7 +32,7 @@ public class Exercise extends BaseEntity {
   private String description;
 
   @Builder.Default
-  private Integer maxSubmissions = 10;
+  private Integer maxSubmissions = 999999;
 
   @Column(columnDefinition = "double precision default 0.2 check (time_limit > 0)")
   @Builder.Default
@@ -68,4 +69,7 @@ public class Exercise extends BaseEntity {
 
   @ManyToMany(mappedBy = "exercises")
   private List<Group> groups;
+
+  @OneToMany(mappedBy = "exercise", fetch = FetchType.LAZY)
+  private List<ExamExercise> examExercises;
 }

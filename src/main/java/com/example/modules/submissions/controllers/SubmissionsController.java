@@ -65,7 +65,7 @@ public class SubmissionsController {
       .build();
   }
 
-  //  @AllowRoles(Role.STUDENT)
+  @AllowRoles({ Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN })
   @Operation(
     summary = "Create a new submission with base64 encoded source code (for STUDENT only)",
     responses = {
@@ -162,7 +162,7 @@ public class SubmissionsController {
     }
   )
   @PostMapping("/run")
-  @AllowRoles(Role.STUDENT)
+  @AllowRoles({ Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN })
   public SuccessResponseDTO<RunCodeResponseDTO> runCode(
     @Valid @RequestBody RunCodeRequest request
   ) {
