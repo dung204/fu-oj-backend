@@ -30,7 +30,7 @@ public class ExamController {
 
   private final ExamService examService;
 
-  @AllowRoles(Role.INSTRUCTOR)
+  @AllowRoles({ Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN })
   @Operation(
     summary = "Create exams for multiple groups (for INSTRUCTOR only)",
     description = "Create exams for multiple groups at once. For each group, an exam will be created with title '{original title} {group name}'",
@@ -63,7 +63,7 @@ public class ExamController {
       .build();
   }
 
-  @AllowRoles({ Role.INSTRUCTOR, Role.STUDENT })
+  @AllowRoles({ Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN })
   @Operation(
     summary = "Get exam by ID",
     responses = {
@@ -103,7 +103,7 @@ public class ExamController {
       .build();
   }
 
-  @AllowRoles(Role.INSTRUCTOR)
+  @AllowRoles({ Role.INSTRUCTOR, Role.ADMIN })
   @Operation(
     summary = "Delete exam by ID (for INSTRUCTOR only)",
     description = "Soft delete an exam",

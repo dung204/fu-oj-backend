@@ -33,7 +33,7 @@ public class ExamSubmissionController {
 
   private final ExamSubmissionService examSubmissionService;
 
-  @AllowRoles(Role.STUDENT)
+  @AllowRoles({ Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN })
   @Operation(
     summary = "Submit an exercise solution for an exam (for STUDENT only)",
     description = """

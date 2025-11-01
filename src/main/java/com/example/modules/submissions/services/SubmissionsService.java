@@ -126,7 +126,7 @@ public class SubmissionsService {
         .verdict(Verdict.IN_QUEUE.getValue())
         .build();
 
-      log.info("Submission {}, token: {}, verdict: {}", i, tokens.get(i), Judge0Status.IN_QUEUE);
+      log.info("Submission {}, token: {}, verdict: {}", i, tokens.get(i), Verdict.IN_QUEUE);
       submissionResultRepository.save(result);
     }
 
