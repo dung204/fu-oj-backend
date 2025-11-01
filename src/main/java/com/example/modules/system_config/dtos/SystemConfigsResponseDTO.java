@@ -1,4 +1,4 @@
-package com.example.modules.comments.dtos;
+package com.example.modules.system_config.dtos;
 
 import com.example.base.dtos.EntityDTO;
 import lombok.AllArgsConstructor;
@@ -13,10 +13,14 @@ import lombok.experimental.SuperBuilder;
 // TODO: After adding fields, uncomment these two lines
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommentResponseDTO extends EntityDTO {
+public class SystemConfigsResponseDTO extends EntityDTO {
 
-  private String userId;
-  private String exerciseId;
-  private String parentId;
-  private String content;
+  // TODO: Add fields
+  private Double easy;
+  private Double medium;
+  private Double difficult;
+  private Double bonusTheFirstSubmit;
+  private Double bonusNoWrongAnswer;
+  private Double bonusTime;
+  private Double countReport;
 }

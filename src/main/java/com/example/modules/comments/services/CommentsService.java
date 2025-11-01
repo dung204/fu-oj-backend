@@ -12,6 +12,9 @@ import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.redis.configs.publishers.CommentPublisher;
 import com.example.modules.redis.event_type.comment.CommentEvent;
 import com.example.modules.redis.event_type.comment.CommentEventType;
+import com.example.modules.system_config.entities.SystemConfigs;
+import com.example.modules.system_config.repositories.SystemConfigsRepository;
+import com.example.modules.system_config.services.SystemConfigsService;
 import com.example.modules.users.entities.User;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ public class CommentsService implements ICommentsService {
   private final ExercisesRepository exercisesRepository;
   private final CommentMapper commentMapper;
   private final CommentPublisher commentPublisher;
+  private final SystemConfigsRepository systemConfigsRepository;
 
   @Override
   public CommentResponseDTO createComment(User user, CommentRequestDTO commentRequestDTO) {
@@ -125,7 +129,8 @@ public class CommentsService implements ICommentsService {
   public CommentResponseDTO reportCommentById(String commentId, int contReport) {
     Comment comment = commentsRepository.findCommentById(commentId);
     comment.setCountReport(contReport + 1);
-    if (comment.getCountReport() == 10) {
+    SystemConfigs systemConfigs = systemConfigsRepository.findAll().getFirst();
+    if (comment.getCountReport() == Integer.parseInt("" + systemConfigs.getCountReport())) {
       comment.setDeletedTimestamp(Instant.now());
       commentsRepository.save(comment);
       CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
