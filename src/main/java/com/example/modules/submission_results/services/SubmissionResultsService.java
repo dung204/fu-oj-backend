@@ -49,7 +49,8 @@ public class SubmissionResultsService {
   /**
    * Part 1: Cập nhật các SubmissionResult có verdict IN_QUEUE hoặc PROCESSING
    */
-  private void updatePendingSubmissionResults() {
+  @Transactional
+  protected void updatePendingSubmissionResults() {
     List<SubmissionResult> pendingResults = submissionResultRepository.findByVerdictIn(
       List.of(Verdict.IN_QUEUE.getValue(), Verdict.PROCESSING.getValue())
     );
@@ -128,7 +129,8 @@ public class SubmissionResultsService {
    * Part 2: Tìm các Submission chưa có điểm (score is null)
    * và đã hoàn thành tất cả test cases → tính điểm
    */
-  private void updateSubmissionsWithoutScore() {
+  @Transactional
+  protected void updateSubmissionsWithoutScore() {
     // Tìm các submission chưa có điểm (score is null) + không phải là bài kiểm tra + chưa bị xóa
     List<Submission> submissionsWithoutScore = submissionsRepository.findAll((root, query, cb) ->
       cb.and(
@@ -153,7 +155,8 @@ public class SubmissionResultsService {
    * Tính lại passedTestCases, totalTestCases, isAccepted, score
    * Sau đó cập nhật tổng điểm user
    */
-  private void updateSubmissionsScore(List<Submission> submissions) {
+  @Transactional
+  protected void updateSubmissionsScore(List<Submission> submissions) {
     for (Submission submission : submissions) {
       try {
         // Refresh submission với tất cả submission results
@@ -180,7 +183,8 @@ public class SubmissionResultsService {
 
         // find exercise to get visibility
         if (
-          submission.getExercise().getVisibility().equals(Visibility.PRIVATE) ||
+          (submission.getExercise() != null &&
+            submission.getExercise().getVisibility().equals(Visibility.PRIVATE)) ||
           submission.getExercise().getVisibility().equals(Visibility.DRAFT)
         ) {
           log.debug(

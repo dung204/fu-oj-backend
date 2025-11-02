@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -135,7 +136,6 @@ public class ScoresService {
    *
    * @param newSubmission Submission vừa hoàn thành
    */
-  @Transactional
   public void updateUserScoreBySubmission(Submission newSubmission) {
     String userId = newSubmission.getUser().getId();
     String exerciseId = newSubmission.getExercise().getId();
@@ -169,6 +169,7 @@ public class ScoresService {
         cb.equal(root.get("user").get("id"), userId),
         cb.equal(root.get("exercise").get("id"), exerciseId),
         cb.notEqual(root.get("id"), newSubmission.getId()),
+        cb.isFalse(root.get("isExamination")),
         cb.isNull(root.get("deletedTimestamp"))
       )
     );
@@ -188,6 +189,7 @@ public class ScoresService {
       // Lấy điểm cao nhất và trạng thái AC của các submission cũ
       double oldHighestScore = previousSubmissions
         .stream()
+        .filter(sub -> sub.getScore() != null)
         .mapToDouble(Submission::getScore)
         .max()
         .orElse(0.0);
