@@ -12,4 +12,10 @@ public interface ExamSubmissionRepository
   List<ExamSubmission> findByExamIdAndUserId(String examId, String userId);
 
   List<ExamSubmission> findByExamId(String examId);
+
+  List<ExamSubmission> findByExamIdAndUserIdAndExerciseId(
+    String examId,
+    String userId,
+    String exerciseId
+  );
 }

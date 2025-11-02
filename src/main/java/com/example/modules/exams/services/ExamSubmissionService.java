@@ -104,6 +104,24 @@ public class ExamSubmissionService {
       );
     }
 
+    // 4.1 check if user has already submitted for this exercise in this exam
+    List<ExamSubmission> existingSubmission =
+      examSubmissionRepository.findByExamIdAndUserIdAndExerciseId(
+        dto.getExamId(),
+        currentUser.getId(),
+        dto.getExerciseId()
+      );
+
+    if (existingSubmission != null && existingSubmission.size() > 0) {
+      log.info(
+        "User {} has already submitted for exercise {} in exam {}",
+        currentUser.getId(),
+        dto.getExerciseId(),
+        dto.getExamId()
+      );
+      throw new DuplicateExamSubmissionException("User has already submitted for exercise");
+    }
+
     // 5. Create submission through existing SubmissionsService
     SubmissionRequest submissionRequest = new SubmissionRequest();
     submissionRequest.setExerciseId(dto.getExerciseId());

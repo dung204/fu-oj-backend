@@ -134,12 +134,6 @@ public class ExamRankingService {
         examId,
         userId
       );
-      double totalScore = userExamSubmissions
-        .stream()
-        .map(ExamSubmission::getScore)
-        .filter(s -> s != null)
-        .mapToDouble(Double::doubleValue)
-        .sum();
 
       // Mỗi bài chỉ nộp 1 lần -> tính trực tiếp theo danh sách ExamSubmission
       double numberOfExercises = (double) userExamSubmissions.size();
@@ -148,6 +142,7 @@ public class ExamRankingService {
         .map(ExamSubmission::getScore)
         .filter(s -> s != null && s >= 100.0)
         .count();
+      double totalScore = (numberOfCompletedExercises / numberOfExercises) * 100.0;
 
       // Tìm hoặc tạo ExamRanking
       List<ExamRanking> existing = examRankingRepository.findAll((root, query, cb) ->
