@@ -5,16 +5,15 @@ import com.example.modules.auth.entities.Account;
 import com.example.modules.auth.exceptions.EmailHasAlreadyBeenUsedException;
 import com.example.modules.auth.repositories.AccountsRepository;
 import com.example.modules.auth.services.AuthService;
+import com.example.modules.email.service.EmailService;
 import com.example.modules.file.excel.exceptions.FileNotValidException;
 import com.example.modules.file.excel.utils.ExcelExporter;
 import com.example.modules.file.excel.utils.ExcelHelper;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.repositories.UsersRepository;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,6 +26,7 @@ public class ExcelService implements IExcelService {
 
   private final AuthService authService;
   private final AccountsRepository accountsRepository;
+  private final EmailService emailService;
 
   @Override
   public List<RegisterRequestDTO> importAccountFromExcel(MultipartFile file, User user) {
@@ -101,9 +101,21 @@ public class ExcelService implements IExcelService {
     try {
       authService.register(account);
       Account acc = accountsRepository.findAccountByEmail(account.getEmail());
-      //set created by
+      // set created by
       acc.setCreatedBy(user.getAccount().getUsername());
+      acc.setDeletedTimestamp(Instant.now());
       accountsRepository.save(acc);
+      emailService.sendEmailWithTemplate(
+        acc.getEmail(),
+        "ACTIVE ACCOUNT",
+        "active-account",
+        Map.of(
+          "name",
+          acc.getUsername(),
+          "activationLink",
+          "http://localhost:4000/api/v1/auth/active-account/" + account.getEmail()
+        )
+      );
       return true;
     } catch (EmailHasAlreadyBeenUsedException e) {
       log.info("Row {}: email '{}' has already been used", row, account.getEmail());
