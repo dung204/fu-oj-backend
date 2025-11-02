@@ -1,6 +1,6 @@
 package com.example.modules.exams.services;
 
-import com.example.modules.exams.dtos.ExamCreateDto;
+import com.example.modules.exams.dtos.ExamCreateDTO;
 import com.example.modules.exams.dtos.ExamResponseDTO;
 import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamExercise;
@@ -43,7 +43,7 @@ public class ExamService {
    * Với mỗi group, sẽ tạo 1 exam riêng với title = "{title} {groupName}"
    */
   @Transactional
-  public List<ExamResponseDTO> createExamsForMultipleGroups(ExamCreateDto dto, User currentUser) {
+  public List<ExamResponseDTO> createExamsForMultipleGroups(ExamCreateDTO dto, User currentUser) {
     List<ExamResponseDTO> createdExams = new ArrayList<>();
 
     // Validate và lấy các group

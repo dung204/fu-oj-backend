@@ -6,7 +6,7 @@ import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.AllowRoles;
 import com.example.modules.auth.annotations.CurrentUser;
 import com.example.modules.auth.enums.Role;
-import com.example.modules.exams.dtos.ExamCreateDto;
+import com.example.modules.exams.dtos.ExamCreateDTO;
 import com.example.modules.exams.dtos.ExamResponseDTO;
 import com.example.modules.exams.services.ExamService;
 import com.example.modules.users.entities.User;
@@ -49,11 +49,11 @@ public class ExamController {
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<List<ExamResponseDTO>> createExams(
-    @RequestBody @Valid ExamCreateDto examCreateDto,
+    @RequestBody @Valid ExamCreateDTO ExamCreateDTO,
     @CurrentUser User currentUser
   ) {
     List<ExamResponseDTO> createdExams = examService.createExamsForMultipleGroups(
-      examCreateDto,
+      ExamCreateDTO,
       currentUser
     );
     return SuccessResponseDTO.<List<ExamResponseDTO>>builder()

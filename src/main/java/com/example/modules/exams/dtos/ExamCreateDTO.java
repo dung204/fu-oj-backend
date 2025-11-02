@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExamCreateDto {
+public class ExamCreateDTO {
 
   @NotBlank(message = "Code is required")
   private String code;
