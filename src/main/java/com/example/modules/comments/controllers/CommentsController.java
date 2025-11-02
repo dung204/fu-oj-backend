@@ -4,13 +4,11 @@ import static com.example.base.utils.AppRoutes.COMMENTS_PREFIX;
 
 import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
-import com.example.modules.auth.annotations.AllowRoles;
 import com.example.modules.auth.annotations.CurrentUser;
-import com.example.modules.auth.enums.Role;
-import com.example.modules.comments.dtos.*;
+import com.example.modules.comments.dtos.CommentQueryDTO;
+import com.example.modules.comments.dtos.CommentRequestDTO;
+import com.example.modules.comments.dtos.CommentResponseDTO;
 import com.example.modules.comments.services.CommentsService;
-import com.example.modules.exercises.dtos.ExerciseResponseDTO;
-import com.example.modules.groups.dtos.GroupResponseDTO;
 import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
