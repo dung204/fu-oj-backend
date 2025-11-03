@@ -1,5 +1,6 @@
 package com.example.modules.exams.services;
 
+import com.example.modules.auth.enums.Role;
 import com.example.modules.exams.dtos.ExamResultRequestDto;
 import com.example.modules.exams.dtos.ExamResultResponseDto;
 import com.example.modules.exams.dtos.ExamSubmissionCreateDto;
@@ -167,7 +168,7 @@ public class ExamSubmissionService {
    * lấy tất cả exercise submission của user trong exam
    */
   @Transactional(readOnly = true)
-  public ExamResultResponseDto getExamResult(ExamResultRequestDto dto) {
+  public ExamResultResponseDto getExamResult(ExamResultRequestDto dto, User currentUser) {
     // 1. Validate exam exists
     Exam exam = examRepository
       .findById(dto.getExamId())
@@ -175,16 +176,30 @@ public class ExamSubmissionService {
         new ExamNotFoundException("Exam with id " + dto.getExamId() + " not found")
       );
 
-    // 2. Validate user exists
+    // 2. Validate user exists và check quyền truy cập
+    // STUDENT chỉ được xem kết quả của chính mình
+    final String effectiveUserId;
+    if (currentUser.getAccount().getRole() == Role.STUDENT) {
+      effectiveUserId = currentUser.getId();
+      if (!currentUser.getId().equals(dto.getUserId())) {
+        throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.FORBIDDEN,
+          "Students can only view their own exam results"
+        );
+      }
+    } else {
+      effectiveUserId = dto.getUserId();
+    }
+
     User user = usersRepository
-      .findById(dto.getUserId())
+      .findById(effectiveUserId)
       .orElseThrow(() ->
-        new UserNotFoundException("User with id " + dto.getUserId() + " not found")
+        new UserNotFoundException("User with id " + effectiveUserId + " not found")
       );
 
     var spec = ExamSubmissionSpecification.builder()
       .withExamId(dto.getExamId())
-      .withUserId(dto.getUserId())
+      .withUserId(effectiveUserId)
       .notDeleted()
       .build();
 

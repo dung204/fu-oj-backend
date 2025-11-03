@@ -154,7 +154,7 @@ public class ExamSubmissionController {
 
     log.info("Fetching exam result for exam {} and user {}", dto.getExamId(), dto.getUserId());
 
-    ExamResultResponseDto response = examSubmissionService.getExamResult(dto);
+    ExamResultResponseDto response = examSubmissionService.getExamResult(dto, currentUser);
 
     return SuccessResponseDTO.<ExamResultResponseDto>builder()
       .status(200)

@@ -25,4 +25,11 @@ public class ExamSubmissionSpecification extends SpecificationBuilder<ExamSubmis
     }
     return this;
   }
+
+  public ExamSubmissionSpecification withStudentId(String studentId) {
+    if (studentId != null && !studentId.trim().isEmpty()) {
+      specifications.add((root, query, cb) -> cb.equal(root.get("user").get("id"), studentId));
+    }
+    return this;
+  }
 }
