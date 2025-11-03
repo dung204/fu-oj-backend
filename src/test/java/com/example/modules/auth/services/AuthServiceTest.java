@@ -78,7 +78,9 @@ public class AuthServiceTest extends BaseServiceTest {
 
     when(accountsRepository.findByEmail(email)).thenReturn(Optional.of(mockAccount));
     when(passwordEncoder.matches(password, mockUser.getAccount().getPassword())).thenReturn(true);
-    when(usersRepository.findByAccount(mockAccount)).thenReturn(Optional.of(mockUser));
+    when(usersRepository.findByAccountAndDeletedTimestampIsNull(mockAccount)).thenReturn(
+      Optional.of(mockUser)
+    );
     when(jwtService.generateAccessToken(mockUser)).thenReturn(tokenDTO.getAccessToken());
     when(jwtService.generateRefreshToken(mockUser)).thenReturn(tokenDTO.getRefreshToken());
     when(userMapper.toUserProfileDTO(mockUser)).thenReturn(userProfileDTO);

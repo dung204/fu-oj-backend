@@ -1,8 +1,10 @@
 package com.example.modules.auth.resolvers;
 
 import com.example.modules.auth.annotations.CurrentUser;
+import com.example.modules.auth.utils.AccountsSpecification;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.repositories.UsersRepository;
+import com.example.modules.users.utils.UsersSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.NonNull;
@@ -43,6 +45,8 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
     }
 
     String email = authentication.getName();
-    return usersRepository.findByAccountEmail(email).orElse(null);
+    return usersRepository
+      .findOne(UsersSpecification.builder().withEmail(email).notDeleted().build())
+      .orElse(null);
   }
 }
