@@ -22,6 +22,9 @@ public class ExerciseResponseDTO extends EntityDTO {
   private String visibility;
   private String difficulty;
   private Integer maxSubmissions;
+  private Integer version;
+  private String solution;
+  private String baseId;
 
   // default empty list to avoid null pointer exception
   @Builder.Default

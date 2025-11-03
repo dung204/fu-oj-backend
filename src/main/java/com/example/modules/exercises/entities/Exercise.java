@@ -22,6 +22,13 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "exercises")
 public class Exercise extends BaseEntity {
 
+  @Column(name = "base_id")
+  private String baseId; // đại diện cho bài tập gốc
+
+  @Column(nullable = false, columnDefinition = "integer default 1 check (version > 0)")
+  @Builder.Default
+  private Integer version = 1; // version hiện tại
+
   @Column(nullable = false, unique = true)
   private String code;
 
@@ -31,8 +38,11 @@ public class Exercise extends BaseEntity {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String description;
 
+  @Column(nullable = false, columnDefinition = "TEXT")
+  private String solution;
+
   @Builder.Default
-  private Integer maxSubmissions = 999999;
+  private Integer maxSubmissions = 0;
 
   @Column(columnDefinition = "double precision default 0.2 check (time_limit > 0)")
   @Builder.Default

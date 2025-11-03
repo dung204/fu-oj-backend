@@ -1,6 +1,5 @@
 package com.example.modules.exercises.services;
 
-import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.utils.ObjectUtils;
 import com.example.modules.exercises.dtos.ExerciseQueryDTO;
 import com.example.modules.exercises.dtos.ExerciseRequestDTO;
@@ -11,7 +10,6 @@ import com.example.modules.exercises.enums.Visibility;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.exercises.utils.ExerciseMapper;
 import com.example.modules.exercises.utils.ExercisesSpecification;
-import com.example.modules.test_cases.dtos.TestCaseResponseDTO;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.topics.entities.Topic;
@@ -23,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -61,6 +60,7 @@ public class ExercisesService {
       .visibility(Visibility.valueOf(request.getVisibility()))
       .timeLimit(request.getTimeLimit())
       .memory(request.getMemory())
+      .version(1)
       .build();
 
     // Gắn topics nếu có
@@ -79,7 +79,13 @@ public class ExercisesService {
     exercise.setCreatedBy(currentUser.getId());
 
     Exercise savedExercise = exercisesRepository.save(exercise);
-    log.info("Created exercise: {}", savedExercise.getId());
+    // Set baseId sau khi save để có id
+    if (savedExercise.getBaseId() == null) {
+      savedExercise.setBaseId(savedExercise.getId());
+      savedExercise = exercisesRepository.save(savedExercise);
+    }
+    final Exercise finalSavedExercise = savedExercise;
+    log.info("Created exercise: {}", finalSavedExercise.getId());
 
     // Tạo test cases nếu có trong request
     if (request.getTestCases() != null) {
@@ -88,7 +94,7 @@ public class ExercisesService {
         .stream()
         .map(testCaseRequest ->
           TestCase.builder()
-            .exercise(savedExercise)
+            .exercise(finalSavedExercise)
             .input(testCaseRequest.getInput())
             .output(testCaseRequest.getOutput())
             .isPublic(testCaseRequest.getIsPublic())
@@ -96,11 +102,15 @@ public class ExercisesService {
         )
         .collect(Collectors.toList());
 
-      savedExercise.setTestCases(testCasesRepository.saveAll(testCases));
-      log.info("Created {} test cases for exercise: {}", testCases.size(), savedExercise.getId());
+      finalSavedExercise.setTestCases(testCasesRepository.saveAll(testCases));
+      log.info(
+        "Created {} test cases for exercise: {}",
+        testCases.size(),
+        finalSavedExercise.getId()
+      );
     }
 
-    return exerciseMapper.toExerciseResponseDTOWithAllTestCases(savedExercise);
+    return exerciseMapper.toExerciseResponseDTOWithAllTestCases(finalSavedExercise);
   }
 
   /**
@@ -133,6 +143,7 @@ public class ExercisesService {
       ExercisesSpecification.builder()
         .containsCodeOrContainsTitle(dto.getQuery())
         .hasOneOfTopics(dto.getTopic())
+        .onlyLatestVersion()
         .build(),
       dto.toPageRequest()
     );
@@ -147,76 +158,95 @@ public class ExercisesService {
    */
   @Transactional
   public ExerciseResponseDTO updateExercise(String id, ExerciseRequestDTO request) {
-    Exercise exercise = exercisesRepository
+    Exercise oldExercise = exercisesRepository
       .findById(id)
       .orElseThrow(() -> new EntityNotFoundException("Exercise not found: " + id));
 
-    // Kiểm tra code duplicate (nếu thay đổi)
-    if (!exercise.getCode().equals(request.getCode())) {
-      Specification<Exercise> codeSpec = ExercisesSpecification.builder()
-        .withCode(request.getCode())
-        .build();
-
-      if (exercisesRepository.findAll(codeSpec).stream().findFirst().isPresent()) {
+    // Kiểm tra trùng code nếu code thay đổi
+    if (!oldExercise.getCode().equals(request.getCode())) {
+      boolean exists = exercisesRepository.existsByCode((request.getCode()));
+      if (exists) {
         throw new IllegalArgumentException("Exercise code already exists: " + request.getCode());
       }
     }
 
-    // Update fields
-    ObjectUtils.assign(exercise, request);
+    // Tạo bản version mới (clone)
+    Exercise newVersion = new Exercise();
+    BeanUtils.copyProperties(
+      oldExercise,
+      newVersion,
+      "id",
+      "createdAt",
+      "updatedAt",
+      "testCases",
+      "topics",
+      "groups",
+      "examExercises"
+    );
 
-    // Update topics
+    newVersion.setId(null);
+    newVersion.setVersion(oldExercise.getVersion() + 1);
+    newVersion.setBaseId(
+      oldExercise.getBaseId() != null ? oldExercise.getBaseId() : oldExercise.getId()
+    );
+
+    // Gán các thay đổi mới từ request
+    ObjectUtils.assign(newVersion, request);
+
+    // Update topics (clone lại mối quan hệ)
     if (request.getTopicIds() != null) {
       if (request.getTopicIds().isEmpty()) {
-        exercise.setTopics(new ArrayList<>());
+        newVersion.setTopics(new ArrayList<>());
       } else {
         List<Topic> topics = topicsRepository.findAllById(request.getTopicIds());
         if (topics.size() != request.getTopicIds().size()) {
           throw new EntityNotFoundException("Some topic IDs not found");
         }
-        exercise.setTopics(topics);
+        newVersion.setTopics(topics);
       }
+    } else {
+      // Tạo ArrayList mới để tránh "shared reference" collection error
+      newVersion.setTopics(
+        oldExercise.getTopics() != null
+          ? new ArrayList<>(oldExercise.getTopics())
+          : new ArrayList<>()
+      );
     }
 
-    Exercise updatedExercise = exercisesRepository.save(exercise);
-    log.info("Updated exercise: {}", updatedExercise.getId());
+    Exercise savedExercise = exercisesRepository.save(newVersion);
+    log.info(
+      "Created new version (v{}) for exercise {} → {}",
+      newVersion.getVersion(),
+      oldExercise.getId(),
+      savedExercise.getId()
+    );
 
-    // Xử lý test cases nếu có trong request
+    // Clone test cases (thay vì update)
+    List<TestCase> oldTestCases = testCasesRepository.findAllByExerciseId(oldExercise.getId());
+    for (TestCase oldCase : oldTestCases) {
+      TestCase clone = new TestCase();
+      BeanUtils.copyProperties(oldCase, clone, "id", "createdAt", "updatedAt", "exercise");
+      clone.setExercise(savedExercise);
+      testCasesRepository.save(clone);
+    }
+
+    // Nếu request có testCases (thêm mới)
     if (request.getTestCases() != null) {
       for (var testCaseRequest : request.getTestCases()) {
-        if (testCaseRequest.getId() != null && !testCaseRequest.getId().isEmpty()) {
-          // Update test case hiện có
-          TestCase existingTestCase = testCasesRepository
-            .findById(testCaseRequest.getId())
-            .orElseThrow(() ->
-              new EntityNotFoundException("Test case not found: " + testCaseRequest.getId())
-            );
-
-          // Kiểm tra test case có thuộc exercise này không
-          if (!existingTestCase.getExercise().getId().equals(updatedExercise.getId())) {
-            throw new IllegalArgumentException("Test case does not belong to this exercise");
-          }
-
-          existingTestCase.setInput(testCaseRequest.getInput());
-          existingTestCase.setOutput(testCaseRequest.getOutput());
-          existingTestCase.setIsPublic(testCaseRequest.getIsPublic());
-          testCasesRepository.save(existingTestCase);
-          log.info("Updated test case: {}", existingTestCase.getId());
-        } else {
-          // Tạo mới test case
+        if (testCaseRequest.getId() == null || testCaseRequest.getId().isEmpty()) {
           TestCase newTestCase = TestCase.builder()
-            .exercise(updatedExercise)
+            .exercise(savedExercise)
             .input(testCaseRequest.getInput())
             .output(testCaseRequest.getOutput())
             .isPublic(testCaseRequest.getIsPublic())
             .build();
           testCasesRepository.save(newTestCase);
-          log.info("Created new test case for exercise: {}", updatedExercise.getId());
+          log.info("Added new test case for exercise version {}", savedExercise.getVersion());
         }
       }
     }
 
-    return exerciseMapper.toExerciseResponseDTOWithAllTestCases(updatedExercise);
+    return exerciseMapper.toExerciseResponseDTOWithAllTestCases(savedExercise);
   }
 
   /**
