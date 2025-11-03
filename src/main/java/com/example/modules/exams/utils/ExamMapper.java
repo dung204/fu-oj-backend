@@ -46,7 +46,7 @@ public abstract class ExamMapper {
 
     return examExercises
       .stream()
-      .map(ee -> exerciseMapper.toExerciseResponseDTOWithPrivateTestCasesHidden(ee.getExercise()))
+      .map(ee -> exerciseMapper.toExerciseResponseDTOWithAllTestCases(ee.getExercise()))
       .collect(Collectors.toList());
   }
 }

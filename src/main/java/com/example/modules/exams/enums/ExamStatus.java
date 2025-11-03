@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum Status {
+public enum ExamStatus {
   UPCOMING("UPCOMING", "UPCOMING"),
   ONGOING("ONGOING", "ONGOING"),
   COMPLETED("COMPLETED", "COMPLETED"),

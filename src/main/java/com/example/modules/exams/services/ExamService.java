@@ -1,14 +1,17 @@
 package com.example.modules.exams.services;
 
+import com.example.modules.auth.enums.Role;
 import com.example.modules.exams.dtos.ExamCreateDTO;
 import com.example.modules.exams.dtos.ExamResponseDTO;
+import com.example.modules.exams.dtos.ExamsSearchDTO;
 import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamExercise;
-import com.example.modules.exams.enums.Status;
+import com.example.modules.exams.enums.ExamStatus;
 import com.example.modules.exams.exceptions.ExamNotFoundException;
 import com.example.modules.exams.repositories.ExamExerciseRepository;
 import com.example.modules.exams.repositories.ExamRepository;
 import com.example.modules.exams.utils.ExamMapper;
+import com.example.modules.exams.utils.ExamsSpecification;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.groups.entities.Group;
@@ -18,9 +21,10 @@ import com.example.modules.users.entities.User;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,9 +62,6 @@ public class ExamService {
       exercises = exercisesRepository.findAllById(dto.getExerciseIds());
     }
 
-    // Parse status
-    Status status = dto.getStatus();
-
     // Tạo exam cho mỗi group
     for (Group group : groups) {
       // Tạo title cho exam: "{title gốc} {tên group}"
@@ -71,14 +72,12 @@ public class ExamService {
         .code(generateUniqueExamCode())
         .title(examTitle)
         .description(dto.getDescription())
-        .status(status)
+        .status(ExamStatus.DRAFT)
         .startTime(dto.getStartTime())
         .endTime(dto.getEndTime())
         .group(group)
+        .createdBy(currentUser.getId())
         .build();
-
-      // set createdBy
-      exam.setCreatedBy(currentUser.getId());
 
       exam = examRepository.save(exam);
 
@@ -110,32 +109,83 @@ public class ExamService {
   /**
    * Lấy exam theo ID
    */
-  public ExamResponseDTO getExamById(String id) {
-    Exam exam = examRepository
-      .findById(id)
-      .orElseThrow(() -> new ExamNotFoundException("Exam with id " + id + " not found"));
-    return examMapper.toExamResponseDTO(exam);
+  public Exam getExamById(String id, User currentUser) {
+    Optional<Exam> exam = null;
+
+    switch (currentUser.getAccount().getRole()) {
+      case Role.STUDENT:
+        exam = examRepository.findOne(
+          ExamsSpecification.builder()
+            .belongsToGroups(currentUser.getJoinedGroups().stream().map(Group::getId).toList())
+            .withId(id)
+            .build()
+        );
+        break;
+      case Role.INSTRUCTOR:
+        exam = examRepository.findOne(
+          ExamsSpecification.builder().createdBy(currentUser.getId()).withId(id).build()
+        );
+        break;
+      case Role.ADMIN:
+        exam = examRepository.findOne(ExamsSpecification.builder().withId(id).build());
+        break;
+    }
+
+    return exam.orElseThrow(() ->
+      new ExamNotFoundException("Exam with id %s not found".formatted(id))
+    );
   }
 
   /**
    * Lấy tất cả exam
    */
-  public List<ExamResponseDTO> getAllExams() {
-    return examRepository
-      .findAll()
-      .stream()
-      .map(examMapper::toExamResponseDTO)
-      .collect(Collectors.toList());
+  public Page<ExamResponseDTO> getAllExams(ExamsSearchDTO examsSearchDTO, User currentUser) {
+    Page<Exam> examsPage = null;
+
+    switch (currentUser.getAccount().getRole()) {
+      case Role.STUDENT:
+        examsPage = examRepository.findAll(
+          ExamsSpecification.builder()
+            .belongsToGroups(currentUser.getJoinedGroups().stream().map(Group::getId).toList())
+            .withGroupId(examsSearchDTO.getGroupId())
+            .containsCodeOrContainsTitle(examsSearchDTO.getQuery())
+            .isOneOfStatuses(examsSearchDTO.getStatus())
+            .build(),
+          examsSearchDTO.toPageRequest()
+        );
+        break;
+      case Role.INSTRUCTOR:
+        examsPage = examRepository.findAll(
+          ExamsSpecification.builder()
+            .withGroupId(examsSearchDTO.getGroupId())
+            .containsCodeOrContainsTitle(examsSearchDTO.getQuery())
+            .isOneOfStatuses(examsSearchDTO.getStatus())
+            .createdBy(currentUser.getId())
+            .build(),
+          examsSearchDTO.toPageRequest()
+        );
+        break;
+      case Role.ADMIN:
+        examsPage = examRepository.findAll(
+          ExamsSpecification.builder()
+            .withGroupId(examsSearchDTO.getGroupId())
+            .containsCodeOrContainsTitle(examsSearchDTO.getQuery())
+            .isOneOfStatuses(examsSearchDTO.getStatus())
+            .build(),
+          examsSearchDTO.toPageRequest()
+        );
+        break;
+    }
+
+    return examsPage.map(examMapper::toExamResponseDTO);
   }
 
   /**
    * Xóa exam (soft delete)
    */
   @Transactional
-  public ExamResponseDTO deleteExam(String id) {
-    Exam exam = examRepository
-      .findById(id)
-      .orElseThrow(() -> new ExamNotFoundException("Exam with id " + id + " not found"));
+  public ExamResponseDTO deleteExam(String id, User currentUser) {
+    Exam exam = getExamById(id, currentUser);
     exam.softDelete();
     examRepository.save(exam);
     return examMapper.toExamResponseDTO(exam);

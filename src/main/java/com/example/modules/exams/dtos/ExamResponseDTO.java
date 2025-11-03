@@ -1,7 +1,7 @@
 package com.example.modules.exams.dtos;
 
 import com.example.base.dtos.EntityDTO;
-import com.example.modules.exams.enums.Status;
+import com.example.modules.exams.enums.ExamStatus;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
 import java.time.Instant;
 import java.util.List;
@@ -19,7 +19,7 @@ public class ExamResponseDTO extends EntityDTO {
   private String code;
   private String title;
   private String description;
-  private Status status;
+  private ExamStatus status;
   private Instant startTime;
   private Instant endTime;
   private String groupId;

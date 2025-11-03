@@ -7,6 +7,7 @@ import com.example.modules.groups.entities.Group;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
@@ -52,10 +53,10 @@ public class User extends BaseEntity {
   @JoinColumn(name = "account_id", nullable = false)
   private Account account;
 
-  @ManyToMany(mappedBy = "students")
+  @ManyToMany(mappedBy = "students", fetch = FetchType.LAZY)
   private List<Group> joinedGroups;
 
-  @ManyToMany
+  @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
     name = "user_certifications",
     joinColumns = @JoinColumn(name = "user_id"),

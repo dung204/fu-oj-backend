@@ -1,7 +1,7 @@
 package com.example.modules.exams.entities;
 
 import com.example.base.entities.BaseEntity;
-import com.example.modules.exams.enums.Status;
+import com.example.modules.exams.enums.ExamStatus;
 import com.example.modules.groups.entities.Group;
 import jakarta.persistence.*;
 import java.time.Instant;
@@ -41,7 +41,7 @@ public class Exam extends BaseEntity {
   @Enumerated(EnumType.STRING)
   @Column(nullable = false, columnDefinition = "varchar(255) default 'UPCOMING'")
   @Builder.Default
-  private Status status = Status.UPCOMING;
+  private ExamStatus status = ExamStatus.UPCOMING;
 
   @OneToMany(
     mappedBy = "exam", // exam: liên kết với tên thuộc tính trong ExamExercise
