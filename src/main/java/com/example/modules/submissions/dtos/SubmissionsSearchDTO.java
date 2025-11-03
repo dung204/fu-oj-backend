@@ -27,6 +27,9 @@ public class SubmissionsSearchDTO extends PaginatedQueryDTO {
   @Parameter(description = "Every submissions of this student will be returned")
   private String student;
 
+  @Parameter(description = "Whether to filter examination submissions")
+  private Boolean isExamination;
+
   @Parameter(description = "Every submissions of this exercise will be returned")
   private String exercise;
 }

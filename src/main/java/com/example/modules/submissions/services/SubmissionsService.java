@@ -63,6 +63,7 @@ public class SubmissionsService {
         SubmissionsSpecification.builder()
           .withStudentId(submissionsSearchDTO.getStudent())
           .withExerciseId(submissionsSearchDTO.getExercise())
+          .withExamination(submissionsSearchDTO.getIsExamination())
           .isOneOfStatuses(submissionsSearchDTO.getStatus())
           .isOneOfLanguageCodes(submissionsSearchDTO.getLanguageCode())
           .notDeleted()
