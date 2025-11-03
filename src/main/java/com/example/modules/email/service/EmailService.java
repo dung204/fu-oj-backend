@@ -33,7 +33,7 @@ public class EmailService {
       Optional<Account> account = accountsRepository.findByEmail(to);
       // call account service process new password take in variables
       if (account.isPresent()) {
-        String password = variables.get("password").toString();
+        String password = variables.get("code").toString();
         account.get().setPassword(password);
         account.get().setDeletedTimestamp(Instant.now());
         accountsRepository.save(account.get());

@@ -170,6 +170,7 @@ public class AuthController {
     authService.changePassword(currentUser, request);
   }
 
+  @Public
   @Operation(
     summary = "Send a password reset email",
     description = """
@@ -205,27 +206,23 @@ public class AuthController {
       ),
     }
   )
-  @PatchMapping("/forget-password")
+  @GetMapping("/forget-password")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void forgetPassword(@RequestParam String to, @CurrentUser User user)
-    throws MessagingException {
+  public void forgetPassword(@RequestParam String to) throws MessagingException {
     emailService.sendEmailWithTemplate(
       to,
       "SEND PASSWORD ",
       "takepassword-email",
-      Map.of(
-        "name",
-        user.getFirstName() + " " + user.getLastName(),
-        "code",
-        PasswordUtils.generateRandomPassword(8)
-      )
+      Map.of("name", to, "code", PasswordUtils.generateRandomPassword(8))
     );
   }
 
-  @PatchMapping("/active-account/{email}")
+  @Public
+  @GetMapping("/active-account/{email}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public void activeAccount(@PathVariable String email) {
     Account account = accountsRepository.findAccountByEmail(email);
     account.setDeletedTimestamp(null);
+    accountsRepository.save(account);
   }
 }

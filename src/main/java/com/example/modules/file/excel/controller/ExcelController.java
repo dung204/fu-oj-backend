@@ -31,7 +31,6 @@ public class ExcelController {
 
   private final ExcelService excelService;
 
-  @Public
   @Operation(
     summary = "Import accounts from Excel file",
     description = """
