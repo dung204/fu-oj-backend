@@ -33,8 +33,9 @@ public class ExamRankingService {
 
   /**
    * Scheduled task chạy mỗi 1 phút để:
-   * Tìm các Submission là bài kiểm tra (isExamination = true), chưa có điểm (score = null)
-   * và đã hoàn thành tất cả test cases → tính điểm và cập nhật ExamSubmission
+   *
+   * <ul><li>Tìm các Submission là bài kiểm tra (isExamination = true), chưa có điểm (score = null)
+   * và đã hoàn thành tất cả test cases → tính điểm và cập nhật ExamSubmission</li></ul>
    */
   @Scheduled(fixedRate = 60000) // 60000ms = 1 phút
   @Transactional

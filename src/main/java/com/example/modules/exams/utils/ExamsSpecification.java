@@ -3,6 +3,7 @@ package com.example.modules.exams.utils;
 import com.example.base.utils.SpecificationBuilder;
 import com.example.modules.exams.entities.Exam;
 import jakarta.persistence.criteria.Predicate;
+import java.time.Instant;
 import java.util.Collection;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -56,6 +57,42 @@ public class ExamsSpecification extends SpecificationBuilder<Exam> {
   public ExamsSpecification isOneOfStatuses(Collection<String> statuses) {
     if (statuses != null && !statuses.isEmpty()) {
       specifications.add((root, query, criteriaBuilder) -> root.get("status").in(statuses));
+    }
+    return this;
+  }
+
+  public ExamsSpecification withStatus(String status) {
+    if (status != null && !status.isEmpty()) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("status"), status)
+      );
+    }
+    return this;
+  }
+
+  public ExamsSpecification withStartTimeSmallerThanOrEqualTo(Instant instant) {
+    if (instant != null) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.lessThanOrEqualTo(root.get("startTime"), instant)
+      );
+    }
+    return this;
+  }
+
+  public ExamsSpecification withEndTimeSmallerThanOrEqualTo(Instant instant) {
+    if (instant != null) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.lessThanOrEqualTo(root.get("endTime"), instant)
+      );
+    }
+    return this;
+  }
+
+  public ExamsSpecification withEndTimeGreaterThan(Instant instant) {
+    if (instant != null) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.greaterThan(root.get("endTime"), instant)
+      );
     }
     return this;
   }

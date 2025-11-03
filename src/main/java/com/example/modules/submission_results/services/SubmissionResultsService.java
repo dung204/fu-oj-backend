@@ -29,8 +29,11 @@ public class SubmissionResultsService {
 
   /**
    * Scheduled task chạy mỗi 1 phút để:
-   * 1. Kiểm tra và cập nhật các SubmissionResult đang pending (IN_QUEUE/PROCESSING)
-   * 2. Tìm các Submission chưa có điểm và đã hoàn thành → tính điểm
+   *
+   * <ol>
+   * <li>Kiểm tra và cập nhật các SubmissionResult đang pending ({@code IN_QUEUE}/{@code PROCESSING})</li>
+   * <li>Tìm các Submission chưa có điểm và đã hoàn thành → tính điểm</li>
+   * </ol>
    */
   @Scheduled(fixedRate = 60000) // 60000ms = 1 phút
   @Transactional

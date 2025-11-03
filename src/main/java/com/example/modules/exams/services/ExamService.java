@@ -19,12 +19,16 @@ import com.example.modules.groups.exeptions.GroupNotFoundException;
 import com.example.modules.groups.repositories.GroupsRepository;
 import com.example.modules.users.entities.User;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +45,82 @@ public class ExamService {
   private final GroupsRepository groupsRepository;
   private final ExercisesRepository exercisesRepository;
   private final ExamMapper examMapper;
+
+  @Scheduled(fixedRate = 1, timeUnit = TimeUnit.MINUTES)
+  @Transactional
+  public void updateExamStatus() {
+    Instant now = Instant.now();
+    log.info("=== Starting scheduled check for Exam status ===");
+
+    // 1. Đóng các kỳ thi đang diễn ra (ONGOING -> COMPLETED)
+    int completedCount = examRepository
+      .saveAll(
+        examRepository
+          .findAll(
+            ExamsSpecification.builder()
+              .withStatus(ExamStatus.ONGOING.getValue())
+              .withEndTimeSmallerThanOrEqualTo(now)
+              .build()
+          )
+          .stream()
+          .map(exam -> {
+            exam.setStatus(ExamStatus.COMPLETED);
+            return exam;
+          })
+          .collect(Collectors.toList())
+      )
+      .size();
+
+    if (completedCount > 0) {
+      log.info("Marked {} exams as COMPLETED.", completedCount);
+    }
+
+    // 2. Đánh hết hạn cho các kỳ thi bị quá hạn (UPCOMING -> OUTDATED)
+    int outdatedCount = examRepository
+      .saveAll(
+        examRepository
+          .findAll(
+            ExamsSpecification.builder()
+              .withStatus(ExamStatus.UPCOMING.getValue())
+              .withEndTimeSmallerThanOrEqualTo(now)
+              .build()
+          )
+          .stream()
+          .map(exam -> {
+            exam.setStatus(ExamStatus.OUTDATED);
+            return exam;
+          })
+          .collect(Collectors.toList())
+      )
+      .size();
+
+    if (outdatedCount > 0) {
+      log.info("Marked {} exams as OUTDATED.", outdatedCount);
+    }
+
+    int ongoingCount = examRepository
+      .saveAll(
+        examRepository
+          .findAll(
+            ExamsSpecification.builder()
+              .withStatus(ExamStatus.UPCOMING.getValue())
+              .withEndTimeGreaterThan(now)
+              .build()
+          )
+          .stream()
+          .map(exam -> {
+            exam.setStatus(ExamStatus.ONGOING);
+            return exam;
+          })
+          .collect(Collectors.toList())
+      )
+      .size();
+
+    if (ongoingCount > 0) {
+      log.info("Marked {} exams as OUTDATED.", outdatedCount);
+    }
+    log.info("=== Scheduled check for Exam status completed ===");
+  }
 
   /**
    * Tạo exam cho nhiều group cùng lúc
