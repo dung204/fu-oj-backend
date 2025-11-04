@@ -142,7 +142,6 @@ public class ExamSubmissionService {
       .score(null) // Will be updated after Judge0 callback
       .build();
 
-    examSubmission.setCreatedBy(currentUser.getId());
     examSubmission = examSubmissionRepository.save(examSubmission);
 
     log.info(

@@ -33,6 +33,9 @@ public class EntityDTO {
   )
   protected String createdTimestamp;
 
+  @Schema(description = "The updatedBy when the entity is updated", example = SwaggerExamples.UUID)
+  protected String updatedBy;
+
   @Schema(
     description = "The timestamp indicating when the entity is last modified",
     example = SwaggerExamples.TIMESTAMP

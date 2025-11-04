@@ -5,7 +5,9 @@ import java.time.Instant;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
+import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
@@ -18,6 +20,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
  * <ul>
  *   <li>UUID-based primary key generation</li>
  *   <li>Automatic audit trail with creation and modification timestamps</li>
+ *   <li>Automatic audit trail with creation and modification user ID</li>
  *   <li>Soft delete support through {@code deletedTimestamp} field</li>
  * </ul>
  */
@@ -32,12 +35,17 @@ public class BaseEntity {
   @GeneratedValue(strategy = GenerationType.UUID)
   protected String id;
 
-  @Column(name = "created_by", nullable = true)
+  @Column(nullable = true)
+  @CreatedBy
   protected String createdBy;
 
   @Column(nullable = false)
   @CreatedDate
   protected Instant createdTimestamp;
+
+  @Column(nullable = true)
+  @LastModifiedBy
+  protected String updatedBy;
 
   @Column(nullable = false)
   @LastModifiedDate

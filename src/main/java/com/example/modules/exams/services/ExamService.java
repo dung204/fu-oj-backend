@@ -175,7 +175,6 @@ public class ExamService {
         .startTime(dto.getStartTime())
         .endTime(dto.getEndTime())
         .group(group)
-        .createdBy(currentUser.getId())
         .build();
 
       exam = examRepository.save(exam);
@@ -188,7 +187,6 @@ public class ExamService {
             .exam(exam)
             .exercise(exercises.get(i))
             .order(i + 1)
-            .createdBy(currentUser.getId())
             .build();
 
           // set createdBy
@@ -221,9 +219,7 @@ public class ExamService {
         );
         break;
       case Role.INSTRUCTOR:
-        exam = examRepository.findOne(
-          ExamsSpecification.builder().createdBy(currentUser.getId()).withId(id).build()
-        );
+        exam = examRepository.findOne(ExamsSpecification.builder().withId(id).build());
         break;
       case Role.ADMIN:
         exam = examRepository.findOne(ExamsSpecification.builder().withId(id).build());
@@ -259,7 +255,6 @@ public class ExamService {
             .withGroupId(examsSearchDTO.getGroupId())
             .containsCodeOrContainsTitle(examsSearchDTO.getQuery())
             .isOneOfStatuses(examsSearchDTO.getStatus())
-            .createdBy(currentUser.getId())
             .build(),
           examsSearchDTO.toPageRequest()
         );
