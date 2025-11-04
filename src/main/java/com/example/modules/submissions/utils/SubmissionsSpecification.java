@@ -31,6 +31,15 @@ public class SubmissionsSpecification extends SpecificationBuilder<Submission> {
     return this;
   }
 
+  public SubmissionsSpecification withExamination(Boolean examination) {
+    if (examination != null) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("isExamination"), examination)
+      );
+    }
+    return this;
+  }
+
   public SubmissionsSpecification withExerciseId(String exerciseId) {
     if (exerciseId != null && !exerciseId.trim().isEmpty()) {
       specifications.add((root, query, criteriaBuilder) ->

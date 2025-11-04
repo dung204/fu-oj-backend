@@ -80,9 +80,9 @@ public class SpecificationBuilder<T> {
     return specFunctionIfFalse.apply((S) this);
   }
 
-  public SpecificationBuilder<T> withId(String id) {
+  public <S extends SpecificationBuilder<T>> S withId(String id) {
     specifications.add((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("id"), id));
-    return this;
+    return (S) this;
   }
 
   public <S extends SpecificationBuilder<T>> S notDeleted() {
@@ -95,6 +95,13 @@ public class SpecificationBuilder<T> {
   public <S extends SpecificationBuilder<T>> S deletedOnly() {
     specifications.add((root, query, criteriaBuilder) ->
       criteriaBuilder.isNotNull(root.get("deletedTimestamp"))
+    );
+    return (S) this;
+  }
+
+  public <S extends SpecificationBuilder<T>> S createdBy(String userId) {
+    specifications.add((root, query, criteriaBuilder) ->
+      criteriaBuilder.equal(root.get("createdBy").get("id"), userId)
     );
     return (S) this;
   }

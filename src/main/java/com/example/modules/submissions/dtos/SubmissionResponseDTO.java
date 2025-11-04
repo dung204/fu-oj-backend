@@ -24,6 +24,8 @@ public class SubmissionResponseDTO extends EntityDTO {
   private String verdict;
   private Integer passedTestCases;
   private Integer totalTestCases;
+  private Boolean isExamination;
+  private Boolean isAccepted;
 
   @Builder.Default
   private List<SubmissionResultResponseDTO> submissionResults = List.of();

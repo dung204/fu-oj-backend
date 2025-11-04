@@ -22,4 +22,11 @@ public class SwaggerExamples {
   public static final String TOPIC_NAME = "topic name";
   public static final String TITLE = "title";
   public static final String JOIN_CODE = "abcd1234";
+  public static final String EXERCISE_CODE = "EX001";
+  public static final String TIME_LIMIT = "0.2";
+  public static final String MEMORY = "66536";
+  public static final String VISIBILITY = "PUBLIC";
+  public static final String DIFFICULTY = "EASY";
+  public static final String EXAM_STATUS = "DRAFT";
+  public static final String EXAM_CODE = "EXAM-ABC123";
 }
