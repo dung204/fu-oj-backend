@@ -2,7 +2,6 @@ package com.example.modules.users.dtos;
 
 import com.example.base.dtos.EntityDTO;
 import com.example.base.utils.SwaggerExamples;
-import com.example.modules.minio.dtos.MinioFileResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,7 +14,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserProfileDtoV2 extends EntityDTO {
+public class UserProfileWithoutAvatarDTO extends EntityDTO {
 
   @Schema(
     description = "The roll number of the student, `null` for INSTRUCTOR & ADMIN",

@@ -2,7 +2,6 @@ package com.example.modules.submissions.controllers;
 
 import static com.example.base.utils.AppRoutes.SUBMISSIONS_PREFIX;
 
-import com.example.base.annotations.VerifyTurnstile;
 import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.Judge0.dtos.Judge0CallbackRequestDTO;
@@ -92,6 +91,7 @@ public class SubmissionsController {
     }
   )
   @PostMapping
+  // TODO: re-enable Turnstile
   //  @VerifyTurnstile
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<SubmissionResponseDTO> createSubmissionBase64(

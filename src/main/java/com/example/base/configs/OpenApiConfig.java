@@ -11,12 +11,12 @@ import org.springframework.context.annotation.Configuration;
 
 @OpenAPIDefinition(
   info = @Info(
-    title = "Spring REST API Starter Template",
+    title = "FPT University Online Judge API documentation",
     version = "1.0",
-    description = "A starter template for building REST APIs with Spring Boot",
+    description = "The REST API for FU-OJ (FPT University Online Judge)",
     contact = @Contact(
-      name = "Ho Anh Dung (a.k.a Mantrilogix)",
-      email = "acezombiev4@gmail.com",
+      name = "Ho Anh Dung - HE181529",
+      email = "dunghahe181529@fpt.edu.vn",
       url = "https://github.com/dung204"
     )
   ),

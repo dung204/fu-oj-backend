@@ -10,7 +10,6 @@ import com.example.modules.exams.entities.ExamSubmission;
 import com.example.modules.exams.exceptions.*;
 import com.example.modules.exams.repositories.ExamRepository;
 import com.example.modules.exams.repositories.ExamSubmissionRepository;
-import com.example.modules.exams.utils.ExamResultMapper;
 import com.example.modules.exams.utils.ExamSubmissionSpecification;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.exceptions.ExerciseNotFoundException;
@@ -42,7 +41,6 @@ public class ExamSubmissionService {
   private final SubmissionsService submissionsService;
   private final SubmissionsRepository submissionsRepository;
   private final UsersRepository usersRepository;
-  private final ExamResultMapper examResultMapper;
 
   /**
    * Nộp bài cho exam (từng bài 1)

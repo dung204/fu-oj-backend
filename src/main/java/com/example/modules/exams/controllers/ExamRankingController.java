@@ -7,7 +7,7 @@ import com.example.modules.auth.annotations.AllowRoles;
 import com.example.modules.auth.annotations.CurrentUser;
 import com.example.modules.auth.enums.Role;
 import com.example.modules.exams.dtos.ExamRankingRequestDto;
-import com.example.modules.exams.dtos.ExamRankingResponseDto;
+import com.example.modules.exams.dtos.ExamRankingResponseDTO;
 import com.example.modules.exams.services.ExamRankingService;
 import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(path = EXAMS_PREFIX + "/submissions/rank")
 @RequiredArgsConstructor
-@Tag(name = "Exam Rankings", description = "API to list all submissions (scores) for an exam")
+@Tag(name = "exam-rankings", description = "API to list all submissions (scores) for an exam")
 public class ExamRankingController {
 
   private final ExamRankingService examRankingService;
@@ -46,13 +46,13 @@ public class ExamRankingController {
   )
   @GetMapping
   @ResponseStatus(HttpStatus.OK)
-  public SuccessResponseDTO<List<ExamRankingResponseDto>> getExamSubmissions(
+  public SuccessResponseDTO<List<ExamRankingResponseDTO>> getExamSubmissions(
     @ParameterObject @Valid ExamRankingRequestDto dto,
     @CurrentUser User currentUser
   ) {
     log.info("Fetching all exam submissions for exam {}", dto.getExamId());
-    List<ExamRankingResponseDto> data = examRankingService.getExamRankings(dto, currentUser);
-    return SuccessResponseDTO.<List<ExamRankingResponseDto>>builder()
+    List<ExamRankingResponseDTO> data = examRankingService.getExamRankings(dto, currentUser);
+    return SuccessResponseDTO.<List<ExamRankingResponseDTO>>builder()
       .status(200)
       .message("Exam submissions retrieved successfully")
       .data(data)

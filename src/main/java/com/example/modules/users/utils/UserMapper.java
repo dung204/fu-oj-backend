@@ -3,6 +3,7 @@ package com.example.modules.users.utils;
 import com.example.modules.minio.dtos.MinioFileResponse;
 import com.example.modules.minio.services.MinioService;
 import com.example.modules.users.dtos.UserProfileDTO;
+import com.example.modules.users.dtos.UserProfileWithoutAvatarDTO;
 import com.example.modules.users.entities.User;
 import lombok.extern.slf4j.Slf4j;
 import org.mapstruct.Mapper;
@@ -22,6 +23,11 @@ public abstract class UserMapper {
   @Mapping(source = "account.role", target = "role")
   @Mapping(source = "avatar", target = "avatar", qualifiedByName = "mapAvatar")
   public abstract UserProfileDTO toUserProfileDTO(User user);
+
+  @Named("toUserProfileWithoutAvatarDTO")
+  @Mapping(source = "account.email", target = "email")
+  @Mapping(source = "account.role", target = "role")
+  public abstract UserProfileWithoutAvatarDTO toUserProfileWithoutAvatarDTO(User user);
 
   @Named("mapAvatar")
   protected MinioFileResponse mapAvatar(String avatarFileName) {

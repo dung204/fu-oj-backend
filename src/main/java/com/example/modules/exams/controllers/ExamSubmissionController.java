@@ -28,7 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping(path = EXAMS_PREFIX + "/submissions")
 @RequiredArgsConstructor
-@Tag(name = "Exam Submissions", description = "API for managing exam submissions")
+@Tag(name = "exam-submissions", description = "API for managing exam submissions")
 public class ExamSubmissionController {
 
   private final ExamSubmissionService examSubmissionService;

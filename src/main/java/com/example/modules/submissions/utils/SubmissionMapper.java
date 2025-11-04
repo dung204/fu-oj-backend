@@ -21,6 +21,7 @@ public abstract class SubmissionMapper {
   @Mapping(source = "user", target = "user", qualifiedByName = "toUserProfileDTO")
   @Mapping(source = "exercise", target = "exercise", qualifiedByName = "toExerciseResponseDTO")
   @Mapping(source = "submissionResults", target = "submissionResults")
+  @Mapping(target = "verdict", ignore = true)
   public abstract SubmissionResponseDTO toSubmissionResponseDTO(Submission submission);
 
   @AfterMapping

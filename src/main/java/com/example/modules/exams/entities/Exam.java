@@ -39,9 +39,12 @@ public class Exam extends BaseEntity {
   private Instant endTime;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false, columnDefinition = "varchar(255) default 'UPCOMING'")
+  @Column(
+    nullable = false,
+    columnDefinition = "varchar(255) default 'DRAFT' check (status in ('DRAFT','UPCOMING','ONGOING','COMPLETED','CANCELLED','OUTDATED'))"
+  )
   @Builder.Default
-  private ExamStatus status = ExamStatus.UPCOMING;
+  private ExamStatus status = ExamStatus.DRAFT;
 
   @OneToMany(
     mappedBy = "exam", // exam: liên kết với tên thuộc tính trong ExamExercise

@@ -1,38 +1,21 @@
 package com.example.modules.exams.utils;
 
-import com.example.modules.exams.dtos.ExamRankingResponseDto;
+import com.example.modules.exams.dtos.ExamRankingResponseDTO;
 import com.example.modules.exams.dtos.ExamResultResponseDto;
 import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamRanking;
-import com.example.modules.users.dtos.UserProfileDtoV2;
 import com.example.modules.users.entities.User;
+import com.example.modules.users.utils.UserMapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = { UserMapper.class })
 public abstract class ExamRankingMapper {
 
-  @Mapping(target = "user", expression = "java(mapUser(ranking.getUser()))")
+  @Mapping(target = "user", qualifiedByName = "toUserProfileWithoutAvatarDTO")
   @Mapping(target = "exam", expression = "java(mapExam(ranking.getExam(), ranking.getUser()))")
-  public abstract ExamRankingResponseDto toExamRankingResponseDto(ExamRanking ranking);
-
-  @Named("mapUser")
-  protected UserProfileDtoV2 mapUser(User user) {
-    if (user == null) return null;
-    return UserProfileDtoV2.builder()
-      .id(user.getId())
-      .email(user.getAccount() != null ? user.getAccount().getEmail() : null)
-      .role(
-        user.getAccount() != null && user.getAccount().getRole() != null
-          ? user.getAccount().getRole().getValue()
-          : null
-      )
-      .firstName(user.getFirstName())
-      .lastName(user.getLastName())
-      .rollNumber(user.getRollNumber())
-      .build();
-  }
+  public abstract ExamRankingResponseDTO toExamRankingResponseDto(ExamRanking ranking);
 
   @Named("mapExam")
   protected ExamResultResponseDto mapExam(Exam exam, User user) {

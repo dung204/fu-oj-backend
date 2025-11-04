@@ -9,6 +9,7 @@ import com.example.modules.auth.annotations.CurrentUser;
 import com.example.modules.auth.enums.Role;
 import com.example.modules.exams.dtos.ExamCreateDTO;
 import com.example.modules.exams.dtos.ExamResponseDTO;
+import com.example.modules.exams.dtos.ExamUpdateDTO;
 import com.example.modules.exams.dtos.ExamsSearchDTO;
 import com.example.modules.exams.services.ExamService;
 import com.example.modules.exams.utils.ExamMapper;
@@ -31,7 +32,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping(path = EXAMS_PREFIX)
 @RequiredArgsConstructor
-@Tag(name = "Exams", description = "API for managing exams")
+@Tag(name = "exams", description = "API for managing exams")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ExamController {
 
@@ -41,7 +42,9 @@ public class ExamController {
   @AllowRoles({ Role.INSTRUCTOR })
   @Operation(
     summary = "Create exams for multiple groups (for INSTRUCTOR only)",
-    description = "Create exams for multiple groups at once. For each group, an exam will be created with title '{original title} {group name}'",
+    description = "Creates exams for multiple groups at once based on a single template. For each `groupId` provided, a new exam is generated with a unique title formatted as `{original title} {group name}`.\n\n" +
+      "The `status` can be `DRAFT` or `UPCOMING` (defaults to `DRAFT`).\n\n" +
+      "If the status is set to `UPCOMING`, the `startTime` must be at least 5 minutes in the future.",
     responses = {
       @ApiResponse(responseCode = "201", description = "Exams created successfully"),
       @ApiResponse(
@@ -119,6 +122,85 @@ public class ExamController {
       .message("Exams retrieved successfully")
       .page(examService.getAllExams(examsSearchDTO, currentUser))
       .filters(examsSearchDTO.getFilters())
+      .build();
+  }
+
+  @AllowRoles({ Role.INSTRUCTOR, Role.ADMIN })
+  @Operation(
+    summary = "Update an exam by ID (for INSTRUCTOR or ADMIN)",
+    description = "Updates an existing exam. An `INSTRUCTOR` can only update exams they created. An `ADMIN` can update any exam. Only the fields provided in the request body will be updated.\n\n" +
+      "This endpoint does not update the `status` of exams. It can be only updated via the scheduled task or the `[PATCH] /api/v1/exams/{id}/publish`\n\n" +
+      "An exam can not be updated when the status is `ONGOING`, `COMPLETED`, `CANCELLED`",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Exam updated successfully"),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid request body or parameters",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Exam not found, or user is not authorized to update this exam",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "409",
+        description = "Exam not can not be updated because of the status",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @PatchMapping("/{id}")
+  public SuccessResponseDTO<ExamResponseDTO> updateExam(
+    @PathVariable String id,
+    @RequestBody @Valid ExamUpdateDTO examUpdateDTO,
+    @CurrentUser User currentUser
+  ) {
+    return SuccessResponseDTO.<ExamResponseDTO>builder()
+      .status(200)
+      .message("Exam updated successfully.")
+      .data(examService.updateExam(id, examUpdateDTO, currentUser))
+      .build();
+  }
+
+  @AllowRoles({ Role.INSTRUCTOR, Role.ADMIN })
+  @Operation(
+    summary = "Publish a draft exam (for INSTRUCTOR or ADMIN)",
+    description = "Changes an exam's status from `DRAFT` to `UPCOMING`. This makes the exam visible and schedules it to become `ONGOING` at its start time.\n\n" +
+      "**Conditions for publishing:**\n" +
+      "1. The exam must currently be in `DRAFT` status.\n" +
+      "2. The exam's start time must be at least 5 minutes in the future.\n" +
+      "3. An `INSTRUCTOR` can only publish exams they created.",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Exam published successfully"),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Cannot publish exam because its status is not DRAFT or its start time is invalid.",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Exam not found, or user is not authorized to the exam",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "409",
+        description = "Exam not can not be published because the status is not `DRAFT`",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @PatchMapping("/{id}/publish")
+  public SuccessResponseDTO<ExamResponseDTO> publishExam(
+    @PathVariable String id,
+    @CurrentUser User currentUser
+  ) {
+    return SuccessResponseDTO.<ExamResponseDTO>builder()
+      .status(200)
+      .message("Exam published successfully.")
+      .data(examService.publishExam(id, currentUser))
       .build();
   }
 

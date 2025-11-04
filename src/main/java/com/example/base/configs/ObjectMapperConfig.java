@@ -1,6 +1,8 @@
 package com.example.base.configs;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.json.JsonWriteFeature;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.openapitools.jackson.nullable.JsonNullableModule;
@@ -18,14 +20,11 @@ public class ObjectMapperConfig {
     mapper.registerModule(new JavaTimeModule());
 
     // avoid Jackson escape
-    mapper.getFactory().configure(JsonGenerator.Feature.ESCAPE_NON_ASCII, false);
-    mapper.getFactory().configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
+    mapper.configure(JsonWriteFeature.ESCAPE_NON_ASCII.mappedFeature(), false);
+    mapper.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
 
     // ignore unknown properties in JSON input
-    mapper.configure(
-      com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-      false
-    );
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     return mapper;
   }

@@ -1,13 +1,18 @@
 package com.example.modules.exams.services;
 
+import com.example.base.utils.ObjectUtils;
 import com.example.modules.auth.enums.Role;
 import com.example.modules.exams.dtos.ExamCreateDTO;
 import com.example.modules.exams.dtos.ExamResponseDTO;
+import com.example.modules.exams.dtos.ExamUpdateDTO;
 import com.example.modules.exams.dtos.ExamsSearchDTO;
 import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamExercise;
 import com.example.modules.exams.enums.ExamStatus;
 import com.example.modules.exams.exceptions.ExamNotFoundException;
+import com.example.modules.exams.exceptions.ExamNotModifiableException;
+import com.example.modules.exams.exceptions.InvalidTimeRangeException;
+import com.example.modules.exams.exceptions.StartTimeTooSoonException;
 import com.example.modules.exams.repositories.ExamExerciseRepository;
 import com.example.modules.exams.repositories.ExamRepository;
 import com.example.modules.exams.utils.ExamMapper;
@@ -15,11 +20,11 @@ import com.example.modules.exams.utils.ExamsSpecification;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.groups.entities.Group;
-import com.example.modules.groups.exeptions.GroupNotFoundException;
 import com.example.modules.groups.repositories.GroupsRepository;
 import com.example.modules.users.entities.User;
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,6 +44,7 @@ public class ExamService {
 
   private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   private static final SecureRandom random = new SecureRandom();
+  private final long BUFFER_MINUTES = 5;
 
   private final ExamRepository examRepository;
   private final ExamExerciseRepository examExerciseRepository;
@@ -130,11 +136,24 @@ public class ExamService {
   public List<ExamResponseDTO> createExamsForMultipleGroups(ExamCreateDTO dto, User currentUser) {
     List<ExamResponseDTO> createdExams = new ArrayList<>();
 
-    // Validate và lấy các group
-    List<Group> groups = groupsRepository.findAllById(dto.getGroupId());
-    if (groups.isEmpty()) {
-      throw new GroupNotFoundException();
+    if (dto.getStartTime().isAfter(dto.getEndTime())) {
+      throw new InvalidTimeRangeException();
     }
+
+    Instant now = Instant.now();
+    Instant safeStartTime = now.plus(BUFFER_MINUTES, ChronoUnit.MINUTES);
+
+    if (
+      dto.getStatus().equals(ExamStatus.UPCOMING.getValue()) &&
+      dto.getStartTime().isBefore(safeStartTime)
+    ) {
+      throw new StartTimeTooSoonException(
+        "Start time must be after the current time at least " + BUFFER_MINUTES + " minutes."
+      );
+    }
+
+    // Validate và lấy các group
+    List<Group> groups = groupsRepository.findAllById(dto.getGroupIds());
 
     // Validate và lấy các exercise
     List<Exercise> exercises = new ArrayList<>();
@@ -152,7 +171,7 @@ public class ExamService {
         .code(generateUniqueExamCode())
         .title(examTitle)
         .description(dto.getDescription())
-        .status(ExamStatus.DRAFT)
+        .status(ExamStatus.fromValue(dto.getStatus()))
         .startTime(dto.getStartTime())
         .endTime(dto.getEndTime())
         .group(group)
@@ -169,10 +188,10 @@ public class ExamService {
             .exam(exam)
             .exercise(exercises.get(i))
             .order(i + 1)
+            .createdBy(currentUser.getId())
             .build();
 
           // set createdBy
-          examExercise.setCreatedBy(currentUser.getId());
           examExercises.add(examExercise);
         }
         examExerciseRepository.saveAll(examExercises);
@@ -258,6 +277,63 @@ public class ExamService {
     }
 
     return examsPage.map(examMapper::toExamResponseDTO);
+  }
+
+  @Transactional
+  public ExamResponseDTO updateExam(String id, ExamUpdateDTO examUpdateDTO, User currentUser) {
+    Exam exam = getExamById(id, currentUser);
+
+    if (
+      List.of(ExamStatus.ONGOING, ExamStatus.COMPLETED, ExamStatus.CANCELED).contains(
+        exam.getStatus()
+      )
+    ) {
+      throw new ExamNotModifiableException();
+    }
+
+    ObjectUtils.assign(exam, examUpdateDTO);
+
+    if (exam.getStartTime().isAfter(exam.getEndTime())) {
+      throw new InvalidTimeRangeException();
+    }
+
+    Instant now = Instant.now();
+    Instant safeStartTime = now.plus(BUFFER_MINUTES, ChronoUnit.MINUTES);
+
+    if (exam.getStatus() == ExamStatus.UPCOMING && exam.getStartTime().isBefore(safeStartTime)) {
+      throw new StartTimeTooSoonException(
+        "Start time must be after the current time at least " + BUFFER_MINUTES + " minutes."
+      );
+    }
+
+    return examMapper.toExamResponseDTO(examRepository.save(exam));
+  }
+
+  @Transactional
+  public ExamResponseDTO publishExam(String id, User currentUser) {
+    Exam exam = getExamById(id, currentUser);
+
+    if (exam.getStatus() != ExamStatus.DRAFT) {
+      throw new ExamNotModifiableException(
+        "Exam can not be published when the status is not 'DRAFT'."
+      );
+    }
+
+    if (exam.getStartTime().isAfter(exam.getEndTime())) {
+      throw new InvalidTimeRangeException();
+    }
+
+    Instant now = Instant.now();
+    Instant safeStartTime = now.plus(BUFFER_MINUTES, ChronoUnit.MINUTES);
+
+    if (exam.getStartTime().isBefore(safeStartTime)) {
+      throw new StartTimeTooSoonException(
+        "Start time must be after the current time at least " + BUFFER_MINUTES + " minutes."
+      );
+    }
+
+    exam.setStatus(ExamStatus.UPCOMING);
+    return examMapper.toExamResponseDTO(examRepository.save(exam));
   }
 
   /**

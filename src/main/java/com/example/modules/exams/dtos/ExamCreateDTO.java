@@ -1,6 +1,13 @@
 package com.example.modules.exams.dtos;
 
+import com.example.base.annotations.AllowedStrings;
+import com.example.base.utils.SwaggerExamples;
+import com.example.modules.exams.enums.ExamStatus;
+import io.jsonwebtoken.lang.Collections;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.List;
@@ -13,19 +20,26 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ExamCreateDTO {
 
-  @NotBlank(message = "Title is required")
+  @NotBlank
   private String title;
 
-  @NotBlank(message = "Description is required")
+  @NotBlank
   private String description;
 
-  @NotNull(message = "Start time is required")
+  @NotNull
   private Instant startTime;
 
-  @NotNull(message = "End time is required")
+  @NotNull
   private Instant endTime;
 
-  private List<String> groupId;
+  @Schema(example = SwaggerExamples.EXAM_STATUS)
+  @AllowedStrings(values = { "DRAFT", "UPCOMING" })
+  private String status = ExamStatus.DRAFT.getValue();
 
-  private List<String> exerciseIds;
+  @ArraySchema(schema = @Schema(example = SwaggerExamples.UUID))
+  @NotEmpty
+  private List<String> groupIds;
+
+  @ArraySchema(schema = @Schema(example = SwaggerExamples.UUID))
+  private List<String> exerciseIds = Collections.emptyList();
 }
