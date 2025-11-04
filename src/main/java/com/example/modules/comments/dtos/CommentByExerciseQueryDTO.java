@@ -13,13 +13,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CommentQueryDTO extends PaginatedQueryDTO {
+public class CommentByExerciseQueryDTO extends PaginatedQueryDTO {
 
   @Parameter(
     description = "Filter for replies to a specific comment by providing its parent ID, `null` for top-level comments"
   )
   private String parentId;
-
-  @Parameter(description = "Filter comments belonging to a specific exercise by providing its ID.")
-  private String exerciseId;
 }

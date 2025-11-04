@@ -1,7 +1,8 @@
 package com.example.modules.comments.services;
 
+import com.example.modules.comments.dtos.CommentByExerciseQueryDTO;
+import com.example.modules.comments.dtos.CommentCreateDTO;
 import com.example.modules.comments.dtos.CommentQueryDTO;
-import com.example.modules.comments.dtos.CommentRequestDTO;
 import com.example.modules.comments.dtos.CommentResponseDTO;
 import com.example.modules.comments.entities.Comment;
 import com.example.modules.comments.repositories.CommentsRepository;
@@ -14,7 +15,6 @@ import com.example.modules.redis.event_type.comment.CommentEvent;
 import com.example.modules.redis.event_type.comment.CommentEventType;
 import com.example.modules.system_config.entities.SystemConfigs;
 import com.example.modules.system_config.repositories.SystemConfigsRepository;
-import com.example.modules.system_config.services.SystemConfigsService;
 import com.example.modules.users.entities.User;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +34,13 @@ public class CommentsService implements ICommentsService {
   private final SystemConfigsRepository systemConfigsRepository;
 
   @Override
-  public CommentResponseDTO createComment(User user, CommentRequestDTO commentRequestDTO) {
+  public CommentResponseDTO createComment(
+    String exerciseId,
+    CommentCreateDTO commentRequestDTO,
+    User currentUser
+  ) {
     //find exercise by id
-    Exercise exercise = exercisesRepository.findExerciseById(commentRequestDTO.getExerciseId());
+    Exercise exercise = exercisesRepository.findExerciseById(exerciseId);
     // find parent by id
     Comment comment = null;
     if (commentRequestDTO.getParentId() != null) {
@@ -44,7 +48,7 @@ public class CommentsService implements ICommentsService {
     }
     //process
     Comment commentCreate = Comment.builder()
-      .user(user)
+      .user(currentUser)
       .exercise(exercise)
       .parent(comment)
       .content(commentRequestDTO.getContent())
@@ -80,6 +84,28 @@ public class CommentsService implements ICommentsService {
         commentQueryDTO.toPageRequest()
       )
       .map(commentMapper::toCommentResponseDTO);
+  }
+
+  @Override
+  public Page<CommentResponseDTO> getCommentsByParentIdAndExerciseId(
+    String exerciseId,
+    CommentByExerciseQueryDTO commentByExerciseQueryDTO
+  ) {
+    return commentsRepository
+      .findAll(
+        CommentsSpecification.builder()
+          .withParentId(commentByExerciseQueryDTO.getParentId())
+          .withExerciseId(exerciseId)
+          .notDeleted()
+          .build(),
+        commentByExerciseQueryDTO.toPageRequest()
+      )
+      .map(commentMapper::toCommentResponseDTO);
+  }
+
+  @Override
+  public CommentResponseDTO getCommentById(String commentId) {
+    return commentMapper.toCommentResponseDTO(commentsRepository.findCommentById(commentId));
   }
 
   @Override
