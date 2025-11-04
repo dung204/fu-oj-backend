@@ -3,6 +3,7 @@ package com.example.base.configs;
 import com.example.modules.auth.exceptions.InvalidCredentialsException;
 import com.example.modules.auth.filters.JwtAuthenticationFilter;
 import com.example.modules.auth.repositories.AccountsRepository;
+import com.example.modules.auth.utils.AccountsSpecification;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -58,7 +59,9 @@ public class SecurityConfig {
   @Bean
   UserDetailsService userDetailsService() {
     return email ->
-      accountsRepository.findByEmail(email).orElseThrow(InvalidCredentialsException::new);
+      accountsRepository
+        .findOne(AccountsSpecification.builder().withEmail(email).notDeleted().build())
+        .orElseThrow(InvalidCredentialsException::new);
   }
 
   @Bean

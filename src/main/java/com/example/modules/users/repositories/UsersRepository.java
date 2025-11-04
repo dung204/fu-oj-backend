@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UsersRepository
   extends JpaRepository<User, String>, JpaSpecificationExecutor<User> {
-  Optional<User> findByAccount(Account account);
+  Optional<User> findByAccountAndDeletedTimestampIsNull(Account account);
 
   @Query("SELECT u FROM User u JOIN u.account a WHERE a.email = :email")
   Optional<User> findByAccountEmail(String email);

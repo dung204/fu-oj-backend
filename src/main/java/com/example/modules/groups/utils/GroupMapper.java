@@ -18,5 +18,6 @@ public abstract class GroupMapper {
     target = "studentsCount",
     expression = "java(group.getStudents() != null ? group.getStudents().size() : 0)"
   )
+  @Mapping(target = "joined", ignore = true)
   public abstract GroupResponseDTO toGroupResponseDTO(Group group);
 }

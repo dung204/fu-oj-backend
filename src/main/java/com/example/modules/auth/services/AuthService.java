@@ -10,6 +10,7 @@ import com.example.modules.auth.exceptions.InvalidCredentialsException;
 import com.example.modules.auth.exceptions.PasswordNotMatchException;
 import com.example.modules.auth.exceptions.TokenInvalidatedException;
 import com.example.modules.auth.repositories.AccountsRepository;
+import com.example.modules.auth.utils.AccountsSpecification;
 import com.example.modules.redis.services.RedisService;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.exceptions.UserNotFoundException;
@@ -43,14 +44,16 @@ public class AuthService {
     String password = loginRequest.getPassword();
 
     Account account = accountsRepository
-      .findByEmail(email)
-      .orElseThrow(() -> new InvalidCredentialsException());
+      .findOne(AccountsSpecification.builder().withEmail(email).notDeleted().build())
+      .orElseThrow(InvalidCredentialsException::new);
 
     if (!passwordEncoder.matches(password, account.getPassword())) {
       throw new InvalidCredentialsException();
     }
 
-    User user = usersRepository.findByAccount(account).get();
+    User user = usersRepository
+      .findByAccountAndDeletedTimestampIsNull(account)
+      .orElseThrow(InvalidCredentialsException::new);
     return getTokenResponse(user);
   }
 
@@ -58,7 +61,9 @@ public class AuthService {
     final String email = registerRequest.getEmail();
     final String password = registerRequest.getPassword();
 
-    final Optional<Account> existingAccount = accountsRepository.findByEmail(email);
+    final Optional<Account> existingAccount = accountsRepository.findOne(
+      AccountsSpecification.builder().withEmail(email).notDeleted().build()
+    );
     final User savedUser;
 
     if (!existingAccount.isPresent()) {
@@ -76,7 +81,7 @@ public class AuthService {
       account.setDeletedTimestamp(null);
       final Account savedAccount = accountsRepository.save(account);
       final User user = usersRepository
-        .findByAccount(account)
+        .findByAccountAndDeletedTimestampIsNull(account)
         .orElse(User.builder().account(savedAccount).build());
       savedUser = usersRepository.save(user);
     }

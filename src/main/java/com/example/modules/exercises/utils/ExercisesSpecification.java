@@ -72,4 +72,31 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
     }
     return this;
   }
+
+  public ExercisesSpecification onlyLatestVersion() {
+    specifications.add((root, query, cb) -> {
+      // Nếu baseId == null: coi như exercise riêng lẻ, lấy luôn
+      var baseIdIsNull = cb.isNull(root.get("baseId"));
+
+      // Nếu baseId != null: tìm max version của cùng baseId
+      // (bao gồm cả trường hợp baseId == id, vì đó cũng là một nhóm version)
+      var subquery = query.subquery(Integer.class);
+      var subRoot = subquery.from(Exercise.class);
+
+      subquery.select(cb.max(subRoot.get("version")));
+      subquery.where(
+        cb.and(
+          cb.isNotNull(subRoot.get("baseId")),
+          cb.equal(subRoot.get("baseId"), root.get("baseId"))
+        )
+      );
+
+      var versionEqualsMax = cb.equal(root.get("version"), subquery);
+      var baseIdNotNull = cb.isNotNull(root.get("baseId"));
+
+      // Kết hợp: (baseId == null) OR (baseId != null AND version == max version của cùng baseId)
+      return cb.or(baseIdIsNull, cb.and(baseIdNotNull, versionEqualsMax));
+    });
+    return this;
+  }
 }

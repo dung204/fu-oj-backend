@@ -3,6 +3,7 @@ package com.example.modules.submission_results.services;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.Judge0.utils.Base64Utils;
+import com.example.modules.exercises.enums.Visibility;
 import com.example.modules.scores.services.ScoresService;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
@@ -28,8 +29,11 @@ public class SubmissionResultsService {
 
   /**
    * Scheduled task chạy mỗi 1 phút để:
-   * 1. Kiểm tra và cập nhật các SubmissionResult đang pending (IN_QUEUE/PROCESSING)
-   * 2. Tìm các Submission chưa có điểm và đã hoàn thành → tính điểm
+   *
+   * <ol>
+   * <li>Kiểm tra và cập nhật các SubmissionResult đang pending ({@code IN_QUEUE}/{@code PROCESSING})</li>
+   * <li>Tìm các Submission chưa có điểm và đã hoàn thành → tính điểm</li>
+   * </ol>
    */
   @Scheduled(fixedRate = 60000) // 60000ms = 1 phút
   @Transactional
@@ -48,7 +52,8 @@ public class SubmissionResultsService {
   /**
    * Part 1: Cập nhật các SubmissionResult có verdict IN_QUEUE hoặc PROCESSING
    */
-  private void updatePendingSubmissionResults() {
+  @Transactional
+  protected void updatePendingSubmissionResults() {
     List<SubmissionResult> pendingResults = submissionResultRepository.findByVerdictIn(
       List.of(Verdict.IN_QUEUE.getValue(), Verdict.PROCESSING.getValue())
     );
@@ -127,10 +132,15 @@ public class SubmissionResultsService {
    * Part 2: Tìm các Submission chưa có điểm (score is null)
    * và đã hoàn thành tất cả test cases → tính điểm
    */
-  private void updateSubmissionsWithoutScore() {
-    // Tìm các submission chưa có điểm (score is null)
+  @Transactional
+  protected void updateSubmissionsWithoutScore() {
+    // Tìm các submission chưa có điểm (score is null) + không phải là bài kiểm tra + chưa bị xóa
     List<Submission> submissionsWithoutScore = submissionsRepository.findAll((root, query, cb) ->
-      cb.and(cb.isNull(root.get("score")), cb.isNull(root.get("deletedTimestamp")))
+      cb.and(
+        cb.isNull(root.get("score")),
+        cb.isNull(root.get("deletedTimestamp")),
+        cb.isFalse(root.get("isExamination"))
+      )
     );
 
     if (submissionsWithoutScore.isEmpty()) {
@@ -148,7 +158,8 @@ public class SubmissionResultsService {
    * Tính lại passedTestCases, totalTestCases, isAccepted, score
    * Sau đó cập nhật tổng điểm user
    */
-  private void updateSubmissionsScore(List<Submission> submissions) {
+  @Transactional
+  protected void updateSubmissionsScore(List<Submission> submissions) {
     for (Submission submission : submissions) {
       try {
         // Refresh submission với tất cả submission results
@@ -170,6 +181,19 @@ public class SubmissionResultsService {
 
         if (!allCompleted) {
           log.debug("Submission {} chưa hoàn thành hết test cases", submission.getId());
+          continue;
+        }
+
+        // find exercise to get visibility
+        if (
+          (submission.getExercise() != null &&
+            submission.getExercise().getVisibility().equals(Visibility.PRIVATE)) ||
+          submission.getExercise().getVisibility().equals(Visibility.DRAFT)
+        ) {
+          log.debug(
+            "Submission {} belongs to a private exercise, skipping score update",
+            submission.getId()
+          );
           continue;
         }
 

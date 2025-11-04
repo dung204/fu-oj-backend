@@ -39,6 +39,9 @@ public abstract class ExerciseMapper {
 
   @Named("hidePrivateTestCases")
   protected List<TestCaseResponseDTO> hidePrivateTestCases(List<TestCase> testCases) {
+    if (testCases == null || testCases.isEmpty()) {
+      return List.of();
+    }
     return testCases
       .stream()
       .map(tc -> {
@@ -55,6 +58,9 @@ public abstract class ExerciseMapper {
 
   @Named("mapAllTestCases")
   protected List<TestCaseResponseDTO> mapAllTestCases(List<TestCase> testCases) {
+    if (testCases == null || testCases.isEmpty()) {
+      return List.of();
+    }
     return testCases.stream().map(testCaseMapper::toTestCaseResponseDTO).toList();
   }
 }

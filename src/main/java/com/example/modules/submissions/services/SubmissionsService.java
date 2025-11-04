@@ -63,6 +63,7 @@ public class SubmissionsService {
         SubmissionsSpecification.builder()
           .withStudentId(submissionsSearchDTO.getStudent())
           .withExerciseId(submissionsSearchDTO.getExercise())
+          .withExamination(submissionsSearchDTO.getIsExamination())
           .isOneOfStatuses(submissionsSearchDTO.getStatus())
           .isOneOfLanguageCodes(submissionsSearchDTO.getLanguageCode())
           .notDeleted()
@@ -89,6 +90,10 @@ public class SubmissionsService {
     // get all test cases of exercise
     List<TestCase> testCases = testCaseRepository.findAllByExerciseId((exercise.getId()));
 
+    boolean isExamination = false;
+    if (request.isExamination()) {
+      isExamination = true;
+    }
     // create submission
     Submission submission = Submission.builder()
       .user(currentUser)
@@ -101,6 +106,7 @@ public class SubmissionsService {
       .totalTestCases(testCases.size())
       .isAccepted(false)
       .score(null)
+      .isExamination(isExamination)
       .build();
     submission = submissionsRepository.save(submission);
 
@@ -126,7 +132,7 @@ public class SubmissionsService {
         .verdict(Verdict.IN_QUEUE.getValue())
         .build();
 
-      log.info("Submission {}, result: {} ", i, result.toString());
+      log.info("Submission {}, token: {}, verdict: {}", i, tokens.get(i), Verdict.IN_QUEUE);
       submissionResultRepository.save(result);
     }
 

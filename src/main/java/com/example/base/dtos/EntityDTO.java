@@ -1,7 +1,6 @@
 package com.example.base.dtos;
 
 import com.example.base.utils.SwaggerExamples;
-import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -33,6 +32,9 @@ public class EntityDTO {
     example = SwaggerExamples.TIMESTAMP
   )
   protected String createdTimestamp;
+
+  @Schema(description = "The updatedBy when the entity is updated", example = SwaggerExamples.UUID)
+  protected String updatedBy;
 
   @Schema(
     description = "The timestamp indicating when the entity is last modified",

@@ -11,6 +11,7 @@ import com.example.modules.auth.exceptions.TokenInvalidatedException;
 import com.example.modules.auth.services.JwtService;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.repositories.UsersRepository;
+import com.example.modules.users.utils.UsersSpecification;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -87,7 +88,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       }
 
       User user = usersRepository
-        .findById(userId)
+        .findOne(UsersSpecification.builder().withId(userId).notDeleted().build())
         .orElseThrow(() -> new InvalidCredentialsException());
 
       final String currentRole = decodedToken.getPayload().get("role", String.class);
@@ -103,7 +104,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
       securityContext.setAuthentication(
         new UsernamePasswordAuthenticationToken(
-          user.getAccount().getEmail(),
+          user,
           null,
           List.of(new SimpleGrantedAuthority(currentRole))
         )
