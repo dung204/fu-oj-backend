@@ -6,10 +6,10 @@ import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.AllowRoles;
 import com.example.modules.auth.annotations.CurrentUser;
 import com.example.modules.auth.enums.Role;
-import com.example.modules.exams.dtos.ExamResultRequestDto;
-import com.example.modules.exams.dtos.ExamResultResponseDto;
-import com.example.modules.exams.dtos.ExamSubmissionCreateDto;
-import com.example.modules.exams.dtos.ExamSubmissionResponseDto;
+import com.example.modules.exams.dtos.ExamResultRequestDTO;
+import com.example.modules.exams.dtos.ExamResultResponseDTO;
+import com.example.modules.exams.dtos.ExamSubmissionCreateDTO;
+import com.example.modules.exams.dtos.ExamSubmissionResponseDTO;
 import com.example.modules.exams.services.ExamSubmissionService;
 import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -80,8 +80,8 @@ public class ExamSubmissionController {
   )
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public SuccessResponseDTO<ExamSubmissionResponseDto> createExamSubmission(
-    @RequestBody @Valid ExamSubmissionCreateDto dto,
+  public SuccessResponseDTO<ExamSubmissionResponseDTO> createExamSubmission(
+    @RequestBody @Valid ExamSubmissionCreateDTO dto,
     @CurrentUser User currentUser
   ) {
     log.info(
@@ -91,12 +91,12 @@ public class ExamSubmissionController {
       dto.getExerciseId()
     );
 
-    ExamSubmissionResponseDto response = examSubmissionService.createExamSubmission(
+    ExamSubmissionResponseDTO response = examSubmissionService.createExamSubmission(
       dto,
       currentUser
     );
 
-    return SuccessResponseDTO.<ExamSubmissionResponseDto>builder()
+    return SuccessResponseDTO.<ExamSubmissionResponseDTO>builder()
       .status(201)
       .message("Exam submission created successfully")
       .data(response)
@@ -137,8 +137,8 @@ public class ExamSubmissionController {
   )
   @GetMapping("/results")
   @ResponseStatus(HttpStatus.OK)
-  public SuccessResponseDTO<ExamResultResponseDto> getExamResult(
-    @ParameterObject @Valid ExamResultRequestDto dto,
+  public SuccessResponseDTO<ExamResultResponseDTO> getExamResult(
+    @ParameterObject @Valid ExamResultRequestDTO dto,
     @CurrentUser User currentUser
   ) {
     // Students can only view their own results
@@ -154,9 +154,9 @@ public class ExamSubmissionController {
 
     log.info("Fetching exam result for exam {} and user {}", dto.getExamId(), dto.getUserId());
 
-    ExamResultResponseDto response = examSubmissionService.getExamResult(dto, currentUser);
+    ExamResultResponseDTO response = examSubmissionService.getExamResult(dto, currentUser);
 
-    return SuccessResponseDTO.<ExamResultResponseDto>builder()
+    return SuccessResponseDTO.<ExamResultResponseDTO>builder()
       .status(200)
       .message("Exam result retrieved successfully")
       .data(response)

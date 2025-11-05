@@ -1,6 +1,6 @@
 package com.example.modules.exams.utils;
 
-import com.example.modules.exams.dtos.ExamResultResponseDto;
+import com.example.modules.exams.dtos.ExamResultResponseDTO;
 import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamSubmission;
 import com.example.modules.submissions.entities.Submission;
@@ -24,7 +24,7 @@ public abstract class ExamResultMapper {
   @Mapping(target = "totalScore", ignore = true)
   @Mapping(target = "totalExercises", ignore = true)
   @Mapping(target = "completedExercises", ignore = true)
-  public abstract ExamResultResponseDto toBaseExamResult(Exam exam, User user);
+  public abstract ExamResultResponseDTO toBaseExamResult(Exam exam, User user);
 
   @Named("toSubmissionDetail")
   @Mapping(
@@ -45,7 +45,7 @@ public abstract class ExamResultMapper {
   @Mapping(target = "passedTestCases", source = "submission.passedTestCases")
   @Mapping(target = "totalTestCases", source = "submission.totalTestCases")
   @Mapping(target = "submittedAt", source = "es.createdTimestamp")
-  public abstract ExamResultResponseDto.ExamSubmissionDetail toSubmissionDetail(
+  public abstract ExamResultResponseDTO.ExamSubmissionDetail toSubmissionDetail(
     ExamSubmission es,
     Submission submission
   );

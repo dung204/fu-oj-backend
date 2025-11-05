@@ -17,7 +17,7 @@ public class ExamRankingResponseDTO extends EntityDTO {
 
   private UserProfileWithoutAvatarDTO user;
 
-  private ExamResultResponseDto exam;
+  private ExamResultResponseDTO exam;
 
   private Double totalScore;
 }

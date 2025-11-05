@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class ExamSubmissionCreateDto extends SubmissionRequest {
+public class ExamSubmissionCreateDTO extends SubmissionRequest {
 
   @NotBlank(message = "ExamId is required")
   private String examId;
