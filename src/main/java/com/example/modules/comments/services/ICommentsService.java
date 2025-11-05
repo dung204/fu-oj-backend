@@ -17,12 +17,14 @@ public interface ICommentsService {
   );
 
   public Page<CommentResponseDTO> getCommentsByParentIdAndExerciseId(
-    CommentQueryDTO commentQueryDTO
+    CommentQueryDTO commentQueryDTO,
+    User currentUser
   );
 
   public Page<CommentResponseDTO> getCommentsByParentIdAndExerciseId(
     String exerciseId,
-    CommentByExerciseQueryDTO commentByExerciseQueryDTO
+    CommentByExerciseQueryDTO commentByExerciseQueryDTO,
+    User currentUser
   );
 
   public Comment getCommentById(String commentId, User currentUser);

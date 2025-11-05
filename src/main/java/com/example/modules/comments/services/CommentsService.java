@@ -13,7 +13,7 @@ import com.example.modules.comments.repositories.CommentsRepository;
 import com.example.modules.comments.utils.CommentMapper;
 import com.example.modules.comments.utils.CommentsSpecification;
 import com.example.modules.exercises.entities.Exercise;
-import com.example.modules.exercises.repositories.ExercisesRepository;
+import com.example.modules.exercises.services.ExercisesService;
 import com.example.modules.groups.entities.Group;
 import com.example.modules.redis.configs.publishers.CommentPublisher;
 import com.example.modules.redis.event_type.comment.CommentEvent;
@@ -22,7 +22,9 @@ import com.example.modules.system_config.entities.SystemConfigs;
 import com.example.modules.system_config.repositories.SystemConfigsRepository;
 import com.example.modules.users.entities.User;
 import java.util.Optional;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -30,13 +32,14 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CommentsService implements ICommentsService {
 
-  private final CommentsRepository commentsRepository;
-  private final ExercisesRepository exercisesRepository;
-  private final CommentMapper commentMapper;
-  private final CommentPublisher commentPublisher;
-  private final SystemConfigsRepository systemConfigsRepository;
+  CommentsRepository commentsRepository;
+  ExercisesService exercisesService;
+  CommentMapper commentMapper;
+  CommentPublisher commentPublisher;
+  SystemConfigsRepository systemConfigsRepository;
 
   @Override
   public Comment getCommentById(String commentId, User currentUser) {
@@ -45,15 +48,16 @@ public class CommentsService implements ICommentsService {
     switch (currentUser.getAccount().getRole()) {
       case Role.ADMIN:
         comment = commentsRepository.findOne(
-          CommentsSpecification.builder().withId(commentId).notDeleted().build()
+          CommentsSpecification.builder().withId(commentId).build()
         );
         break;
       case Role.INSTRUCTOR:
         comment = commentsRepository.findOne(
           CommentsSpecification.builder()
-            .<CommentsSpecification>or(CommentsSpecification::withPublicExercises, spec ->
+            .or(CommentsSpecification::withPublicExercises, spec ->
               spec.withExercisesCreatedBy(commentId)
             )
+            .withNonDeletedExercisesOnly()
             .withId(commentId)
             .notDeleted()
             .build()
@@ -65,6 +69,7 @@ public class CommentsService implements ICommentsService {
             .withExercisesOfGroups(
               currentUser.getJoinedGroups().stream().map(Group::getId).toList()
             )
+            .withNonDeletedExercisesOnly()
             .withId(commentId)
             .notDeleted()
             .build()
@@ -81,8 +86,7 @@ public class CommentsService implements ICommentsService {
     CommentCreateDTO commentRequestDTO,
     User currentUser
   ) {
-    //find exercise by id
-    Exercise exercise = exercisesRepository.findExerciseById(exerciseId);
+    Exercise exercise = exercisesService.getExerciseById(exerciseId, currentUser);
 
     // find parent by id
     Comment parentComment = null;
@@ -116,14 +120,23 @@ public class CommentsService implements ICommentsService {
 
   @Override
   public Page<CommentResponseDTO> getCommentsByParentIdAndExerciseId(
-    CommentQueryDTO commentQueryDTO
+    CommentQueryDTO commentQueryDTO,
+    User currentUser
   ) {
+    Exercise exercise = exercisesService.getExerciseById(
+      commentQueryDTO.getExerciseId(),
+      currentUser
+    );
+
     return commentsRepository
       .findAll(
         CommentsSpecification.builder()
           .withParentId(commentQueryDTO.getParentId())
-          .withExerciseId(commentQueryDTO.getExerciseId())
-          .notDeleted()
+          .withExerciseId(exercise.getId())
+          .<CommentsSpecification>conditionally(
+            currentUser.getAccount().getRole() != Role.ADMIN,
+            CommentsSpecification::notDeleted
+          )
           .build(),
         commentQueryDTO.toPageRequest()
       )
@@ -133,13 +146,16 @@ public class CommentsService implements ICommentsService {
   @Override
   public Page<CommentResponseDTO> getCommentsByParentIdAndExerciseId(
     String exerciseId,
-    CommentByExerciseQueryDTO commentByExerciseQueryDTO
+    CommentByExerciseQueryDTO commentByExerciseQueryDTO,
+    User currentUser
   ) {
+    Exercise exercise = exercisesService.getExerciseById(exerciseId, currentUser);
+
     return commentsRepository
       .findAll(
         CommentsSpecification.builder()
           .withParentId(commentByExerciseQueryDTO.getParentId())
-          .withExerciseId(exerciseId)
+          .withExerciseId(exercise.getId())
           .notDeleted()
           .build(),
         commentByExerciseQueryDTO.toPageRequest()

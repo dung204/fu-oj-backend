@@ -35,16 +35,20 @@ public class CommentsController {
   CommentMapper commentMapper;
 
   @Operation(
-    summary = "Retrieve a list of comments based on exercise ID and parent comment ID",
-    description = "Fetches a paginated list of comments for a specific exercise. " +
-      "The returned comments depend on the provided exercise ID and optional parent comment ID:\n" +
-      "  * If `parentId = 'null'` (string with content of 'null'), returns all top-level comments (of the exercise with `exerciseId` if provided).\n" +
-      "  * If `parentId` is provided, returns all replies to the specified parent comment.",
+    summary = "Retrieve a list of comments for an exercise",
+    description = "Fetches a paginated list of comments. Access to the parent exercise is verified first, and the visibility of comments depends on the user's role.\n\n" +
+      "**Exercise Access Logic:**\n" +
+      "*   `ADMIN`: Can access any non-deleted exercise.\n" +
+      "*   `INSTRUCTOR`: Can access public exercises or exercises they created.\n" +
+      "*   `STUDENT`: Can access public exercises or exercises belonging to groups they are a member of.\n\n" +
+      "**Comment Visibility:**\n" +
+      "*   `ADMIN` can view all comments, including soft-deleted ones.\n" +
+      "*   Other roles can only view non-deleted comments.",
     responses = {
       @ApiResponse(responseCode = "200", description = "Comments retrieved successfully"),
       @ApiResponse(
         responseCode = "404",
-        description = "Exercise or comment not found",
+        description = "Exercise not found or user not authorized",
         content = @Content
       ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
@@ -52,28 +56,29 @@ public class CommentsController {
   )
   @GetMapping
   public PaginatedSuccessResponseDTO<CommentResponseDTO> getComment(
-    @ParameterObject @Valid CommentQueryDTO commentQueryDTO
+    @ParameterObject @Valid CommentQueryDTO commentQueryDTO,
+    @CurrentUser User currentUser
   ) {
     return PaginatedSuccessResponseDTO.<CommentResponseDTO>builder()
       .status(200)
       .message("Get comment successfully")
-      .page(commentsService.getCommentsByParentIdAndExerciseId(commentQueryDTO))
+      .page(commentsService.getCommentsByParentIdAndExerciseId(commentQueryDTO, currentUser))
       .filters(commentQueryDTO.getFilters())
       .build();
   }
 
   @Operation(
     summary = "Get a single comment by its ID",
-    description = "Retrieves the details of a specific comment using its unique identifier. Access is determined by the user's role:\n\n" +
-      "*   `ADMIN`: Can retrieve any non-deleted comment.\n" +
-      "*   `INSTRUCTOR`: Can retrieve comments on public exercises or on exercises they created.\n" +
-      "*   `STUDENT`: Can only retrieve comments on exercises belonging to groups they are a member of.\n\n" +
+    description = "Retrieves the details of a specific comment. Access is determined by the user's role:\n\n" +
+      "*   **ADMIN**: Can retrieve any comment, including soft-deleted ones.\n" +
+      "*   **INSTRUCTOR**: Can retrieve non-deleted comments on non-deleted exercises that are either public or created by them.\n" +
+      "*   **STUDENT**: Can retrieve non-deleted comments on non-deleted exercises belonging to a group they are a member of.\n\n" +
       "A `404 Not Found` error is returned if the comment does not exist or if the user is not authorized to view it.",
     responses = {
       @ApiResponse(responseCode = "200", description = "Comment retrieved successfully"),
       @ApiResponse(
         responseCode = "404",
-        description = "Comment not found or user not authorized to view the comment",
+        description = "Comment not found or user not authorized",
         content = @Content
       ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
@@ -93,13 +98,13 @@ public class CommentsController {
 
   @Operation(
     summary = "Update a comment by ID",
-    description = "Updates the content of a specific comment. Access to the comment is first determined by the user's role, and then an ownership check is performed.\n\n" +
+    description = "Updates the content of a specific comment. Access to the comment is first determined by the user's role, followed by an ownership check.\n\n" +
       "**Access Logic:**\n" +
-      "*   `ADMIN`: Can access any non-deleted comment.\n" +
-      "*   `INSTRUCTOR`: Can access comments on public exercises or on exercises they created.\n" +
-      "*   `STUDENT`: Can access comments on exercises belonging to groups they are a member of.\n\n" +
+      "*   `ADMIN`: Can access any comment.\n" +
+      "*   `INSTRUCTOR`: Can access non-deleted comments on non-deleted exercises that are either public or created by them.\n" +
+      "*   `STUDENT`: Can access non-deleted comments on non-deleted exercises belonging to a group they are a member of.\n\n" +
       "**Ownership Logic:**\n" +
-      "A user can only update comments they have created themselves. A `403 Forbidden` error is returned if they have access to another user's comment and try to update it.",
+      "A user can only update comments they have created themselves. A `403 Forbidden` error is returned if they try to update another user's comment.",
     responses = {
       @ApiResponse(responseCode = "200", description = "Comment updated successfully"),
       @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content),
@@ -131,13 +136,13 @@ public class CommentsController {
 
   @Operation(
     summary = "Delete a comment by ID",
-    description = "Performs a soft delete on a specific comment. Access to the comment is first determined by the user's role, and then an ownership check is performed.\n\n" +
+    description = "Performs a soft delete on a specific comment. Access to the comment is first determined by the user's role, followed by an ownership check.\n\n" +
       "**Access Logic:**\n" +
-      "*   `ADMIN`: Can access any non-deleted comment.\n" +
-      "*   `INSTRUCTOR`: Can access comments on public exercises or on exercises they created.\n" +
-      "*   `STUDENT`: Can access comments on exercises belonging to groups they are a member of.\n\n" +
+      "*   `ADMIN`: Can access any comment.\n" +
+      "*   `INSTRUCTOR`: Can access non-deleted comments on non-deleted exercises that are either public or created by them.\n" +
+      "*   `STUDENT`: Can access non-deleted comments on non-deleted exercises belonging to a group they are a member of.\n\n" +
       "**Ownership Logic:**\n" +
-      "A user can only delete comments they have created themselves. A `403 Forbidden` error is returned if they have access to another user's comment & try to delete it.",
+      "A user can only delete comments they have created themselves. A `403 Forbidden` error is returned if they try to delete another user's comment.",
     responses = {
       @ApiResponse(responseCode = "200", description = "Comment deleted successfully"),
       @ApiResponse(
@@ -169,9 +174,9 @@ public class CommentsController {
     summary = "Report a comment by ID",
     description = "Reports a comment. If the report count reaches a system-defined threshold, the comment is automatically soft-deleted. Access to the comment is determined by the user's role.\n\n" +
       "**Access Logic:**\n" +
-      "*   `ADMIN`: Can access any non-deleted comment.\n" +
-      "*   `INSTRUCTOR`: Can access comments on public exercises or on exercises they created.\n" +
-      "*   `STUDENT`: Can access comments on exercises belonging to groups they are a member of.",
+      "*   `ADMIN`: Can access any comment.\n" +
+      "*   `INSTRUCTOR`: Can access non-deleted comments on non-deleted exercises that are either public or created by them.\n" +
+      "*   `STUDENT`: Can access non-deleted comments on non-deleted exercises belonging to a group they are a member of.",
     responses = {
       @ApiResponse(responseCode = "201", description = "Comment reported successfully"),
       @ApiResponse(

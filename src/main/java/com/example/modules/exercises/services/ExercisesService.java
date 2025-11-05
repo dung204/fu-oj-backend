@@ -1,24 +1,31 @@
 package com.example.modules.exercises.services;
 
 import com.example.base.utils.ObjectUtils;
+import com.example.modules.auth.enums.Role;
 import com.example.modules.exercises.dtos.ExerciseQueryDTO;
 import com.example.modules.exercises.dtos.ExerciseRequestDTO;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.enums.Difficulty;
 import com.example.modules.exercises.enums.Visibility;
+import com.example.modules.exercises.exceptions.ExerciseNotFoundException;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.exercises.utils.ExerciseMapper;
 import com.example.modules.exercises.utils.ExercisesSpecification;
+import com.example.modules.groups.entities.Group;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.topics.entities.Topic;
 import com.example.modules.topics.repositories.TopicsRepository;
+import com.example.modules.users.entities.User;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
@@ -29,12 +36,48 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ExercisesService {
 
-  private final ExercisesRepository exercisesRepository;
-  private final TopicsRepository topicsRepository;
-  private final TestCasesRepository testCasesRepository;
-  private final ExerciseMapper exerciseMapper;
+  ExercisesRepository exercisesRepository;
+  TopicsRepository topicsRepository;
+  TestCasesRepository testCasesRepository;
+  ExerciseMapper exerciseMapper;
+
+  /**
+   * Lấy exercise theo ID (chỉ lấy public test cases - dành cho student)
+   */
+  public Exercise getExerciseById(String id, User currentUser) {
+    Optional<Exercise> exercise = Optional.ofNullable(null);
+
+    switch (currentUser.getAccount().getRole()) {
+      case Role.ADMIN:
+        exercise = exercisesRepository.findOne(ExercisesSpecification.builder().withId(id).build());
+        break;
+      case Role.INSTRUCTOR:
+        exercise = exercisesRepository.findOne(
+          ExercisesSpecification.builder()
+            .or(ExercisesSpecification::publicOnly, spec -> spec.createdBy(currentUser.getId()))
+            .withId(id)
+            .notDeleted()
+            .build()
+        );
+        break;
+      case Role.STUDENT:
+        exercise = exercisesRepository.findOne(
+          ExercisesSpecification.builder()
+            .or(ExercisesSpecification::publicOnly, spec ->
+              spec.inOneOfGroups(currentUser.getJoinedGroups().stream().map(Group::getId).toList())
+            )
+            .withId(id)
+            .notDeleted()
+            .build()
+        );
+        break;
+    }
+
+    return exercise.orElseThrow(ExerciseNotFoundException::new);
+  }
 
   /**
    * Tạo mới exercise
@@ -111,53 +154,77 @@ public class ExercisesService {
   }
 
   /**
-   * Lấy exercise theo ID (chỉ lấy public test cases - dành cho student)
-   */
-  public ExerciseResponseDTO getExerciseById(String id) {
-    Exercise exercise = exercisesRepository
-      .findById(id)
-      .orElseThrow(() -> new EntityNotFoundException("Exercise not found: " + id));
-
-    return exerciseMapper.toExerciseResponseDTOWithPrivateTestCasesHidden(exercise);
-  }
-
-  /**
-   * Lấy exercise theo ID với tất cả test cases (dành cho instructor/admin)
-   */
-  public ExerciseResponseDTO getExerciseByIdWithAllTestCases(String id) {
-    Exercise exercise = exercisesRepository
-      .findById(id)
-      .orElseThrow(() -> new EntityNotFoundException("Exercise not found: " + id));
-
-    return exerciseMapper.toExerciseResponseDTOWithAllTestCases(exercise);
-  }
-
-  /**
    * Lấy danh sách exercises với pagination và filter
    */
-  public Page<ExerciseResponseDTO> getExercises(ExerciseQueryDTO dto) {
-    Page<Exercise> exercisePage = exercisesRepository.findAll(
-      ExercisesSpecification.builder()
-        .containsCodeOrContainsTitle(dto.getQuery())
-        .hasOneOfTopics(dto.getTopic())
-        .onlyLatestVersion()
-        .build(),
-      dto.toPageRequest()
-    );
-    log.info("Found {} exercises", exercisePage.getTotalElements());
+  public Page<ExerciseResponseDTO> getExercises(ExerciseQueryDTO dto, User currentUser) {
+    Page<Exercise> exercisesPage = null;
+
+    switch (currentUser.getAccount().getRole()) {
+      case Role.ADMIN:
+        exercisesPage = exercisesRepository.findAll(
+          ExercisesSpecification.builder()
+            .<ExercisesSpecification>or(
+              spec -> spec.containsCode(dto.getQuery()),
+              spec -> spec.containsTitle(dto.getQuery())
+            )
+            .hasOneOfTopics(dto.getTopic())
+            .onlyLatestVersion()
+            .build(),
+          dto.toPageRequest()
+        );
+        break;
+      case Role.INSTRUCTOR:
+        exercisesPage = exercisesRepository.findAll(
+          ExercisesSpecification.builder()
+            .or(ExercisesSpecification::publicOnly, spec -> spec.createdBy(currentUser.getId()))
+            .<ExercisesSpecification>or(
+              spec -> spec.containsCode(dto.getQuery()),
+              spec -> spec.containsTitle(dto.getQuery())
+            )
+            .hasOneOfTopics(dto.getTopic())
+            .onlyLatestVersion()
+            .notDeleted()
+            .build(),
+          dto.toPageRequest()
+        );
+        break;
+      case Role.STUDENT:
+        exercisesPage = exercisesRepository.findAll(
+          ExercisesSpecification.builder()
+            .inOneOfGroups(currentUser.getJoinedGroups().stream().map(Group::getId).toList())
+            .<ExercisesSpecification>or(
+              spec -> spec.containsCode(dto.getQuery()),
+              spec -> spec.containsTitle(dto.getQuery())
+            )
+            .hasOneOfTopics(dto.getTopic())
+            .onlyLatestVersion()
+            .notDeleted()
+            .build(),
+          dto.toPageRequest()
+        );
+        break;
+    }
+
+    log.info("Found {} exercises", exercisesPage.getTotalElements());
 
     // Map to DTO
-    return exercisePage.map(exerciseMapper::toExerciseResponseDTOWithPrivateTestCasesHidden);
+    return exercisesPage.map(
+      currentUser.getAccount().getRole() == Role.STUDENT
+        ? exerciseMapper::toExerciseResponseDTOWithPrivateTestCasesHidden
+        : exerciseMapper::toExerciseResponseDTOWithAllTestCases
+    );
   }
 
   /**
    * Cập nhật exercise
    */
   @Transactional
-  public ExerciseResponseDTO updateExercise(String id, ExerciseRequestDTO request) {
-    Exercise oldExercise = exercisesRepository
-      .findById(id)
-      .orElseThrow(() -> new EntityNotFoundException("Exercise not found: " + id));
+  public ExerciseResponseDTO updateExercise(
+    String id,
+    ExerciseRequestDTO request,
+    User currentUser
+  ) {
+    Exercise oldExercise = getExerciseById(id, currentUser);
 
     // Kiểm tra trùng code nếu code thay đổi
     if (!oldExercise.getCode().equals(request.getCode())) {
@@ -250,12 +317,11 @@ public class ExercisesService {
    * Xóa exercise
    */
   @Transactional
-  public void deleteExercise(String id) {
-    Exercise exercise = exercisesRepository
-      .findById(id)
-      .orElseThrow(() -> new EntityNotFoundException("Exercise not found: " + id));
+  public void deleteExercise(String id, User currentUser) {
+    Exercise exercise = getExerciseById(id, currentUser);
+    exercise.softDelete();
 
-    exercisesRepository.delete(exercise);
+    exercisesRepository.save(exercise);
     log.info("Deleted exercise: {}", id);
   }
 }

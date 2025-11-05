@@ -2,7 +2,7 @@ package com.example.modules.exercises.utils;
 
 import com.example.base.utils.SpecificationBuilder;
 import com.example.modules.exercises.entities.Exercise;
-import jakarta.persistence.criteria.Predicate;
+import com.example.modules.exercises.enums.Visibility;
 import java.util.Collection;
 
 public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
@@ -20,7 +20,19 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
     return this;
   }
 
-  public ExercisesSpecification withTitleLike(String title) {
+  public ExercisesSpecification containsCode(String code) {
+    if (code != null && !code.isBlank()) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.like(
+          criteriaBuilder.lower(root.get("code")),
+          "%" + code.toLowerCase() + "%"
+        )
+      );
+    }
+    return this;
+  }
+
+  public ExercisesSpecification containsTitle(String title) {
     if (title != null && !title.isBlank()) {
       specifications.add((root, query, criteriaBuilder) ->
         criteriaBuilder.like(
@@ -29,6 +41,13 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
         )
       );
     }
+    return this;
+  }
+
+  public ExercisesSpecification publicOnly() {
+    specifications.add((root, query, criteriaBuilder) ->
+      criteriaBuilder.equal(root.get("visibility"), Visibility.PUBLIC.getValue())
+    );
     return this;
   }
 
@@ -43,21 +62,11 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
     return this;
   }
 
-  public ExercisesSpecification containsCodeOrContainsTitle(String query) {
-    if (query != null && !query.isEmpty()) {
-      specifications.add((root, criteriaQuery, criteriaBuilder) -> {
-        String pattern = "%" + query.toLowerCase() + "%";
-
-        Predicate codePredicate = criteriaBuilder.like(
-          criteriaBuilder.lower(root.get("code")),
-          pattern
-        );
-        Predicate titlePredicate = criteriaBuilder.like(
-          criteriaBuilder.lower(root.get("title")),
-          pattern
-        );
-
-        return criteriaBuilder.or(codePredicate, titlePredicate);
+  public ExercisesSpecification inOneOfGroups(Collection<String> groupIds) {
+    if (groupIds != null && !groupIds.isEmpty()) {
+      specifications.add((root, query, criteriaBuilder) -> {
+        query.distinct(false);
+        return root.join("groups").get("id").in(groupIds);
       });
     }
     return this;

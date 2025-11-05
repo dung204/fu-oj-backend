@@ -60,7 +60,14 @@ public class CommentsSpecification extends SpecificationBuilder<Comment> {
   public CommentsSpecification withExercisesOfGroups(Collection<String> groupIds) {
     specifications.add((root, query, criteriaBuilder) -> {
       query.distinct(true);
-      return root.join("exercise").join("group").get("id").in(groupIds);
+      return root.join("exercise").join("groups").get("id").in(groupIds);
+    });
+    return this;
+  }
+
+  public CommentsSpecification withNonDeletedExercisesOnly() {
+    specifications.add((root, query, criteriaBuilder) -> {
+      return criteriaBuilder.isNull(root.join("exercise").get("deletedTimestamp"));
     });
     return this;
   }
