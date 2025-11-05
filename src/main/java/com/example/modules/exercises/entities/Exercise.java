@@ -38,7 +38,7 @@ public class Exercise extends BaseEntity {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String description;
 
-  @Column(nullable = false, columnDefinition = "TEXT")
+  @Column(columnDefinition = "TEXT")
   private String solution;
 
   @Builder.Default

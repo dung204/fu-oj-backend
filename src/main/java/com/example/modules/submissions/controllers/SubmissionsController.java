@@ -189,13 +189,14 @@ public class SubmissionsController {
     }
   )
   @GetMapping("/{submissionId}/result")
-  public SuccessResponseDTO<List<SubmissionResultResponseDTO>> getAllSubmissionResult(
+  public SuccessResponseDTO<SubmissionResponseDTO> getAllSubmissionResult(
     @PathVariable String submissionId
   ) {
-    List<SubmissionResultResponseDTO> result =
-      submissionsService.getAllSubmissionResultBySubmissionId(submissionId);
-    return SuccessResponseDTO.<List<SubmissionResultResponseDTO>>builder()
-      .message("Get all submission results successfully")
+    SubmissionResponseDTO result = submissionsService.getAllSubmissionResultBySubmissionId(
+      submissionId
+    );
+    return SuccessResponseDTO.<SubmissionResponseDTO>builder()
+      .message("Get submission results successfully")
       .data(result)
       .build();
   }
