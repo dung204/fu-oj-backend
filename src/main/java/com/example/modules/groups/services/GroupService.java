@@ -213,7 +213,10 @@ public class GroupService {
       .findAll(
         ExercisesSpecification.builder()
           .withGroupId(groupId)
-          .containsCodeOrContainsTitle(queryDTO.getQuery())
+          .<ExercisesSpecification>or(
+            spec -> spec.containsCode(queryDTO.getQuery()),
+            spec -> spec.containsTitle(queryDTO.getQuery())
+          )
           .hasOneOfTopics(queryDTO.getTopic())
           .build(),
         queryDTO.toPageRequest()
