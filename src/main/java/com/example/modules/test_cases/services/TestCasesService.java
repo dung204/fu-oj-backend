@@ -2,8 +2,7 @@ package com.example.modules.test_cases.services;
 
 import com.example.base.utils.ObjectUtils;
 import com.example.modules.exercises.entities.Exercise;
-import com.example.modules.exercises.exceptions.ExerciseNotFoundException;
-import com.example.modules.exercises.repositories.ExercisesRepository;
+import com.example.modules.exercises.services.ExercisesService;
 import com.example.modules.test_cases.dtos.TestCaseQueryDTO;
 import com.example.modules.test_cases.dtos.TestCaseRequestDTO;
 import com.example.modules.test_cases.dtos.TestCaseResponseDTO;
@@ -12,8 +11,10 @@ import com.example.modules.test_cases.exceptions.TestCaseNotFoundException;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.test_cases.utils.TestCaseMapper;
 import com.example.modules.test_cases.utils.TestCasesSpecification;
-import jakarta.persistence.EntityNotFoundException;
+import com.example.modules.users.entities.User;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -22,21 +23,24 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TestCasesService {
 
-  private final TestCasesRepository testCasesRepository;
-  private final ExercisesRepository exercisesRepository;
-  private final TestCaseMapper testCaseMapper;
+  TestCasesRepository testCasesRepository;
+  ExercisesService exercisesService;
+  TestCaseMapper testCaseMapper;
 
   /**
    * Tạo mới test case
    */
   @Transactional
-  public TestCaseResponseDTO createTestCase(String exerciseId, TestCaseRequestDTO request) {
+  public TestCaseResponseDTO createTestCase(
+    String exerciseId,
+    TestCaseRequestDTO request,
+    User currentUser
+  ) {
     // Kiểm tra exercise có tồn tại không
-    Exercise exercise = exercisesRepository
-      .findById(exerciseId)
-      .orElseThrow(ExerciseNotFoundException::new);
+    Exercise exercise = exercisesService.getExerciseById(exerciseId, currentUser);
 
     TestCase testCase = TestCase.builder()
       .exercise(exercise)
@@ -48,11 +52,20 @@ public class TestCasesService {
     return testCaseMapper.toTestCaseResponseDTO(testCasesRepository.save(testCase));
   }
 
-  public TestCaseResponseDTO getTestCaseByIdAndExerciseId(String testCaseId, String exerciseId) {
+  public TestCaseResponseDTO getTestCaseByIdAndExerciseId(
+    String testCaseId,
+    String exerciseId,
+    User currentUser
+  ) {
+    Exercise exercise = exercisesService.getExerciseById(exerciseId, currentUser);
+
     return testCaseMapper.toTestCaseResponseDTO(
       testCasesRepository
         .findOne(
-          TestCasesSpecification.builder().withExerciseId(exerciseId).withId(testCaseId).build()
+          TestCasesSpecification.builder()
+            .withExerciseId(exercise.getId())
+            .withId(testCaseId)
+            .build()
         )
         .orElseThrow(TestCaseNotFoundException::new)
     );
@@ -60,11 +73,10 @@ public class TestCasesService {
 
   public Page<TestCaseResponseDTO> getTestCasesOfExercise(
     String exerciseId,
-    TestCaseQueryDTO query
+    TestCaseQueryDTO query,
+    User currentUser
   ) {
-    exercisesRepository
-      .findById(exerciseId)
-      .orElseThrow(() -> new EntityNotFoundException("Exercise not found: " + exerciseId));
+    exercisesService.getExerciseById(exerciseId, currentUser);
 
     return testCasesRepository
       .findAll(

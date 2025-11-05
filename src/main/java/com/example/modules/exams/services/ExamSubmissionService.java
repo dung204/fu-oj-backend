@@ -1,10 +1,10 @@
 package com.example.modules.exams.services;
 
 import com.example.modules.auth.enums.Role;
-import com.example.modules.exams.dtos.ExamResultRequestDto;
-import com.example.modules.exams.dtos.ExamResultResponseDto;
-import com.example.modules.exams.dtos.ExamSubmissionCreateDto;
-import com.example.modules.exams.dtos.ExamSubmissionResponseDto;
+import com.example.modules.exams.dtos.ExamResultRequestDTO;
+import com.example.modules.exams.dtos.ExamResultResponseDTO;
+import com.example.modules.exams.dtos.ExamSubmissionCreateDTO;
+import com.example.modules.exams.dtos.ExamSubmissionResponseDTO;
 import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamSubmission;
 import com.example.modules.exams.exceptions.*;
@@ -50,8 +50,8 @@ public class ExamSubmissionService {
    * - Exercise phải thuộc exam
    */
   @Transactional
-  public ExamSubmissionResponseDto createExamSubmission(
-    ExamSubmissionCreateDto dto,
+  public ExamSubmissionResponseDTO createExamSubmission(
+    ExamSubmissionCreateDTO dto,
     User currentUser
   ) {
     // 1. Validate exam exists
@@ -151,7 +151,7 @@ public class ExamSubmissionService {
       dto.getExerciseId()
     );
 
-    return ExamSubmissionResponseDto.builder()
+    return ExamSubmissionResponseDTO.builder()
       .id(examSubmission.getId())
       .examId(exam.getId())
       .userId(currentUser.getId())
@@ -165,7 +165,7 @@ public class ExamSubmissionService {
    * lấy tất cả exercise submission của user trong exam
    */
   @Transactional(readOnly = true)
-  public ExamResultResponseDto getExamResult(ExamResultRequestDto dto, User currentUser) {
+  public ExamResultResponseDTO getExamResult(ExamResultRequestDTO dto, User currentUser) {
     // 1. Validate exam exists
     Exam exam = examRepository
       .findById(dto.getExamId())
@@ -203,7 +203,7 @@ public class ExamSubmissionService {
     List<ExamSubmission> examSubmissions = examSubmissionRepository.findAll(spec);
 
     // 4. Build submission details
-    List<ExamResultResponseDto.ExamSubmissionDetail> submissionDetails = new ArrayList<>();
+    List<ExamResultResponseDTO.ExamSubmissionDetail> submissionDetails = new ArrayList<>();
     double totalScore = 0.0;
     int completedExercises = 0;
 
@@ -214,8 +214,8 @@ public class ExamSubmissionService {
         .orElse(null);
 
       if (submission != null) {
-        ExamResultResponseDto.ExamSubmissionDetail detail =
-          ExamResultResponseDto.ExamSubmissionDetail.builder()
+        ExamResultResponseDTO.ExamSubmissionDetail detail =
+          ExamResultResponseDTO.ExamSubmissionDetail.builder()
             .exerciseId(examSubmission.getExercise().getId())
             .exerciseTitle(examSubmission.getExercise().getTitle())
             .exerciseCode(examSubmission.getExercise().getCode())
@@ -240,7 +240,7 @@ public class ExamSubmissionService {
     }
 
     // 5. Build response
-    return ExamResultResponseDto.builder()
+    return ExamResultResponseDTO.builder()
       .examId(exam.getId())
       .examCode(exam.getCode())
       .examTitle(exam.getTitle())

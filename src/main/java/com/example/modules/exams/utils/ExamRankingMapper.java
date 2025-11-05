@@ -1,7 +1,7 @@
 package com.example.modules.exams.utils;
 
 import com.example.modules.exams.dtos.ExamRankingResponseDTO;
-import com.example.modules.exams.dtos.ExamResultResponseDto;
+import com.example.modules.exams.dtos.ExamResultResponseDTO;
 import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamRanking;
 import com.example.modules.users.entities.User;
@@ -18,9 +18,9 @@ public abstract class ExamRankingMapper {
   public abstract ExamRankingResponseDTO toExamRankingResponseDto(ExamRanking ranking);
 
   @Named("mapExam")
-  protected ExamResultResponseDto mapExam(Exam exam, User user) {
+  protected ExamResultResponseDTO mapExam(Exam exam, User user) {
     if (exam == null) return null;
-    return ExamResultResponseDto.builder()
+    return ExamResultResponseDTO.builder()
       .examId(exam.getId())
       .examCode(exam.getCode())
       .examTitle(exam.getTitle())

@@ -10,23 +10,24 @@ import com.example.modules.auth.dtos.ChangePasswordRequestDTO;
 import com.example.modules.auth.dtos.LoginRequestDTO;
 import com.example.modules.auth.dtos.RefreshTokenRequestDTO;
 import com.example.modules.auth.dtos.RegisterRequestDTO;
+import com.example.modules.auth.entities.Account;
+import com.example.modules.auth.repositories.AccountsRepository;
 import com.example.modules.auth.services.AuthService;
+import com.example.modules.email.service.EmailService;
+import com.example.modules.file.excel.utils.PasswordUtils;
 import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(path = AUTH_PREFIX, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -35,6 +36,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
   private final AuthService authService;
+  private final EmailService emailService;
+  private final AccountsRepository accountsRepository;
 
   @Public
   @Operation(
@@ -165,5 +168,61 @@ public class AuthController {
     @RequestBody @Valid ChangePasswordRequestDTO request
   ) {
     authService.changePassword(currentUser, request);
+  }
+
+  @Public
+  @Operation(
+    summary = "Send a password reset email",
+    description = """
+    Sends an email containing a randomly generated password or reset code
+    to the user's email address.
+    The email content is rendered using a predefined HTML template (`takepassword-email`).
+    """,
+    parameters = {
+      @Parameter(
+        name = "to",
+        description = "Email address of the recipient",
+        required = true,
+        example = "user@example.com"
+      ),
+    },
+    responses = {
+      @ApiResponse(
+        responseCode = "204",
+        description = "Email sent successfully. No content is returned."
+      ),
+      @ApiResponse(
+        responseCode = "400",
+        description = """
+        - Missing or invalid email address
+        - Email template not found
+        """,
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "500",
+        description = "Internal Server Error while sending email",
+        content = @Content
+      ),
+    }
+  )
+  @GetMapping("/forget-password")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void forgetPassword(@RequestParam String to) throws MessagingException {
+    emailService.sendEmailWithTemplate(
+      to,
+      "SEND PASSWORD ",
+      "takepassword-email",
+      Map.of("name", to, "code", PasswordUtils.generateRandomPassword(8))
+    );
+  }
+
+  @Public
+  @GetMapping("/active-account/{email}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void activeAccount(@PathVariable String email) {
+    Account account = accountsRepository.findAccountByEmail(email);
+    account.setDeletedTimestamp(null);
+    accountsRepository.save(account);
   }
 }

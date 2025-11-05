@@ -6,7 +6,7 @@ import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.AllowRoles;
 import com.example.modules.auth.annotations.CurrentUser;
 import com.example.modules.auth.enums.Role;
-import com.example.modules.exams.dtos.ExamRankingRequestDto;
+import com.example.modules.exams.dtos.ExamRankingRequestDTO;
 import com.example.modules.exams.dtos.ExamRankingResponseDTO;
 import com.example.modules.exams.services.ExamRankingService;
 import com.example.modules.users.entities.User;
@@ -47,7 +47,7 @@ public class ExamRankingController {
   @GetMapping
   @ResponseStatus(HttpStatus.OK)
   public SuccessResponseDTO<List<ExamRankingResponseDTO>> getExamSubmissions(
-    @ParameterObject @Valid ExamRankingRequestDto dto,
+    @ParameterObject @Valid ExamRankingRequestDTO dto,
     @CurrentUser User currentUser
   ) {
     log.info("Fetching all exam submissions for exam {}", dto.getExamId());

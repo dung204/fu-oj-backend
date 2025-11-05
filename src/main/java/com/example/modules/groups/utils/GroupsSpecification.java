@@ -94,4 +94,14 @@ public class GroupsSpecification extends SpecificationBuilder<Group> {
     }
     return this;
   }
+
+  public GroupsSpecification orderByCreatedTimestampDesc() {
+    Specification<Group> orderByCreatedAtDesc = (root, query, cb) -> {
+      query.orderBy(cb.desc(root.get("createdTimestamp")));
+      return cb.conjunction();
+    };
+
+    this.specifications.add(orderByCreatedAtDesc);
+    return this;
+  }
 }

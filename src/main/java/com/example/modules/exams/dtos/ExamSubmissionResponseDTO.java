@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExamSubmissionResponseDto extends EntityDTO {
+public class ExamSubmissionResponseDTO extends EntityDTO {
 
   private String examId;
   private String userId;

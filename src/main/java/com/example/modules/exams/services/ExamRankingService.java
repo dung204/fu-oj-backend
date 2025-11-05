@@ -1,6 +1,6 @@
 package com.example.modules.exams.services;
 
-import com.example.modules.exams.dtos.ExamRankingRequestDto;
+import com.example.modules.exams.dtos.ExamRankingRequestDTO;
 import com.example.modules.exams.dtos.ExamRankingResponseDTO;
 import com.example.modules.exams.entities.ExamRanking;
 import com.example.modules.exams.entities.ExamSubmission;
@@ -179,7 +179,7 @@ public class ExamRankingService {
     }
   }
 
-  public List<ExamRankingResponseDTO> getExamRankings(ExamRankingRequestDto dto, User currentUser) {
+  public List<ExamRankingResponseDTO> getExamRankings(ExamRankingRequestDTO dto, User currentUser) {
     String effectiveUserId = dto.getUserId();
     if (currentUser != null && currentUser.getAccount() != null) {
       // Nếu là STUDENT thì chỉ được xem của chính mình

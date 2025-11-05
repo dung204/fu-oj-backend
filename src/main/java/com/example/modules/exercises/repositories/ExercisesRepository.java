@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ExercisesRepository
   extends JpaRepository<Exercise, String>, JpaSpecificationExecutor<Exercise> {
+  Exercise findExerciseById(String id);
   boolean existsByCode(String code);
 
   Optional<Exercise> findTopByBaseIdOrderByVersionDesc(String baseId);

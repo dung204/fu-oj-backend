@@ -58,6 +58,7 @@ public class GroupService {
         groupsPage = groupsRepository.findAll(
           GroupsSpecification.builder()
             .containsName(groupsSearchDTO.getName())
+            .orderByCreatedTimestampDesc()
             .conditionally(
               groupsSearchDTO.getIsPublic() != null && groupsSearchDTO.getIsPublic(),
               GroupsSpecification::publicOnly
@@ -76,6 +77,7 @@ public class GroupService {
           GroupsSpecification.builder()
             .ownedBy(currentUser.getId())
             .containsName(groupsSearchDTO.getName())
+            .orderByCreatedTimestampDesc()
             .conditionally(
               groupsSearchDTO.getIsPublic() != null && groupsSearchDTO.getIsPublic(),
               GroupsSpecification::publicOnly
@@ -93,6 +95,7 @@ public class GroupService {
         groupsPage = groupsRepository.findAll(
           GroupsSpecification.builder()
             .containsName(groupsSearchDTO.getName())
+            .orderByCreatedTimestampDesc()
             .<GroupsSpecification>conditionally(
               "joined".equals(groupsSearchDTO.getFilter()),
               spec -> spec.joinedBy(currentUser.getId()),
@@ -210,7 +213,10 @@ public class GroupService {
       .findAll(
         ExercisesSpecification.builder()
           .withGroupId(groupId)
-          .containsCodeOrContainsTitle(queryDTO.getQuery())
+          .<ExercisesSpecification>or(
+            spec -> spec.containsCode(queryDTO.getQuery()),
+            spec -> spec.containsTitle(queryDTO.getQuery())
+          )
           .hasOneOfTopics(queryDTO.getTopic())
           .build(),
         queryDTO.toPageRequest()
