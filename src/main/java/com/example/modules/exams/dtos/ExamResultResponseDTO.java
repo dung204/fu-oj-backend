@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ExamResultResponseDto {
+public class ExamResultResponseDTO {
 
   private String examId;
   private String examCode;

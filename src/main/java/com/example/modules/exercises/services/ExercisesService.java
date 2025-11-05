@@ -59,6 +59,7 @@ public class ExercisesService {
       .visibility(Visibility.valueOf(request.getVisibility()))
       .timeLimit(request.getTimeLimit())
       .memory(request.getMemory())
+      .solution(request.getSolution())
       .version(1)
       .build();
 

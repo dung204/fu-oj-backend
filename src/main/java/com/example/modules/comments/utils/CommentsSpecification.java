@@ -2,7 +2,9 @@ package com.example.modules.comments.utils;
 
 import com.example.base.utils.SpecificationBuilder;
 import com.example.modules.comments.entities.Comment;
+import com.example.modules.exercises.enums.Visibility;
 import jakarta.persistence.criteria.JoinType;
+import java.util.Collection;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -33,9 +35,33 @@ public class CommentsSpecification extends SpecificationBuilder<Comment> {
   public CommentsSpecification withExerciseId(String exerciseId) {
     if (exerciseId != null && !exerciseId.trim().isEmpty()) {
       specifications.add((root, query, criteriaBuilder) ->
-        criteriaBuilder.equal(root.join("exercise", JoinType.LEFT).get("id"), exerciseId)
+        criteriaBuilder.equal(root.join("exercise").get("id"), exerciseId)
       );
     }
+    return this;
+  }
+
+  public CommentsSpecification withPublicExercises() {
+    specifications.add((root, query, criteriaBuilder) ->
+      criteriaBuilder.equal(root.join("exercise").get("visibility"), Visibility.PUBLIC.getValue())
+    );
+    return this;
+  }
+
+  public CommentsSpecification withExercisesCreatedBy(String userId) {
+    if (userId != null && !userId.trim().isEmpty()) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.equal(root.join("exercise").get("createdBy"), userId)
+      );
+    }
+    return this;
+  }
+
+  public CommentsSpecification withExercisesOfGroups(Collection<String> groupIds) {
+    specifications.add((root, query, criteriaBuilder) -> {
+      query.distinct(true);
+      return root.join("exercise").join("group").get("id").in(groupIds);
+    });
     return this;
   }
 }

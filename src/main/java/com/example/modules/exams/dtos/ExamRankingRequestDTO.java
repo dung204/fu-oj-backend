@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Min;
 import lombok.Data;
 
 @Data
-public class ExamRankingRequestDto {
+public class ExamRankingRequestDTO {
 
   private String examId;
   private String userId;
