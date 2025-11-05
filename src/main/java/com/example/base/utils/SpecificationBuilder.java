@@ -1,5 +1,6 @@
 package com.example.base.utils;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -78,6 +79,70 @@ public class SpecificationBuilder<T> {
       return specFunctionIfTrue.apply((S) this);
     }
     return specFunctionIfFalse.apply((S) this);
+  }
+
+  /**
+   * Combines multiple groups of specifications using a logical OR.
+   * <p>
+   * This method is used to construct complex OR conditions. Each function provided in the
+   * {@code specFunctions} varargs receives a new, temporary {@code SpecificationBuilder}.
+   * The specifications defined within each function are built, and the resulting
+   * {@link org.springframework.data.jpa.domain.Specification} objects are then combined using a logical OR.
+   * This final combined OR specification is then added to the current builder's list of specifications.
+   * <p>
+   * Example:
+   * <pre>{@code
+   * builder.and(user.name.equal("John"))
+   *        .or(
+   *            b -> b.and(user.age.greaterThan(20), user.status.equal("ACTIVE")),
+   *            b -> b.and(user.age.lessThan(10), user.status.equal("INACTIVE"))
+   *        );
+   * // This will result in a query predicate like:
+   * // WHERE name = 'John' AND ((age > 20 AND status = 'ACTIVE') OR (age < 10 AND status = 'INACTIVE'))
+   * }</pre>
+   *
+   * @param specFunctions A varargs array of functions. Each function takes a new {@code SpecificationBuilder}
+   *                      and is used to define a group of criteria. These groups will be joined by an OR condition.
+   * @param <S>           The type of the {@code SpecificationBuilder}, allowing for method chaining on subclasses.
+   * @return The current builder instance ({@code this}) for fluent chaining.
+   */
+  public <S extends SpecificationBuilder<T>> S or(Function<S, S>... specFunctions) {
+    if (specFunctions == null || specFunctions.length == 0) {
+      return (S) this;
+    }
+
+    List<Specification<T>> orSpecifications = new ArrayList<>();
+
+    try {
+      // For each function, create a new temporary builder, apply the function, and get the resulting specification.
+      for (Function<S, S> specFunction : specFunctions) {
+        // Create a new instance of the *actual subclass* (e.g., CommentsSpecification)
+        Constructor<S> tempBuilderConstructor = (Constructor<
+          S
+        >) this.getClass().getDeclaredConstructor();
+
+        tempBuilderConstructor.setAccessible(true);
+        S tempBuilder = tempBuilderConstructor.newInstance();
+        tempBuilderConstructor.setAccessible(false);
+
+        specFunction.apply(tempBuilder);
+        orSpecifications.add(tempBuilder.build());
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(
+        "Failed to create new instance of SpecificationBuilder subclass",
+        e
+      );
+    }
+
+    // Combine all the generated specifications with OR logic.
+    if (!orSpecifications.isEmpty()) {
+      specifications.add(
+        orSpecifications.stream().reduce(Specification.unrestricted(), Specification::or)
+      );
+    }
+
+    return (S) this;
   }
 
   public <S extends SpecificationBuilder<T>> S withId(String id) {

@@ -1,8 +1,7 @@
 package com.example.modules.comments.dtos;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -19,7 +18,6 @@ public class CommentCreateDTO {
   String parentId;
 
   @Schema(description = "The content of the comment.")
-  @NotNull
-  @NotEmpty
+  @NotBlank
   String content;
 }

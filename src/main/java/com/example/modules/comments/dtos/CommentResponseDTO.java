@@ -1,6 +1,9 @@
 package com.example.modules.comments.dtos;
 
 import com.example.base.dtos.EntityDTO;
+import com.example.base.utils.SwaggerExamples;
+import com.example.modules.users.dtos.UserProfileDTO;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -10,13 +13,17 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Data
 @EqualsAndHashCode(callSuper = true)
-// TODO: After adding fields, uncomment these two lines
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommentResponseDTO extends EntityDTO {
 
-  private String userId;
+  private UserProfileDTO user;
+
+  @Schema(example = SwaggerExamples.UUID)
   private String exerciseId;
+
+  @Schema(example = SwaggerExamples.UUID)
   private String parentId;
+
   private String content;
 }
