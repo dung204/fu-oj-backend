@@ -28,11 +28,9 @@ public class ExcelHelper {
       for (int i = 1; i <= sheet.getLastRowNum(); i++) {
         Row row = sheet.getRow(i);
         if (row == null) continue;
-
         String user = getString(row.getCell(2));
+        if (user.isEmpty()) continue;
         String password = PasswordUtils.generateRandomPassword(8);
-
-        if (user.isEmpty() && password.isEmpty()) continue;
 
         accounts.add(new RegisterRequestDTO(user, password));
       }

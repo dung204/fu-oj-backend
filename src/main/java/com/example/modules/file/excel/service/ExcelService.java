@@ -81,8 +81,9 @@ public class ExcelService implements IExcelService {
       log.info("File must be in .xlsx format");
       return false;
     }
-    if (file.getSize() > 5 * 1024 * 1024) {
-      log.info("File size exceeds 5MB");
+    if (file.getSize() > 20L * 1024 * 1024) {
+      log.info("File size exceeds 20MB");
+      return false;
     }
     return true;
   }
