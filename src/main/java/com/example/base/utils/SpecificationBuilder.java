@@ -166,7 +166,7 @@ public class SpecificationBuilder<T> {
 
   public <S extends SpecificationBuilder<T>> S createdBy(String userId) {
     specifications.add((root, query, criteriaBuilder) ->
-      criteriaBuilder.equal(root.get("createdBy").get("id"), userId)
+      criteriaBuilder.equal(root.get("createdBy"), userId)
     );
     return (S) this;
   }

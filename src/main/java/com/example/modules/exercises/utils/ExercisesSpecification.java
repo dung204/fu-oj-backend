@@ -63,12 +63,10 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
   }
 
   public ExercisesSpecification inOneOfGroups(Collection<String> groupIds) {
-    if (groupIds != null && !groupIds.isEmpty()) {
-      specifications.add((root, query, criteriaBuilder) -> {
-        query.distinct(false);
-        return root.join("groups").get("id").in(groupIds);
-      });
-    }
+    specifications.add((root, query, criteriaBuilder) -> {
+      query.distinct(false);
+      return root.join("groups").get("id").in(groupIds);
+    });
     return this;
   }
 
