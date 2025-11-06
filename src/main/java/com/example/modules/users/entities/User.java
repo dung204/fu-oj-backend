@@ -53,7 +53,7 @@ public class User extends BaseEntity {
   @JoinColumn(name = "account_id", nullable = false)
   private Account account;
 
-  @ManyToMany(mappedBy = "students", fetch = FetchType.LAZY)
+  @ManyToMany(mappedBy = "students")
   private List<Group> joinedGroups;
 
   @ManyToMany(fetch = FetchType.LAZY)

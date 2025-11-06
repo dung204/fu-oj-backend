@@ -87,11 +87,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         throw new TokenInvalidatedException();
       }
 
+      final String currentRole = decodedToken.getPayload().get("role", String.class);
       User user = usersRepository
-        .findOne(UsersSpecification.builder().withId(userId).notDeleted().build())
+        .findOne(
+          UsersSpecification.builder()
+            .conditionally(
+              currentRole.equals(Role.STUDENT.getValue()),
+              UsersSpecification::fetchJoinedGroups
+            )
+            .withId(userId)
+            .notDeleted()
+            .build()
+        )
         .orElseThrow(() -> new InvalidCredentialsException());
 
-      final String currentRole = decodedToken.getPayload().get("role", String.class);
       final List<String> allowRoles = getAllowRolesOfCurrentRoute(request)
         .stream()
         .map(Role::getValue)

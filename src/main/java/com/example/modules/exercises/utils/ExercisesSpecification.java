@@ -4,7 +4,10 @@ import com.example.base.utils.SpecificationBuilder;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.enums.Visibility;
 import java.util.Collection;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
 
   public static ExercisesSpecification builder() {
