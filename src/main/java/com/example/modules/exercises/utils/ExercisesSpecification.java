@@ -67,7 +67,7 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
 
   public ExercisesSpecification inOneOfGroups(Collection<String> groupIds) {
     specifications.add((root, query, criteriaBuilder) -> {
-      query.distinct(false);
+      query.distinct(true);
       return root.join("groups").get("id").in(groupIds);
     });
     return this;

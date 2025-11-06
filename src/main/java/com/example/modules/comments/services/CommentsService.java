@@ -66,8 +66,10 @@ public class CommentsService implements ICommentsService {
       case Role.STUDENT:
         comment = commentsRepository.findOne(
           CommentsSpecification.builder()
-            .withExercisesOfGroups(
-              currentUser.getJoinedGroups().stream().map(Group::getId).toList()
+            .or(CommentsSpecification::withPublicExercises, spec ->
+              spec.withExercisesOfGroups(
+                currentUser.getJoinedGroups().stream().map(Group::getId).toList()
+              )
             )
             .withNonDeletedExercisesOnly()
             .withId(commentId)

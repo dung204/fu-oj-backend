@@ -191,7 +191,9 @@ public class ExercisesService {
       case Role.STUDENT:
         exercisesPage = exercisesRepository.findAll(
           ExercisesSpecification.builder()
-            .inOneOfGroups(currentUser.getJoinedGroups().stream().map(Group::getId).toList())
+            .or(ExercisesSpecification::publicOnly, spec ->
+              spec.inOneOfGroups(currentUser.getJoinedGroups().stream().map(Group::getId).toList())
+            )
             .<ExercisesSpecification>or(
               spec -> spec.containsCode(dto.getQuery()),
               spec -> spec.containsTitle(dto.getQuery())
