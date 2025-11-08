@@ -3,8 +3,12 @@ package com.example.modules.exercises.utils;
 import com.example.base.utils.SpecificationBuilder;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.enums.Visibility;
+import jakarta.persistence.criteria.JoinType;
 import java.util.Collection;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
 
   public static ExercisesSpecification builder() {
@@ -55,7 +59,7 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
     if (groupId != null && !groupId.isBlank()) {
       specifications.add((root, query, criteriaBuilder) -> {
         // Join với bảng group_exercises để lọc exercises thuộc group
-        var groupJoin = root.join("groups"); // Cần thêm field này vào Exercise entity
+        var groupJoin = root.join("groups");
         return criteriaBuilder.equal(groupJoin.get("id"), groupId);
       });
     }
@@ -63,10 +67,12 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
   }
 
   public ExercisesSpecification inOneOfGroups(Collection<String> groupIds) {
-    specifications.add((root, query, criteriaBuilder) -> {
-      query.distinct(false);
-      return root.join("groups").get("id").in(groupIds);
-    });
+    if (groupIds != null && !groupIds.isEmpty()) {
+      specifications.add((root, query, criteriaBuilder) -> {
+        query.distinct(true);
+        return root.join("groups", JoinType.LEFT).get("id").in(groupIds);
+      });
+    }
     return this;
   }
 

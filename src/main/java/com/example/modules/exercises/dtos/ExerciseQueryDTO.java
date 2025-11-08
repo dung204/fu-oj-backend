@@ -3,6 +3,7 @@ package com.example.modules.exercises.dtos;
 import com.example.base.annotations.OrderParam;
 import com.example.base.dtos.PaginatedQueryDTO;
 import com.example.modules.exercises.enums.Difficulty;
+import com.example.modules.exercises.enums.Visibility;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
@@ -20,14 +21,14 @@ public class ExerciseQueryDTO extends PaginatedQueryDTO {
   private String query;
 
   @Parameter(
-    description = "Filter by exercise code (partial match) or exercise title (partial match)",
+    description = "Filter by difficulty",
     schema = @Schema(implementation = Difficulty.class)
   )
   private String difficulty;
 
   @Parameter(
-    description = "Filter by exercise code (partial match) or exercise title (partial match)",
-    schema = @Schema(implementation = Difficulty.class)
+    description = "Filter by visibility",
+    schema = @Schema(implementation = Visibility.class)
   )
   private String visibility;
 

@@ -21,6 +21,7 @@ import com.example.modules.submissions.dtos.SubmissionsSearchDTO;
 import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.enums.Verdict;
+import com.example.modules.submissions.exceptions.SubmissionNotFound;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.submissions.utils.SubmissionMapper;
 import com.example.modules.submissions.utils.SubmissionResultMapper;
@@ -328,14 +329,21 @@ public class SubmissionsService {
     return response;
   }
 
-  public List<SubmissionResultResponseDTO> getAllSubmissionResultBySubmissionId(
-    String submissionId
-  ) {
-    return submissionResultRepository
-      .findAllBySubmissionId(submissionId)
-      .stream()
-      .map(submissionResultMapper::toSubmissionResultResponseDTO)
-      .toList();
+  public SubmissionResponseDTO getAllSubmissionResultBySubmissionId(String submissionId) {
+    Submission submission = submissionsRepository
+      .findById(submissionId)
+      .orElseThrow(() -> new SubmissionNotFound("Submission not found with ID: " + submissionId));
+
+    // get submission results
+    List<SubmissionResult> submissionResults = submissionResultRepository.findAllBySubmissionId(
+      submissionId
+    );
+
+    // attach results to submission entity for mapper usage
+    submission.setSubmissionResults(submissionResults);
+
+    // map to response dto (SubmissionMapper handles nested mappings & derived fields)
+    return submissionMapper.toSubmissionResponseDTO(submission);
   }
 
   public SubmissionStatisticsResponseDTO getSubmissionStatistics(

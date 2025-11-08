@@ -58,10 +58,12 @@ public class CommentsSpecification extends SpecificationBuilder<Comment> {
   }
 
   public CommentsSpecification withExercisesOfGroups(Collection<String> groupIds) {
-    specifications.add((root, query, criteriaBuilder) -> {
-      query.distinct(true);
-      return root.join("exercise").join("groups").get("id").in(groupIds);
-    });
+    if (groupIds != null && !groupIds.isEmpty()) {
+      specifications.add((root, query, criteriaBuilder) -> {
+        query.distinct(true);
+        return root.join("exercise").join("groups", JoinType.LEFT).get("id").in(groupIds);
+      });
+    }
     return this;
   }
 
