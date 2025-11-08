@@ -2,7 +2,6 @@ package com.example.modules.exams.dtos;
 
 import com.example.base.dtos.EntityDTO;
 import com.example.base.utils.SwaggerExamples;
-import com.example.modules.exams.enums.ExamStatus;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -45,6 +44,32 @@ public class ExamResponseDTO extends EntityDTO {
   )
   private String endTime;
 
+  @Schema(description = "List of groups this exam belongs to")
+  @Builder.Default
+  private List<GroupInfo> groups = List.of();
+
   @Builder.Default
   private List<ExerciseResponseDTO> exercises = List.of();
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class GroupInfo {
+
+    @Schema(description = "Group ID", example = SwaggerExamples.UUID)
+    private String id;
+
+    @Schema(description = "Group code", example = "SE1234")
+    private String code;
+
+    @Schema(description = "Group name", example = "Software Engineering 2024")
+    private String name;
+
+    @Schema(description = "Group description")
+    private String description;
+
+    @Schema(description = "Is the group public?")
+    private Boolean isPublic;
+  }
 }
