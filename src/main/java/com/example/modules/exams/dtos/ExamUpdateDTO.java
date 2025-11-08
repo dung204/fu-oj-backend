@@ -35,8 +35,10 @@ public class ExamUpdateDTO {
   private JsonNullable<Instant> endTime = JsonNullable.undefined();
 
   @ArraySchema(schema = @Schema(example = SwaggerExamples.UUID))
+  @Builder.Default
   private List<String> groupIds = Collections.emptyList();
 
   @ArraySchema(schema = @Schema(example = SwaggerExamples.UUID))
+  @Builder.Default
   private List<String> exerciseIds = Collections.emptyList();
 }
