@@ -37,8 +37,7 @@ public class ExamCreateDTO {
   private String status = ExamStatus.DRAFT.getValue();
 
   @ArraySchema(schema = @Schema(example = SwaggerExamples.UUID))
-  @NotEmpty
-  private List<String> groupIds;
+  private List<String> groupIds = Collections.emptyList();
 
   @ArraySchema(schema = @Schema(example = SwaggerExamples.UUID))
   private List<String> exerciseIds = Collections.emptyList();

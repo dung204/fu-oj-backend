@@ -34,12 +34,6 @@ public class ExamResponseDTO extends EntityDTO {
   private String description;
 
   @Schema(
-    description = "The current status of the exam (e.g., DRAFT, UPCOMING, ONGOING, FINISHED).",
-    example = SwaggerExamples.EXAM_STATUS
-  )
-  private ExamStatus status;
-
-  @Schema(
     description = "The date and time when the exam starts (ISO 8601 format).",
     example = SwaggerExamples.TIMESTAMP
   )
@@ -50,18 +44,6 @@ public class ExamResponseDTO extends EntityDTO {
     example = SwaggerExamples.TIMESTAMP
   )
   private String endTime;
-
-  @Schema(
-    description = "The unique identifier of the group this exam belongs to.",
-    example = SwaggerExamples.UUID
-  )
-  private String groupId;
-
-  @Schema(
-    description = "The name of the group this exam belongs to.",
-    example = SwaggerExamples.GROUP_NAME
-  )
-  private String groupName;
 
   @Builder.Default
   private List<ExerciseResponseDTO> exercises = List.of();

@@ -7,9 +7,11 @@ import com.example.modules.exams.dtos.ExamSubmissionCreateDTO;
 import com.example.modules.exams.dtos.ExamSubmissionResponseDTO;
 import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamSubmission;
+import com.example.modules.exams.entities.GroupExam;
 import com.example.modules.exams.exceptions.*;
 import com.example.modules.exams.repositories.ExamRepository;
 import com.example.modules.exams.repositories.ExamSubmissionRepository;
+import com.example.modules.exams.repositories.GroupExamRepository;
 import com.example.modules.exams.utils.ExamSubmissionSpecification;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.exceptions.ExerciseNotFoundException;
@@ -37,6 +39,7 @@ public class ExamSubmissionService {
 
   private final ExamRepository examRepository;
   private final ExamSubmissionRepository examSubmissionRepository;
+  private final GroupExamRepository groupExamRepository;
   private final ExercisesRepository exercisesRepository;
   private final SubmissionsService submissionsService;
   private final SubmissionsRepository submissionsRepository;
@@ -72,17 +75,23 @@ public class ExamSubmissionService {
       throw new ExamEndedException("Exam ended at " + exam.getEndTime() + ", current time: " + now);
     }
 
-    // 3. Check if student is in the exam's group
-    if (exam.getGroup() != null) {
-      boolean isInGroup = exam
-        .getGroup()
-        .getStudents()
-        .stream()
-        .anyMatch(student -> student.getId().equals(currentUser.getId()));
+    // 3. Check if student is in any group that has this exam
+    List<GroupExam> groupExams = groupExamRepository.findByExamId(exam.getId());
 
-      if (!isInGroup) {
+    if (!groupExams.isEmpty()) {
+      boolean isInAnyGroup = groupExams
+        .stream()
+        .anyMatch(groupExam ->
+          groupExam
+            .getGroup()
+            .getStudents()
+            .stream()
+            .anyMatch(student -> student.getId().equals(currentUser.getId()))
+        );
+
+      if (!isInAnyGroup) {
         throw new StudentNotInGroupException(
-          "Student " + currentUser.getId() + " is not in group " + exam.getGroup().getId()
+          "Student " + currentUser.getId() + " is not in any group assigned to exam " + exam.getId()
         );
       }
     }

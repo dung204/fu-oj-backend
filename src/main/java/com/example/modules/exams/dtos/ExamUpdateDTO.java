@@ -1,8 +1,11 @@
 package com.example.modules.exams.dtos;
 
 import com.example.base.utils.SwaggerExamples;
+import io.jsonwebtoken.lang.Collections;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,4 +33,10 @@ public class ExamUpdateDTO {
   @Schema(example = SwaggerExamples.TIMESTAMP)
   @Builder.Default
   private JsonNullable<Instant> endTime = JsonNullable.undefined();
+
+  @ArraySchema(schema = @Schema(example = SwaggerExamples.UUID))
+  private List<String> groupIds = Collections.emptyList();
+
+  @ArraySchema(schema = @Schema(example = SwaggerExamples.UUID))
+  private List<String> exerciseIds = Collections.emptyList();
 }
