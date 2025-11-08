@@ -310,6 +310,7 @@ public class GroupsController {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(201)
       .message("Add students to group successfully")
+      //id => email, add student group equal email
       .data(groupsService.addStudentsToGroup(id, addStudentToGroupRequestDTO.getStudentIds()))
       .build();
   }
@@ -350,7 +351,7 @@ public class GroupsController {
   ) {
     return PaginatedSuccessResponseDTO.<UserProfileDTO>builder()
       .status(200)
-      .message("Get students by groupId successfully")
+      .message("Teacher:" + currentUser)
       .page(groupsService.getStudentsByGroupId(id, studentsSearchDTO, currentUser))
       .filters(studentsSearchDTO.getFilters())
       .build();
