@@ -94,7 +94,6 @@ public class ExamController {
       .build();
   }
 
-  @AllowRoles({ Role.INSTRUCTOR, Role.ADMIN })
   @Operation(
     summary = "Get all exams",
     description = "The returned exams list depends on the role of the authenticated user:\n" +
