@@ -8,6 +8,7 @@ import com.example.modules.exams.dtos.ExamUpdateDTO;
 import com.example.modules.exams.dtos.ExamsSearchDTO;
 import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamExercise;
+import com.example.modules.exams.entities.ExamSubmission;
 import com.example.modules.exams.entities.GroupExam;
 import com.example.modules.exams.enums.ExamStatus;
 import com.example.modules.exams.exceptions.ExamNotFoundException;
@@ -16,6 +17,7 @@ import com.example.modules.exams.exceptions.InvalidTimeRangeException;
 import com.example.modules.exams.exceptions.StartTimeTooSoonException;
 import com.example.modules.exams.repositories.ExamExerciseRepository;
 import com.example.modules.exams.repositories.ExamRepository;
+import com.example.modules.exams.repositories.ExamSubmissionRepository;
 import com.example.modules.exams.repositories.GroupExamRepository;
 import com.example.modules.exams.utils.ExamMapper;
 import com.example.modules.exams.utils.ExamsSpecification;
@@ -51,6 +53,7 @@ public class ExamService {
 
   private final ExamRepository examRepository;
   private final ExamExerciseRepository examExerciseRepository;
+  private final ExamSubmissionRepository examSubmissionRepository;
   private final GroupExamRepository groupExamRepository;
   private final GroupsRepository groupsRepository;
   private final ExercisesRepository exercisesRepository;
@@ -281,9 +284,27 @@ public class ExamService {
 
   @Transactional
   public ExamResponseDTO updateExam(String id, ExamUpdateDTO examUpdateDTO, User currentUser) {
+    log.info("Updating exam with id {}", id);
+    log.info("Updating exam with list groups {}", examUpdateDTO.getGroupIds().size());
+    log.info("Updating exam with list exercise {}", examUpdateDTO.getExerciseIds().size());
     Exam exam = getExamById(id, currentUser);
 
-    // Check if any GroupExam has status that prevents modification
+    Instant now = Instant.now();
+
+    // 1. Check if exam has already started or passed start time
+    if (exam.getStartTime() != null && !now.isBefore(exam.getStartTime())) {
+      throw new ExamNotModifiableException(
+        "Cannot update exam that has already started or passed its start time."
+      );
+    }
+
+    // 2. Check if there are any submissions for this exam
+    List<ExamSubmission> submissions = examSubmissionRepository.findByExamId(exam.getId());
+    if (submissions != null && !submissions.isEmpty()) {
+      throw new ExamNotModifiableException("Cannot update exam that already has submissions.");
+    }
+
+    // 3. Check if any GroupExam has status that prevents modification
     List<GroupExam> groupExams = groupExamRepository.findByExamId(exam.getId());
     boolean hasNonModifiableStatus = groupExams
       .stream()
@@ -303,7 +324,6 @@ public class ExamService {
       throw new InvalidTimeRangeException();
     }
 
-    Instant now = Instant.now();
     Instant safeStartTime = now.plus(BUFFER_MINUTES, ChronoUnit.MINUTES);
 
     // Check if any GroupExam is UPCOMING and start time is too soon
@@ -315,6 +335,60 @@ public class ExamService {
       throw new StartTimeTooSoonException(
         "Start time must be after the current time at least " + BUFFER_MINUTES + " minutes."
       );
+    }
+
+    // 4. Update GroupExams if groupIds is provided
+    if (examUpdateDTO.getGroupIds() != null && !examUpdateDTO.getGroupIds().isEmpty()) {
+      log.info("Updating groups for exam {}", exam.getId());
+
+      // Validate và lấy các group mới
+      List<Group> newGroups = groupsRepository.findAllById(examUpdateDTO.getGroupIds());
+
+      // Clear collection cũ (sẽ trigger orphanRemoval để xóa các GroupExam cũ)
+      if (exam.getGroupExams() != null) {
+        exam.getGroupExams().clear();
+      } else {
+        exam.setGroupExams(new ArrayList<>());
+      }
+
+      // Tạo và add GroupExam mới vào collection
+      for (Group group : newGroups) {
+        GroupExam groupExam = GroupExam.builder()
+          .exam(exam)
+          .group(group)
+          .status(ExamStatus.DRAFT) // Mặc định là DRAFT khi tạo mới
+          .build();
+        exam.getGroupExams().add(groupExam);
+      }
+
+      log.info("Updated {} groups for exam {}", newGroups.size(), exam.getId());
+    }
+
+    // 5. Update ExamExercises if exerciseIds is provided
+    if (examUpdateDTO.getExerciseIds() != null && !examUpdateDTO.getExerciseIds().isEmpty()) {
+      log.info("Updating exercises for exam {}", exam.getId());
+
+      // Validate và lấy các exercise mới
+      List<Exercise> newExercises = exercisesRepository.findAllById(examUpdateDTO.getExerciseIds());
+
+      // Clear collection cũ (sẽ trigger orphanRemoval để xóa các ExamExercise cũ)
+      if (exam.getExamExercises() != null) {
+        exam.getExamExercises().clear();
+      } else {
+        exam.setExamExercises(new ArrayList<>());
+      }
+
+      // Tạo và add ExamExercise mới vào collection với thứ tự
+      for (int i = 0; i < newExercises.size(); i++) {
+        ExamExercise examExercise = ExamExercise.builder()
+          .exam(exam)
+          .exercise(newExercises.get(i))
+          .order(i + 1)
+          .build();
+        exam.getExamExercises().add(examExercise);
+      }
+
+      log.info("Updated {} exercises for exam {}", newExercises.size(), exam.getId());
     }
 
     return examMapper.toExamResponseDTO(examRepository.save(exam));
