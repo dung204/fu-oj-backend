@@ -1,10 +1,14 @@
 package com.example.modules.exams.services;
 
+import com.example.modules.exams.dtos.ExamRankingCreateDTO;
 import com.example.modules.exams.dtos.ExamRankingRequestDTO;
 import com.example.modules.exams.dtos.ExamRankingResponseDTO;
+import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamRanking;
 import com.example.modules.exams.entities.ExamSubmission;
+import com.example.modules.exams.exceptions.ExamNotFoundException;
 import com.example.modules.exams.repositories.ExamRankingRepository;
+import com.example.modules.exams.repositories.ExamRepository;
 import com.example.modules.exams.repositories.ExamSubmissionRepository;
 import com.example.modules.exams.utils.ExamRankingMapper;
 import com.example.modules.exams.utils.ExamRankingSpecification;
@@ -13,6 +17,8 @@ import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.enums.Verdict;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.users.entities.User;
+import com.example.modules.users.exceptions.UserNotFoundException;
+import com.example.modules.users.repositories.UsersRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +35,8 @@ public class ExamRankingService {
   private final SubmissionsRepository submissionsRepository;
   private final ExamSubmissionRepository examSubmissionRepository;
   private final ExamRankingRepository examRankingRepository;
+  private final ExamRepository examRepository;
+  private final UsersRepository usersRepository;
   private final ExamRankingMapper examRankingMapper;
 
   /**
@@ -204,5 +212,59 @@ public class ExamRankingService {
       .stream()
       .map(examRankingMapper::toExamRankingResponseDto)
       .collect(Collectors.toList());
+  }
+
+  /**
+   * Tạo ExamRanking với chỉ exam và user, các field score để null
+   * Scheduler sẽ tự động tính toán và cập nhật sau
+   */
+  @Transactional
+  public ExamRankingResponseDTO createExamRanking(ExamRankingCreateDTO dto, User currentUser) {
+    // 1. Validate exam exists
+    Exam exam = examRepository
+      .findById(dto.getExamId())
+      .orElseThrow(() ->
+        new ExamNotFoundException("Exam with id " + dto.getExamId() + " not found")
+      );
+
+    // 2. Validate user exists
+    User user = usersRepository
+      .findById(dto.getUserId())
+      .orElseThrow(() ->
+        new UserNotFoundException("User with id " + dto.getUserId() + " not found")
+      );
+
+    // 3. Kiểm tra xem ExamRanking đã tồn tại chưa
+    List<ExamRanking> existing = examRankingRepository.findAll((root, query, cb) ->
+      cb.and(
+        cb.equal(root.get("exam").get("id"), dto.getExamId()),
+        cb.equal(root.get("user").get("id"), dto.getUserId()),
+        cb.isNull(root.get("deletedTimestamp"))
+      )
+    );
+
+    if (!existing.isEmpty()) {
+      log.info(
+        "ExamRanking already exists for exam {} and user {}",
+        dto.getExamId(),
+        dto.getUserId()
+      );
+      return examRankingMapper.toExamRankingResponseDto(existing.get(0));
+    }
+
+    // 4. Tạo ExamRanking mới với các field score = null
+    ExamRanking ranking = ExamRanking.builder()
+      .exam(exam)
+      .user(user)
+      .totalScore(null)
+      .numberOfExercises(null)
+      .numberOfCompletedExercises(null)
+      .build();
+
+    ranking = examRankingRepository.save(ranking);
+
+    log.info("Created ExamRanking for exam {} and user {}", dto.getExamId(), dto.getUserId());
+
+    return examRankingMapper.toExamRankingResponseDto(ranking);
   }
 }

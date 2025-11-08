@@ -1,14 +1,18 @@
 package com.example.modules.groups.entities;
 
 import com.example.base.entities.BaseEntity;
+import com.example.modules.exams.entities.GroupExam;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.users.entities.User;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -20,8 +24,11 @@ import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
-@EqualsAndHashCode(callSuper = true, exclude = { "instructor", "students", "exercises" })
-@ToString(exclude = { "instructor", "students", "exercises" })
+@EqualsAndHashCode(
+  callSuper = true,
+  exclude = { "instructor", "students", "exercises", "groupExams" }
+)
+@ToString(exclude = { "instructor", "students", "exercises", "groupExams" })
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -59,4 +66,12 @@ public class Group extends BaseEntity {
     inverseJoinColumns = @JoinColumn(name = "exercise_id")
   )
   private List<Exercise> exercises;
+
+  @OneToMany(
+    mappedBy = "group",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true,
+    fetch = FetchType.LAZY
+  )
+  private List<GroupExam> groupExams; // group có thể chứa nhiều exam
 }

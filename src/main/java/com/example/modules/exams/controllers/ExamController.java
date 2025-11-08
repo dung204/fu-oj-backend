@@ -19,7 +19,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -39,7 +38,7 @@ public class ExamController {
   ExamService examService;
   ExamMapper examMapper;
 
-  @AllowRoles({ Role.INSTRUCTOR })
+  @AllowRoles({ Role.INSTRUCTOR, Role.ADMIN })
   @Operation(
     summary = "Create exams for multiple groups (for INSTRUCTOR only)",
     description = "Creates exams for multiple groups at once based on a single template. For each `groupId` provided, a new exam is generated with a unique title formatted as `{original title} {group name}`.\n\n" +
@@ -59,18 +58,14 @@ public class ExamController {
   )
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public SuccessResponseDTO<List<ExamResponseDTO>> createExams(
-    @RequestBody @Valid ExamCreateDTO examCreateDTO,
-    @CurrentUser User currentUser
+  public SuccessResponseDTO<ExamResponseDTO> createExam(
+    @RequestBody @Valid ExamCreateDTO examCreateDTO
   ) {
-    List<ExamResponseDTO> createdExams = examService.createExamsForMultipleGroups(
-      examCreateDTO,
-      currentUser
-    );
-    return SuccessResponseDTO.<List<ExamResponseDTO>>builder()
+    ExamResponseDTO createdExam = examService.createExamForMultipleGroups(examCreateDTO);
+    return SuccessResponseDTO.<ExamResponseDTO>builder()
       .status(201)
-      .message("Exams created successfully for " + createdExams.size() + " group(s)")
-      .data(createdExams)
+      .message("Exam created successfully for " + examCreateDTO.getGroupIds().size() + " group(s)")
+      .data(createdExam)
       .build();
   }
 

@@ -8,6 +8,7 @@ import com.example.modules.exams.dtos.ExamUpdateDTO;
 import com.example.modules.exams.dtos.ExamsSearchDTO;
 import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamExercise;
+import com.example.modules.exams.entities.GroupExam;
 import com.example.modules.exams.enums.ExamStatus;
 import com.example.modules.exams.exceptions.ExamNotFoundException;
 import com.example.modules.exams.exceptions.ExamNotModifiableException;
@@ -15,8 +16,10 @@ import com.example.modules.exams.exceptions.InvalidTimeRangeException;
 import com.example.modules.exams.exceptions.StartTimeTooSoonException;
 import com.example.modules.exams.repositories.ExamExerciseRepository;
 import com.example.modules.exams.repositories.ExamRepository;
+import com.example.modules.exams.repositories.GroupExamRepository;
 import com.example.modules.exams.utils.ExamMapper;
 import com.example.modules.exams.utils.ExamsSpecification;
+import com.example.modules.exams.utils.GroupExamSpecification;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.groups.entities.Group;
@@ -48,6 +51,7 @@ public class ExamService {
 
   private final ExamRepository examRepository;
   private final ExamExerciseRepository examExerciseRepository;
+  private final GroupExamRepository groupExamRepository;
   private final GroupsRepository groupsRepository;
   private final ExercisesRepository exercisesRepository;
   private final ExamMapper examMapper;
@@ -56,86 +60,86 @@ public class ExamService {
   @Transactional
   public void updateExamStatus() {
     Instant now = Instant.now();
-    log.info("=== Starting scheduled check for Exam status ===");
+    log.info("=== Starting scheduled check for GroupExam status ===");
 
     // 1. Đóng các kỳ thi đang diễn ra (ONGOING -> COMPLETED)
-    int completedCount = examRepository
+    int completedCount = groupExamRepository
       .saveAll(
-        examRepository
+        groupExamRepository
           .findAll(
-            ExamsSpecification.builder()
+            GroupExamSpecification.builder()
               .withStatus(ExamStatus.ONGOING.getValue())
-              .withEndTimeSmallerThanOrEqualTo(now)
+              .withExamEndTimeSmallerThanOrEqualTo(now)
               .build()
           )
           .stream()
-          .map(exam -> {
-            exam.setStatus(ExamStatus.COMPLETED);
-            return exam;
+          .map(groupExam -> {
+            groupExam.setStatus(ExamStatus.COMPLETED);
+            return groupExam;
           })
           .collect(Collectors.toList())
       )
       .size();
 
     if (completedCount > 0) {
-      log.info("Marked {} exams as COMPLETED.", completedCount);
+      log.info("Marked {} group exams as COMPLETED.", completedCount);
     }
 
     // 2. Đánh hết hạn cho các kỳ thi bị quá hạn (UPCOMING -> OUTDATED)
-    int outdatedCount = examRepository
+    int outdatedCount = groupExamRepository
       .saveAll(
-        examRepository
+        groupExamRepository
           .findAll(
-            ExamsSpecification.builder()
+            GroupExamSpecification.builder()
               .withStatus(ExamStatus.UPCOMING.getValue())
-              .withEndTimeSmallerThanOrEqualTo(now)
+              .withExamEndTimeSmallerThanOrEqualTo(now)
               .build()
           )
           .stream()
-          .map(exam -> {
-            exam.setStatus(ExamStatus.OUTDATED);
-            return exam;
+          .map(groupExam -> {
+            groupExam.setStatus(ExamStatus.OUTDATED);
+            return groupExam;
           })
           .collect(Collectors.toList())
       )
       .size();
 
     if (outdatedCount > 0) {
-      log.info("Marked {} exams as OUTDATED.", outdatedCount);
+      log.info("Marked {} group exams as OUTDATED.", outdatedCount);
     }
 
-    int ongoingCount = examRepository
+    // 3. Bắt đầu các kỳ thi sắp tới (UPCOMING -> ONGOING)
+    int ongoingCount = groupExamRepository
       .saveAll(
-        examRepository
+        groupExamRepository
           .findAll(
-            ExamsSpecification.builder()
+            GroupExamSpecification.builder()
               .withStatus(ExamStatus.UPCOMING.getValue())
-              .withEndTimeGreaterThan(now)
+              .withExamStartTimeSmallerThanOrEqualTo(now)
+              .withExamEndTimeGreaterThan(now)
               .build()
           )
           .stream()
-          .map(exam -> {
-            exam.setStatus(ExamStatus.ONGOING);
-            return exam;
+          .map(groupExam -> {
+            groupExam.setStatus(ExamStatus.ONGOING);
+            return groupExam;
           })
           .collect(Collectors.toList())
       )
       .size();
 
     if (ongoingCount > 0) {
-      log.info("Marked {} exams as OUTDATED.", outdatedCount);
+      log.info("Marked {} group exams as ONGOING.", ongoingCount);
     }
-    log.info("=== Scheduled check for Exam status completed ===");
+    log.info("=== Scheduled check for GroupExam status completed ===");
   }
 
   /**
-   * Tạo exam cho nhiều group cùng lúc
-   * Với mỗi group, sẽ tạo 1 exam riêng với title = "{title} {groupName}"
+   * Tạo 1 exam cho nhiều group cùng lúc
+   * Tạo 1 exam chung và các GroupExam để liên kết exam với các group
    */
   @Transactional
-  public List<ExamResponseDTO> createExamsForMultipleGroups(ExamCreateDTO dto, User currentUser) {
-    List<ExamResponseDTO> createdExams = new ArrayList<>();
-
+  public ExamResponseDTO createExamForMultipleGroups(ExamCreateDTO dto) {
     if (dto.getStartTime().isAfter(dto.getEndTime())) {
       throw new InvalidTimeRangeException();
     }
@@ -161,46 +165,47 @@ public class ExamService {
       exercises = exercisesRepository.findAllById(dto.getExerciseIds());
     }
 
-    // Tạo exam cho mỗi group
-    for (Group group : groups) {
-      // Tạo title cho exam: "{title gốc} {tên group}"
-      String examTitle = dto.getTitle() + " " + group.getName();
+    // Tạo 1 exam chung cho tất cả các group
+    Exam exam = Exam.builder()
+      .code(generateUniqueExamCode())
+      .title(dto.getTitle())
+      .description(dto.getDescription())
+      .startTime(dto.getStartTime())
+      .endTime(dto.getEndTime())
+      .build();
 
-      // Tạo exam
-      Exam exam = Exam.builder()
-        .code(generateUniqueExamCode())
-        .title(examTitle)
-        .description(dto.getDescription())
-        .status(ExamStatus.fromValue(dto.getStatus()))
-        .startTime(dto.getStartTime())
-        .endTime(dto.getEndTime())
-        .group(group)
-        .build();
+    exam = examRepository.save(exam);
 
-      exam = examRepository.save(exam);
-
-      // Tạo các ExamExercise
-      if (!exercises.isEmpty()) {
-        List<ExamExercise> examExercises = new ArrayList<>();
-        for (int i = 0; i < exercises.size(); i++) {
-          ExamExercise examExercise = ExamExercise.builder()
-            .exam(exam)
-            .exercise(exercises.get(i))
-            .order(i + 1)
-            .build();
-
-          // set createdBy
-          examExercises.add(examExercise);
-        }
-        examExerciseRepository.saveAll(examExercises);
-        exam.setExamExercises(examExercises);
+    // Tạo các ExamExercise
+    if (!exercises.isEmpty()) {
+      List<ExamExercise> examExercises = new ArrayList<>();
+      for (int i = 0; i < exercises.size(); i++) {
+        ExamExercise examExercise = ExamExercise.builder()
+          .exam(exam)
+          .exercise(exercises.get(i))
+          .order(i + 1)
+          .build();
+        examExercises.add(examExercise);
       }
-
-      createdExams.add(examMapper.toExamResponseDTO(exam));
+      examExerciseRepository.saveAll(examExercises);
+      exam.setExamExercises(examExercises);
     }
 
-    log.info("Created {} exams for {} groups", createdExams.size(), groups.size());
-    return createdExams;
+    // Tạo GroupExam cho mỗi group
+    List<GroupExam> groupExams = new ArrayList<>();
+    for (Group group : groups) {
+      GroupExam groupExam = GroupExam.builder()
+        .exam(exam)
+        .group(group)
+        .status(ExamStatus.fromValue(dto.getStatus()))
+        .build();
+      groupExams.add(groupExam);
+    }
+    groupExamRepository.saveAll(groupExams);
+    exam.setGroupExams(groupExams);
+
+    log.info("Created exam {} for {} groups", exam.getCode(), groups.size());
+    return examMapper.toExamResponseDTO(exam);
   }
 
   /**
@@ -278,11 +283,17 @@ public class ExamService {
   public ExamResponseDTO updateExam(String id, ExamUpdateDTO examUpdateDTO, User currentUser) {
     Exam exam = getExamById(id, currentUser);
 
-    if (
-      List.of(ExamStatus.ONGOING, ExamStatus.COMPLETED, ExamStatus.CANCELED).contains(
-        exam.getStatus()
-      )
-    ) {
+    // Check if any GroupExam has status that prevents modification
+    List<GroupExam> groupExams = groupExamRepository.findByExamId(exam.getId());
+    boolean hasNonModifiableStatus = groupExams
+      .stream()
+      .anyMatch(ge ->
+        List.of(ExamStatus.ONGOING, ExamStatus.COMPLETED, ExamStatus.CANCELED).contains(
+          ge.getStatus()
+        )
+      );
+
+    if (hasNonModifiableStatus) {
       throw new ExamNotModifiableException();
     }
 
@@ -295,7 +306,12 @@ public class ExamService {
     Instant now = Instant.now();
     Instant safeStartTime = now.plus(BUFFER_MINUTES, ChronoUnit.MINUTES);
 
-    if (exam.getStatus() == ExamStatus.UPCOMING && exam.getStartTime().isBefore(safeStartTime)) {
+    // Check if any GroupExam is UPCOMING and start time is too soon
+    boolean hasUpcomingStatus = groupExams
+      .stream()
+      .anyMatch(ge -> ge.getStatus() == ExamStatus.UPCOMING);
+
+    if (hasUpcomingStatus && exam.getStartTime().isBefore(safeStartTime)) {
       throw new StartTimeTooSoonException(
         "Start time must be after the current time at least " + BUFFER_MINUTES + " minutes."
       );
@@ -308,9 +324,15 @@ public class ExamService {
   public ExamResponseDTO publishExam(String id, User currentUser) {
     Exam exam = getExamById(id, currentUser);
 
-    if (exam.getStatus() != ExamStatus.DRAFT) {
+    // Check if all GroupExams are in DRAFT status
+    List<GroupExam> groupExams = groupExamRepository.findByExamId(exam.getId());
+    boolean hasNonDraftStatus = groupExams
+      .stream()
+      .anyMatch(ge -> ge.getStatus() != ExamStatus.DRAFT);
+
+    if (hasNonDraftStatus) {
       throw new ExamNotModifiableException(
-        "Exam can not be published when the status is not 'DRAFT'."
+        "Exam can not be published when any group exam status is not 'DRAFT'."
       );
     }
 
@@ -327,7 +349,10 @@ public class ExamService {
       );
     }
 
-    exam.setStatus(ExamStatus.UPCOMING);
+    // Update all GroupExams status to UPCOMING
+    groupExams.forEach(ge -> ge.setStatus(ExamStatus.UPCOMING));
+    groupExamRepository.saveAll(groupExams);
+
     return examMapper.toExamResponseDTO(examRepository.save(exam));
   }
 

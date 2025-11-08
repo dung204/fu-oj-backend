@@ -1,8 +1,6 @@
 package com.example.modules.exams.entities;
 
 import com.example.base.entities.BaseEntity;
-import com.example.modules.exams.enums.ExamStatus;
-import com.example.modules.groups.entities.Group;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.List;
@@ -13,9 +11,9 @@ import lombok.experimental.SuperBuilder;
 @Data
 @EqualsAndHashCode(
   callSuper = true,
-  exclude = { "group", "examExercises", "examSubmissions", "rankings" }
+  exclude = { "groupExams", "examExercises", "examSubmissions", "rankings" }
 )
-@ToString(exclude = { "group", "examExercises", "examSubmissions", "rankings" })
+@ToString(exclude = { "groupExams", "examExercises", "examSubmissions", "rankings" })
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -31,20 +29,19 @@ public class Exam extends BaseEntity {
   @Column(columnDefinition = "TEXT")
   private String description;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "group_id")
-  private Group group; // exam thuộc group nào (nếu có)
+  @OneToMany(
+    mappedBy = "exam",
+    cascade = CascadeType.ALL,
+    orphanRemoval = true,
+    fetch = FetchType.LAZY
+  )
+  private List<GroupExam> groupExams; // exam có thể thuộc nhiều group
 
   private Instant startTime;
   private Instant endTime;
 
-  @Enumerated(EnumType.STRING)
-  @Column(
-    nullable = false,
-    columnDefinition = "varchar(255) default 'DRAFT' check (status in ('DRAFT','UPCOMING','ONGOING','COMPLETED','CANCELLED','OUTDATED'))"
-  )
-  @Builder.Default
-  private ExamStatus status = ExamStatus.DRAFT;
+  @Column(name = "time_limit")
+  private Double timeLimit;
 
   @OneToMany(
     mappedBy = "exam", // exam: liên kết với tên thuộc tính trong ExamExercise

@@ -22,14 +22,6 @@ public abstract class ExamMapper {
 
   @Named("toExamResponseDTO")
   @Mapping(
-    target = "groupId",
-    expression = "java(exam.getGroup() != null ? exam.getGroup().getId() : null)"
-  )
-  @Mapping(
-    target = "groupName",
-    expression = "java(exam.getGroup() != null ? exam.getGroup().getName() : null)"
-  )
-  @Mapping(
     source = "examExercises",
     target = "exercises",
     qualifiedByName = "mapExamExercisesToExercises"
