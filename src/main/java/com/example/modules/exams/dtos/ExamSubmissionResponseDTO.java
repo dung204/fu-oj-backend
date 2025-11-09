@@ -1,6 +1,7 @@
 package com.example.modules.exams.dtos;
 
 import com.example.base.dtos.EntityDTO;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -24,4 +25,5 @@ public class ExamSubmissionResponseDTO extends EntityDTO {
   private Boolean isAccepted;
   private String time;
   private String memory;
+  private Double timeLimit;
 }
