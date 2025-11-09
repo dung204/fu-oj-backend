@@ -42,6 +42,7 @@ public final class AppRoutes {
   public static final String TOPICS_PREFIX = API_PREFIX + "/topics";
   public static final String SYSTEM_CONFIGS_PREFIX = API_PREFIX + "/system-configs";
   public static final String EXCEL_PREFIX = API_PREFIX + "/excels";
+  public static final String DASHBOARD_INSTRUCTOR_PREFIX = API_PREFIX + "/dashboard/instructor";
 
   public static final List<String> whitelistedRoutes = List.of(
     API_PREFIX + "/docs/**",
