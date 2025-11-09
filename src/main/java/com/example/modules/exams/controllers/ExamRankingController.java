@@ -35,7 +35,6 @@ public class ExamRankingController {
 
   ExamRankingService examRankingService;
 
-  @AllowRoles({ Role.INSTRUCTOR, Role.ADMIN })
   @Operation(
     summary = "Create exam ranking (for INSTRUCTOR and ADMIN)",
     description = "Tạo ExamRanking với chỉ exam và user. Các field điểm (totalScore, numberOfExercises, numberOfCompletedExercises) sẽ là null.\n\n" +
