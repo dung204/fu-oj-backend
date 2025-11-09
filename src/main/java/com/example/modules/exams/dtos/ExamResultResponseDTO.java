@@ -24,6 +24,7 @@ public class ExamResultResponseDTO {
   private Double totalScore;
   private Integer totalExercises;
   private Integer completedExercises;
+  private Double timeLimit;
 
   @Data
   @Builder
