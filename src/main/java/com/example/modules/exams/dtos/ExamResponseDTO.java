@@ -32,6 +32,9 @@ public class ExamResponseDTO extends EntityDTO {
   )
   private String description;
 
+  @Schema(description = "The time limit for completing the exam, in minutes.", example = "90.0")
+  private Double timeLimit;
+
   @Schema(
     description = "The date and time when the exam starts (ISO 8601 format).",
     example = SwaggerExamples.TIMESTAMP
