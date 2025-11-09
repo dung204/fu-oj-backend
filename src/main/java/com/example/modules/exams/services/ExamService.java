@@ -263,6 +263,7 @@ public class ExamService {
             .withGroupId(examsSearchDTO.getGroupId())
             .containsCodeOrContainsTitle(examsSearchDTO.getQuery())
             .isOneOfStatuses(examsSearchDTO.getStatus())
+            .withOwnerId(examsSearchDTO.getOwnerId())
             .build(),
           examsSearchDTO.toPageRequest()
         );
