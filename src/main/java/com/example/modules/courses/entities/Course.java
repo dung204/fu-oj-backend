@@ -1,0 +1,49 @@
+package com.example.modules.courses.entities;
+
+import com.example.base.entities.BaseEntity;
+import com.example.modules.exercises.entities.Exercise;
+import com.example.modules.users.entities.User;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
+import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
+@SuperBuilder
+@Data
+@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "courses")
+public class Course extends BaseEntity {
+
+  @Column(nullable = false)
+  private String title;
+
+  @Column(nullable = false)
+  private String description;
+
+  @ManyToMany
+  @JoinTable(
+    name = "course_exercises",
+    joinColumns = @JoinColumn(name = "course_id"),
+    inverseJoinColumns = @JoinColumn(name = "exercise_id")
+  )
+  private List<Exercise> exercises;
+
+  @ManyToMany
+  @JoinTable(
+    name = "course_users",
+    joinColumns = @JoinColumn(name = "course_id"),
+    inverseJoinColumns = @JoinColumn(name = "user_id")
+  )
+  private List<User> enrolledUsers;
+}
