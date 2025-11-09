@@ -98,4 +98,11 @@ public class ExamsSpecification extends SpecificationBuilder<Exam> {
     }
     return this;
   }
+
+  public ExamsSpecification withOwnerId(String ownerId) {
+    if (ownerId != null && !ownerId.trim().isEmpty()) {
+      specifications.add((root, query, cb) -> cb.equal(root.get("createdBy"), ownerId));
+    }
+    return this;
+  }
 }
