@@ -2,6 +2,7 @@ package com.example.modules.file.excel.service;
 
 import com.example.modules.auth.dtos.RegisterRequestDTO;
 import com.example.modules.auth.entities.Account;
+import com.example.modules.auth.enums.Role;
 import com.example.modules.auth.exceptions.EmailHasAlreadyBeenUsedException;
 import com.example.modules.auth.repositories.AccountsRepository;
 import com.example.modules.auth.services.AuthService;
@@ -55,7 +56,11 @@ public class ExcelService implements IExcelService {
   }
 
   public byte[] exportAccountsToExcel() throws IOException {
-    List<Account> accounts = accountsRepository.findAll();
+    List<Account> accounts = accountsRepository
+      .findAll()
+      .stream()
+      .filter(a -> a.getRole() != Role.ADMIN)
+      .toList();
     String[] header = { "Create At", "Email", "Role", "Create By" };
     String[] field = { "createdTimestamp", "email", "role", "createdBy" };
     return exportToExcel(accounts, "account", header, field);
