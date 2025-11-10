@@ -2,6 +2,7 @@ package com.example.modules.auth.services;
 
 import com.example.modules.auth.dtos.account.AccountResponseDTO;
 import com.example.modules.auth.entities.Account;
+import com.example.modules.auth.enums.Role;
 import com.example.modules.auth.repositories.AccountsRepository;
 import com.example.modules.auth.utils.AccountMapper;
 import java.util.ArrayList;
@@ -24,6 +25,10 @@ public class AccountService {
       ArrayList::new
     );
 
-    return accounts.stream().map(accountMapper::toAccountResponseDTO).toList();
+    return accounts
+      .stream()
+      .filter(account -> account.getRole() != Role.ADMIN)
+      .map(accountMapper::toAccountResponseDTO)
+      .toList();
   }
 }

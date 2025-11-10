@@ -15,4 +15,5 @@ import lombok.experimental.SuperBuilder;
 public class AccountResponseDTO extends EntityDTO {
 
   private String email;
+  private String role;
 }
