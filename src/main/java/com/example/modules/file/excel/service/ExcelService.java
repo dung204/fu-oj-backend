@@ -124,7 +124,21 @@ public class ExcelService implements IExcelService {
     } catch (EmailHasAlreadyBeenUsedException e) {
       log.info("Row {}: email '{}' has already been used", row, account.getEmail());
     } catch (Exception e) {
-      log.error("Row {}: unexpected error - {}", row, e.getMessage());
+      log.error(
+        "Row {}: unexpected error - {}: {}",
+        row,
+        e.getClass().getSimpleName(),
+        e.getMessage()
+      );
+      if (e.getCause() != null) {
+        log.error(
+          "Row {}: cause - {}: {}",
+          row,
+          e.getCause().getClass().getSimpleName(),
+          e.getCause().getMessage()
+        );
+      }
+      log.error("Row {}: stack trace", row, e);
     }
     return false;
   }
