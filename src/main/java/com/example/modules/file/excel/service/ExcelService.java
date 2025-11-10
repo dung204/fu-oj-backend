@@ -108,6 +108,7 @@ public class ExcelService implements IExcelService {
       acc.setCreatedBy(user.getAccount().getUsername());
       acc.setDeletedTimestamp(Instant.now());
       accountsRepository.save(acc);
+      log.info("{}=> import", acc.getId());
       emailService.sendEmailWithTemplate(
         acc.getEmail(),
         "ACTIVE ACCOUNT",
