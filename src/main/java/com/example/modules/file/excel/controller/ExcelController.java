@@ -4,7 +4,6 @@ import static com.example.base.utils.AppRoutes.EXCEL_PREFIX;
 
 import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.CurrentUser;
-import com.example.modules.auth.annotations.Public;
 import com.example.modules.auth.dtos.RegisterRequestDTO;
 import com.example.modules.file.excel.service.ExcelService;
 import com.example.modules.users.entities.User;
