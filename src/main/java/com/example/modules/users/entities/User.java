@@ -3,6 +3,7 @@ package com.example.modules.users.entities;
 import com.example.base.entities.BaseEntity;
 import com.example.modules.auth.entities.Account;
 import com.example.modules.certifications.entities.Certification;
+import com.example.modules.courses.entities.Course;
 import com.example.modules.groups.entities.Group;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -22,8 +23,11 @@ import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
-@EqualsAndHashCode(callSuper = true, exclude = { "account", "joinedGroups", "certifications" })
-@ToString(exclude = { "account", "joinedGroups", "certifications" })
+@EqualsAndHashCode(
+  callSuper = true,
+  exclude = { "account", "joinedGroups", "certifications", "enrolledCourses" }
+)
+@ToString(exclude = { "account", "joinedGroups", "certifications", "enrolledCourses" })
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -54,6 +58,9 @@ public class User extends BaseEntity {
 
   @ManyToMany(mappedBy = "students")
   private List<Group> joinedGroups;
+
+  @ManyToMany(mappedBy = "enrolledStudents")
+  private List<Course> enrolledCourses;
 
   @OneToMany(mappedBy = "user")
   private List<Certification> certifications;

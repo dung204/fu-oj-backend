@@ -246,6 +246,31 @@ public class ExercisesService {
     );
   }
 
+  public Page<ExerciseResponseDTO> getExercisesByCourseId(
+    String courseId,
+    ExerciseQueryDTO dto,
+    User currentUser
+  ) {
+    Page<Exercise> exercisesPage = exercisesRepository.findAll(
+      ExercisesSpecification.builder()
+        .withCourseId(courseId)
+        .<ExercisesSpecification>or(
+          spec -> spec.containsCode(dto.getQuery()),
+          spec -> spec.containsTitle(dto.getQuery())
+        )
+        .hasOneOfTopics(dto.getTopic())
+        .onlyLatestVersion()
+        .build(),
+      dto.toPageRequest()
+    );
+
+    return exercisesPage.map(
+      currentUser.getAccount().getRole() == Role.STUDENT
+        ? exerciseMapper::toExerciseResponseDTOWithPrivateTestCasesHidden
+        : exerciseMapper::toExerciseResponseDTOWithAllTestCases
+    );
+  }
+
   /**
    * Cập nhật exercise
    */

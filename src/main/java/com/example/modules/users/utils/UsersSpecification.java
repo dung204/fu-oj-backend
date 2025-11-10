@@ -24,6 +24,19 @@ public class UsersSpecification extends SpecificationBuilder<User> {
     return this;
   }
 
+  public UsersSpecification fetchEnrolledCourses() {
+    specifications.add((root, query, criteriaBuilder) -> {
+      // This check is important to avoid adding the fetch multiple times,
+      // especially in count queries where it's not needed and can cause errors.
+      if (query.getResultType() != Long.class && query.getResultType() != long.class) {
+        root.fetch("enrolledCourses", JoinType.LEFT);
+      }
+      // We return an empty predicate because this specification is only for fetching, not filtering.
+      return criteriaBuilder.conjunction();
+    });
+    return this;
+  }
+
   public UsersSpecification containsFullNameOrContainsRollNumberOrContainsEmail(String query) {
     if (query != null && !query.isEmpty()) {
       specifications.add((root, criteriaQuery, criteriaBuilder) -> {

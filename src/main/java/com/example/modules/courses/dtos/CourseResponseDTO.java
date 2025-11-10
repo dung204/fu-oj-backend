@@ -1,16 +1,28 @@
 package com.example.modules.courses.dtos;
 
 import com.example.base.dtos.EntityDTO;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
 @EqualsAndHashCode(callSuper = true)
-// TODO: After adding fields, uncomment these two lines
-// @NoArgsConstructor
-// @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class CourseResponseDTO extends EntityDTO {
-  // TODO: Add fields
+
+  @Schema(description = "The title of the course.")
+  private String title;
+
+  @Schema(description = "A detailed description of the course content and objectives.")
+  private String description;
+
+  @Schema(
+    description = "The name of the template used for generating certificates upon course completion."
+  )
+  private String certificateTemplateName;
 }

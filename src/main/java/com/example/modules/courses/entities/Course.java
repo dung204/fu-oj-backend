@@ -25,11 +25,14 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "courses")
 public class Course extends BaseEntity {
 
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "TEXT")
   private String title;
 
-  @Column(nullable = false)
+  @Column(nullable = false, columnDefinition = "TEXT")
   private String description;
+
+  @Column(nullable = false, columnDefinition = "TEXT")
+  private String certificateTemplateName;
 
   @ManyToMany
   @JoinTable(
@@ -45,5 +48,5 @@ public class Course extends BaseEntity {
     joinColumns = @JoinColumn(name = "course_id"),
     inverseJoinColumns = @JoinColumn(name = "user_id")
   )
-  private List<User> enrolledUsers;
+  private List<User> enrolledStudents;
 }
