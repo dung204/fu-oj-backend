@@ -109,17 +109,30 @@ public class ExcelService implements IExcelService {
       acc.setDeletedTimestamp(Instant.now());
       accountsRepository.save(acc);
       log.info("{}=> import", acc.getId());
-      emailService.sendEmailWithTemplate(
-        acc.getEmail(),
-        "ACTIVE ACCOUNT",
-        "active-account",
-        Map.of(
-          "name",
-          acc.getUsername(),
-          "activationLink",
-          "http://localhost:4000/api/v1/auth/active-account/" + account.getEmail()
-        )
-      );
+
+      // Send email separately - don't fail import if email fails
+      try {
+        emailService.sendEmailWithTemplate(
+          acc.getEmail(),
+          "ACTIVE ACCOUNT",
+          "active-account",
+          Map.of(
+            "name",
+            acc.getUsername(),
+            "activationLink",
+            "http://localhost:4000/api/v1/auth/active-account/" + account.getEmail()
+          )
+        );
+      } catch (Exception emailException) {
+        // Log email error but don't fail the import
+        log.warn(
+          "Row {}: Failed to send activation email to '{}': {}",
+          row,
+          account.getEmail(),
+          emailException.getMessage()
+        );
+      }
+
       return true;
     } catch (EmailHasAlreadyBeenUsedException e) {
       log.info("Row {}: email '{}' has already been used", row, account.getEmail());
@@ -138,7 +151,6 @@ public class ExcelService implements IExcelService {
           e.getCause().getMessage()
         );
       }
-      log.error("Row {}: stack trace", row, e);
     }
     return false;
   }
