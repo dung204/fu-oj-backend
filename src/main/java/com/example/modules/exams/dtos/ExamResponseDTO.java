@@ -2,7 +2,6 @@ package com.example.modules.exams.dtos;
 
 import com.example.base.dtos.EntityDTO;
 import com.example.base.utils.SwaggerExamples;
-import com.example.modules.exams.enums.ExamStatus;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -33,11 +32,8 @@ public class ExamResponseDTO extends EntityDTO {
   )
   private String description;
 
-  @Schema(
-    description = "The current status of the exam (e.g., DRAFT, UPCOMING, ONGOING, FINISHED).",
-    example = SwaggerExamples.EXAM_STATUS
-  )
-  private ExamStatus status;
+  @Schema(description = "The time limit for completing the exam, in minutes.", example = "90.0")
+  private Double timeLimit;
 
   @Schema(
     description = "The date and time when the exam starts (ISO 8601 format).",
@@ -51,18 +47,32 @@ public class ExamResponseDTO extends EntityDTO {
   )
   private String endTime;
 
-  @Schema(
-    description = "The unique identifier of the group this exam belongs to.",
-    example = SwaggerExamples.UUID
-  )
-  private String groupId;
-
-  @Schema(
-    description = "The name of the group this exam belongs to.",
-    example = SwaggerExamples.GROUP_NAME
-  )
-  private String groupName;
+  @Schema(description = "List of groups this exam belongs to")
+  @Builder.Default
+  private List<GroupInfo> groups = List.of();
 
   @Builder.Default
   private List<ExerciseResponseDTO> exercises = List.of();
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class GroupInfo {
+
+    @Schema(description = "Group ID", example = SwaggerExamples.UUID)
+    private String id;
+
+    @Schema(description = "Group code", example = "SE1234")
+    private String code;
+
+    @Schema(description = "Group name", example = "Software Engineering 2024")
+    private String name;
+
+    @Schema(description = "Group description")
+    private String description;
+
+    @Schema(description = "Is the group public?")
+    private Boolean isPublic;
+  }
 }

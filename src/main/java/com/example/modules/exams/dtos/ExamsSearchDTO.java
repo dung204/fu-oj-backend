@@ -24,4 +24,6 @@ public class ExamsSearchDTO extends PaginatedQueryDTO {
 
   @Parameter(description = "Filter exams by a specific group ID.")
   private String groupId;
+
+  private String ownerId;
 }

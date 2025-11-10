@@ -37,9 +37,10 @@ public class ExamsSpecification extends SpecificationBuilder<Exam> {
 
   public ExamsSpecification belongsToGroups(Collection<String> groupIds) {
     if (groupIds != null && !groupIds.isEmpty()) {
-      specifications.add((root, query, criteriaBuilder) ->
-        root.join("group").get("id").in(groupIds)
-      );
+      specifications.add((root, query, criteriaBuilder) -> {
+        query.distinct(true);
+        return root.join("groupExams").join("group").get("id").in(groupIds);
+      });
     }
     return this;
   }
@@ -47,7 +48,8 @@ public class ExamsSpecification extends SpecificationBuilder<Exam> {
   public ExamsSpecification withGroupId(String groupId) {
     if (groupId != null && !groupId.isBlank()) {
       specifications.add((root, query, criteriaBuilder) -> {
-        var groupJoin = root.join("group");
+        query.distinct(true);
+        var groupJoin = root.join("groupExams").join("group");
         return criteriaBuilder.equal(groupJoin.get("id"), groupId);
       });
     }
@@ -93,6 +95,13 @@ public class ExamsSpecification extends SpecificationBuilder<Exam> {
       specifications.add((root, query, criteriaBuilder) ->
         criteriaBuilder.greaterThan(root.get("endTime"), instant)
       );
+    }
+    return this;
+  }
+
+  public ExamsSpecification withOwnerId(String ownerId) {
+    if (ownerId != null && !ownerId.trim().isEmpty()) {
+      specifications.add((root, query, cb) -> cb.equal(root.get("createdBy"), ownerId));
     }
     return this;
   }

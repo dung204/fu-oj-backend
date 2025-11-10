@@ -12,9 +12,6 @@ public class ExamSubmissionCreateDTO extends SubmissionRequest {
   @NotBlank(message = "ExamId is required")
   private String examId;
 
-  @NotBlank(message = "User id is required")
-  private String userId;
-
   @NotBlank(message = "ExerciseId is required")
   private String exerciseId;
 }
