@@ -4,4 +4,5 @@ public enum CommentEventType {
   CREATED,
   UPDATED,
   DELETED,
+  READ,
 }

@@ -143,9 +143,13 @@ public class GroupService {
   }
 
   @Transactional
-  public GroupResponseDTO addStudentsToGroup(String groupId, List<String> studentIds) {
+  public GroupResponseDTO addStudentsToGroup(String groupId, List<String> emails) {
     Group group = groupsRepository.findGroupById(groupId).orElseThrow(GroupNotFoundException::new);
-    List<User> students = usersRepository.findAllById(studentIds);
+
+    List<User> students = usersRepository.findAllByAccount_EmailIn(emails) != null
+      ? usersRepository.findAllByAccount_EmailIn(emails)
+      : new ArrayList<>();
+
     if (group.getStudents() == null) {
       group.setStudents(new ArrayList<>());
     }

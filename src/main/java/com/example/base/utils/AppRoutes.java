@@ -28,6 +28,7 @@ public final class AppRoutes {
   public static final String API_PREFIX = "/api/v1";
 
   public static final String AUTH_PREFIX = API_PREFIX + "/auth";
+  public static final String ACCOUNT_PREFIX = API_PREFIX + "/account";
   public static final String USER_PREFIX = API_PREFIX + "/users";
   public static final String ME_PREFIX = API_PREFIX + "/me";
   public static final String CERTIFICATIONS_PREFIX = API_PREFIX + "/certifications";

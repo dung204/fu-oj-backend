@@ -20,6 +20,7 @@ public class GroupResponseDTO extends EntityDTO {
   private String name;
   private String description;
   private boolean isPublic;
+  private Boolean isActive;
   private UserProfileDTO owner;
   private Integer studentsCount;
 
