@@ -36,6 +36,7 @@ RUN mkdir -p /app/logs && chown -R spring:spring /app
 
 # Copy jar from builder
 COPY --from=builder /app/target/*.jar app.jar
+COPY .env ./
 RUN chown spring:spring app.jar
 
 # Switch to non-root user
