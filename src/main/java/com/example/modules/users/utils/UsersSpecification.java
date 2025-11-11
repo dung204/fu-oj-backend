@@ -1,6 +1,7 @@
 package com.example.modules.users.utils;
 
 import com.example.base.utils.SpecificationBuilder;
+import com.example.modules.auth.enums.Role;
 import com.example.modules.users.entities.User;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -83,6 +84,15 @@ public class UsersSpecification extends SpecificationBuilder<User> {
     if (email != null && !email.trim().isEmpty()) {
       specifications.add((root, query, criteriaBuilder) -> {
         return criteriaBuilder.equal(root.get("account").get("email"), email);
+      });
+    }
+    return this;
+  }
+
+  public UsersSpecification withAccountRole(Role role) {
+    if (role != null) {
+      specifications.add((root, query, criteriaBuilder) -> {
+        return criteriaBuilder.equal(root.get("account").get("role"), role.getValue());
       });
     }
     return this;

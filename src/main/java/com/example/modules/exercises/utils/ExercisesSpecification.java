@@ -117,7 +117,7 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
     if (courseId != null && !courseId.isEmpty()) {
       specifications.add((root, query, cb) -> {
         query.distinct(true);
-        return cb.equal(root.join("courses").get("id"), courseId);
+        return cb.equal(root.get("courses").get("id"), courseId);
       });
     }
     return this;

@@ -54,7 +54,9 @@ public class CoursesController {
     summary = "Create a new course (for ADMIN only)",
     responses = {
       @ApiResponse(responseCode = "201", description = "Course created successfully"),
+      @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content),
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(responseCode = "403", description = "User is not an ADMIN", content = @Content),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
@@ -75,7 +77,10 @@ public class CoursesController {
     summary = "Update an existing course (for ADMIN only)",
     responses = {
       @ApiResponse(responseCode = "200", description = "Course updated successfully"),
+      @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content),
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(responseCode = "403", description = "User is not an ADMIN", content = @Content),
+      @ApiResponse(responseCode = "404", description = "Course not found", content = @Content),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
@@ -101,6 +106,8 @@ public class CoursesController {
         content = @Content
       ),
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(responseCode = "403", description = "User is not an ADMIN", content = @Content),
+      @ApiResponse(responseCode = "404", description = "Course not found", content = @Content),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
@@ -131,9 +138,12 @@ public class CoursesController {
 
   @Operation(
     summary = "Retrieve a course by ID and the progress of the current authenticated user in this course",
+    description = "For `ADMIN` & `INSTRUCTOR`, the `progress` will always be `null`\n\n" +
+      "For `STUDENT`, the `progress = null` means that the student hasn't enrolled in the course",
     responses = {
       @ApiResponse(responseCode = "200", description = "Course retrieved successfully"),
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(responseCode = "404", description = "Course not found", content = @Content),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
@@ -153,6 +163,7 @@ public class CoursesController {
     responses = {
       @ApiResponse(responseCode = "200", description = "Exercises retrieved successfully"),
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(responseCode = "404", description = "Course not found", content = @Content),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
@@ -172,13 +183,21 @@ public class CoursesController {
   @AllowRoles(Role.ADMIN)
   @Operation(
     summary = "Add exercises to a course (for ADMIN only)",
+    description = "Only exercises with `visibility` of `PUBLIC` are allowed",
     responses = {
       @ApiResponse(
         responseCode = "204",
         description = "Exercises added successfully",
         content = @Content
       ),
+      @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content),
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(responseCode = "403", description = "User is not an ADMIN", content = @Content),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Course not found, or one or more exercises not found/not public",
+        content = @Content
+      ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
@@ -200,7 +219,14 @@ public class CoursesController {
         description = "Exercises removed successfully",
         content = @Content
       ),
+      @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content),
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(responseCode = "403", description = "User is not an ADMIN", content = @Content),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Course not found, or one or more exercises not found in the course",
+        content = @Content
+      ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
@@ -213,11 +239,19 @@ public class CoursesController {
     coursesService.removeExercisesFromCourse(id, courseExerciseRequestDTO);
   }
 
+  @AllowRoles(Role.STUDENT)
   @Operation(
-    summary = "Enroll the current authenticated user in a course",
+    summary = "Enroll the current authenticated user in a course (for STUDENT only)",
     responses = {
       @ApiResponse(responseCode = "200", description = "Enrolled in course successfully"),
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(responseCode = "403", description = "User is not a STUDENT", content = @Content),
+      @ApiResponse(responseCode = "404", description = "Course not found", content = @Content),
+      @ApiResponse(
+        responseCode = "409",
+        description = "User is already enrolled in this course",
+        content = @Content
+      ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )

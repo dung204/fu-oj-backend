@@ -9,7 +9,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
-import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -40,7 +40,7 @@ public class Course extends BaseEntity {
     joinColumns = @JoinColumn(name = "course_id"),
     inverseJoinColumns = @JoinColumn(name = "exercise_id")
   )
-  private List<Exercise> exercises;
+  private Set<Exercise> exercises;
 
   @ManyToMany
   @JoinTable(
@@ -48,5 +48,5 @@ public class Course extends BaseEntity {
     joinColumns = @JoinColumn(name = "course_id"),
     inverseJoinColumns = @JoinColumn(name = "user_id")
   )
-  private List<User> enrolledStudents;
+  private Set<User> enrolledStudents;
 }

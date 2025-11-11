@@ -1,8 +1,9 @@
-package com.example.modules.certifications.entities;
+package com.example.modules.certificates.entities;
 
 import com.example.base.entities.BaseEntity;
 import com.example.modules.courses.entities.Course;
 import com.example.modules.users.entities.User;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -20,7 +21,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @Entity
 @Table(name = "certifications")
-public class Certification extends BaseEntity {
+public class Certificate extends BaseEntity {
 
   @ManyToOne
   @JoinColumn(name = "user_id", nullable = false)
@@ -29,4 +30,7 @@ public class Certification extends BaseEntity {
   @ManyToOne
   @JoinColumn(name = "course_id", nullable = false)
   private Course course;
+
+  @Column(columnDefinition = "TEXT")
+  private String reason; // Lý do cấp chứng chỉ (hữu dụng khi ADMIN cấp chứng chỉ bằng tay)
 }

@@ -2,6 +2,7 @@ package com.example.modules.courses.utils;
 
 import com.example.base.utils.SpecificationBuilder;
 import com.example.modules.courses.entities.Course;
+import jakarta.persistence.criteria.JoinType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -17,7 +18,7 @@ public class CoursesSpecification extends SpecificationBuilder<Course> {
       // This check is important to avoid adding the fetch multiple times,
       // especially in count queries where it's not needed and can cause errors.
       if (query.getResultType() != Long.class && query.getResultType() != long.class) {
-        root.fetch("students");
+        root.fetch("students", JoinType.LEFT);
       }
       // We return an empty predicate because this specification is only for fetching, not filtering.
       return criteriaBuilder.conjunction();
@@ -30,7 +31,7 @@ public class CoursesSpecification extends SpecificationBuilder<Course> {
       // This check is important to avoid adding the fetch multiple times,
       // especially in count queries where it's not needed and can cause errors.
       if (query.getResultType() != Long.class && query.getResultType() != long.class) {
-        root.fetch("exercises");
+        root.fetch("exercises", JoinType.LEFT);
       }
       // We return an empty predicate because this specification is only for fetching, not filtering.
       return criteriaBuilder.conjunction();

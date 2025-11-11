@@ -2,7 +2,7 @@ package com.example.modules.users.entities;
 
 import com.example.base.entities.BaseEntity;
 import com.example.modules.auth.entities.Account;
-import com.example.modules.certifications.entities.Certification;
+import com.example.modules.certificates.entities.Certificate;
 import com.example.modules.courses.entities.Course;
 import com.example.modules.groups.entities.Group;
 import jakarta.persistence.CascadeType;
@@ -13,7 +13,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -57,11 +57,11 @@ public class User extends BaseEntity {
   private Account account;
 
   @ManyToMany(mappedBy = "students")
-  private List<Group> joinedGroups;
+  private Set<Group> joinedGroups;
 
   @ManyToMany(mappedBy = "enrolledStudents")
-  private List<Course> enrolledCourses;
+  private Set<Course> enrolledCourses;
 
   @OneToMany(mappedBy = "user")
-  private List<Certification> certifications;
+  private Set<Certificate> certifications;
 }

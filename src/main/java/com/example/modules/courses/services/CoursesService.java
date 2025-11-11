@@ -1,6 +1,7 @@
 package com.example.modules.courses.services;
 
 import com.example.base.utils.ObjectUtils;
+import com.example.modules.auth.enums.Role;
 import com.example.modules.courses.dtos.CourseCreateDTO;
 import com.example.modules.courses.dtos.CourseExerciseRequestDTO;
 import com.example.modules.courses.dtos.CourseResponseDTO;
@@ -89,7 +90,10 @@ public class CoursesService {
       .orElseThrow(CourseNotFoundException::new);
 
     CourseWithProgressDTO response = courseMapper.toCourseWithProgressDTO(course);
-    response.setProgress(getCourseProgress(course, currentUser));
+
+    if (currentUser.getAccount().getRole() == Role.STUDENT) {
+      response.setProgress(getCourseProgress(course, currentUser));
+    }
 
     return response;
   }
@@ -103,8 +107,8 @@ public class CoursesService {
     Set<String> inputIds = requestDTO.getExerciseIds();
     List<Exercise> exercises = exercisesRepository.findAll(
       ExercisesSpecification.builder()
-        .withCourseId(course.getId())
         .publicOnly()
+        .onlyLatestVersion()
         .withIds(requestDTO.getExerciseIds())
         .build()
     );
@@ -130,7 +134,6 @@ public class CoursesService {
     List<Exercise> exercises = exercisesRepository.findAll(
       ExercisesSpecification.builder()
         .withCourseId(course.getId())
-        .publicOnly()
         .withIds(requestDTO.getExerciseIds())
         .build()
     );

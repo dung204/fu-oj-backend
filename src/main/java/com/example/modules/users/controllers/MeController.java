@@ -3,8 +3,12 @@ package com.example.modules.users.controllers;
 import static com.example.base.utils.AppRoutes.ME_PREFIX;
 
 import com.example.base.annotations.File;
+import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.CurrentUser;
+import com.example.modules.certificates.dtos.UserCertificateResponseDTO;
+import com.example.modules.certificates.dtos.UserCertificatesSearchDTO;
+import com.example.modules.certificates.services.CertificatesService;
 import com.example.modules.users.dtos.UpdateProfileDTO;
 import com.example.modules.users.dtos.UserProfileDTO;
 import com.example.modules.users.entities.User;
@@ -19,7 +23,10 @@ import jakarta.validation.Valid;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.util.unit.DataUnit;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,10 +41,12 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping(path = ME_PREFIX, produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Tag(name = "me", description = "Operations related to the current authenticated users")
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MeController {
 
-  private final UsersService usersService;
-  private final UserMapper userMapper;
+  UsersService usersService;
+  UserMapper userMapper;
+  CertificatesService certificatesService;
 
   @Operation(
     summary = "Get profile of current authenticated user",
@@ -94,6 +103,28 @@ public class MeController {
     return SuccessResponseDTO.<UserProfileDTO>builder()
       .message("User avatar updated successfully")
       .data(usersService.updateAvatar(currentUser, file))
+      .build();
+  }
+
+  @Operation(
+    summary = "Retrieve all existing certificates of the current authenticated user",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Certificates retrieved successfully"),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @GetMapping("/certificates")
+  public PaginatedSuccessResponseDTO<UserCertificateResponseDTO> findAllCertificatesOfCurrentUser(
+    @ParameterObject @Valid UserCertificatesSearchDTO userCertificatesSearchDTO,
+    @CurrentUser User currentUser
+  ) {
+    return PaginatedSuccessResponseDTO.<UserCertificateResponseDTO>builder()
+      .message("Certificates retrieved successfully.")
+      .page(
+        certificatesService.findAllCertificatesOfCurrentUser(userCertificatesSearchDTO, currentUser)
+      )
+      .filters(userCertificatesSearchDTO.getFilters())
       .build();
   }
 }
