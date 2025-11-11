@@ -1,6 +1,7 @@
 package com.example.modules.users.services;
 
 import com.example.base.utils.ObjectUtils;
+import com.example.modules.auth.enums.Role;
 import com.example.modules.minio.dtos.MinioFileResponse;
 import com.example.modules.minio.services.MinioService;
 import com.example.modules.users.dtos.UpdateProfileDTO;
@@ -28,6 +29,10 @@ public class UsersService {
 
   public UserProfileDTO updateProfile(User user, UpdateProfileDTO updateProfileDTO) {
     ObjectUtils.assign(user, updateProfileDTO);
+    if (user.getAccount().getRole() != Role.STUDENT) {
+      user.setRollNumber(null);
+    }
+
     User savedUser = usersRepository.save(user);
 
     return userMapper.toUserProfileDTO(savedUser);

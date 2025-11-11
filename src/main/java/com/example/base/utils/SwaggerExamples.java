@@ -12,8 +12,10 @@ public class SwaggerExamples {
   public static final String REFRESH_TOKEN =
     "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhMmE1ZWMyMS0zNzUzLTQ5YWYtODMyMi0xMjc5MmUxZWE0YjgiLCJpYXQiOjE3NTU1MjI5NzAsImV4cCI6MTc1NTUyNjU3MH0.UUlxbqkbAx-m0fRWHWi6ImJjawd0xz2NdPix5vWnTsyxH8phHPXopUDWYwdF4CSsBaqsfKswpti9l88NfA-F6w";
   public static final String ROLE = "USER";
+  public static final String ROLL_NUMBER = "HE123456";
   public static final String FIRST_NAME = "John";
   public static final String LAST_NAME = "Doe";
+  public static final String PHONE = "0123456789";
   public static final String URL = "https://example.com";
   public static final String GROUP_NAME = "group example name";
   public static final String DESCRIPTION = "description example";

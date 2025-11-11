@@ -66,6 +66,7 @@ public class MeController {
 
   @Operation(
     summary = "Update profile of current authenticated user",
+    description = "If user's role is `ADMIN` or `INSTRUCTOR`, the `rollNumber` will always be `null`",
     responses = {
       @ApiResponse(responseCode = "200", description = "User profile updated successfully"),
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
