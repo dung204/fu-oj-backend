@@ -69,7 +69,7 @@ public class UsersSpecification extends SpecificationBuilder<User> {
   public UsersSpecification withEmail(String email) {
     if (email != null && !email.trim().isEmpty()) {
       specifications.add((root, query, criteriaBuilder) -> {
-        return criteriaBuilder.equal(root.join("account").get("email"), email);
+        return criteriaBuilder.equal(root.get("account").get("email"), email);
       });
     }
     return this;
