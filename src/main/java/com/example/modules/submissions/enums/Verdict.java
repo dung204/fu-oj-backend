@@ -45,7 +45,8 @@ public enum Verdict {
   }
 
   public static Verdict getVerdictFromJudge0Response(Judge0SubmissionResponseDTO response) {
-    if (response.getExitCode() == 137) {
+    Integer exitCode = response.getExitCode();
+    if (exitCode != null && exitCode == 137) {
       return Verdict.MEMORY_LIMIT_EXCEEDED;
     }
 
