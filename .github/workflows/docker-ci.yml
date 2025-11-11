@@ -38,6 +38,7 @@ jobs:
           echo "MINIO_PORT=${{ secrets.MINIO_PORT || '9000' }}" >> .env
           echo "MINIO_CONSOLE_PORT=${{ secrets.MINIO_CONSOLE_PORT || '9001' }}" >> .env
           echo "MINIO_BUCKET=${{ secrets.MINIO_BUCKET || 'bucket' }}" >> .env
+          echo "MINIO_PUBLIC_ENDPOINT=${{ secrets.MINIO_PUBLIC_ENDPOINT || 'http://localhost:9000' }}" >> .env
           echo "" >> .env
 
           echo "# JWT configuration" >> .env
