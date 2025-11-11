@@ -30,7 +30,7 @@ public class Exercise extends BaseEntity {
   @Builder.Default
   private Integer version = 1; // version hiện tại
 
-  @Column(nullable = false, unique = true)
+  @Column(nullable = false)
   private String code;
 
   @Column(nullable = false, columnDefinition = "TEXT")

@@ -86,6 +86,12 @@ public class AuthService {
       savedUser = usersRepository.save(user);
     }
 
+    // Ensure account is loaded before generating token to avoid lazy loading issues
+    // in production
+    if (savedUser.getAccount() != null) {
+      savedUser.getAccount().getRole();
+    }
+
     return getTokenResponse(savedUser);
   }
 

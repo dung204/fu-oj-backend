@@ -2,6 +2,7 @@ package com.example.modules.file.excel.service;
 
 import com.example.modules.auth.dtos.RegisterRequestDTO;
 import com.example.modules.auth.entities.Account;
+import com.example.modules.auth.enums.Role;
 import com.example.modules.auth.exceptions.EmailHasAlreadyBeenUsedException;
 import com.example.modules.auth.repositories.AccountsRepository;
 import com.example.modules.auth.services.AuthService;
@@ -55,7 +56,11 @@ public class ExcelService implements IExcelService {
   }
 
   public byte[] exportAccountsToExcel() throws IOException {
-    List<Account> accounts = accountsRepository.findAll();
+    List<Account> accounts = accountsRepository
+      .findAll()
+      .stream()
+      .filter(a -> a.getRole() != Role.ADMIN)
+      .toList();
     String[] header = { "Create At", "Email", "Role", "Create By" };
     String[] field = { "createdTimestamp", "email", "role", "createdBy" };
     return exportToExcel(accounts, "account", header, field);
@@ -108,22 +113,49 @@ public class ExcelService implements IExcelService {
       acc.setCreatedBy(user.getAccount().getUsername());
       acc.setDeletedTimestamp(Instant.now());
       accountsRepository.save(acc);
-      emailService.sendEmailWithTemplate(
-        acc.getEmail(),
-        "ACTIVE ACCOUNT",
-        "active-account",
-        Map.of(
-          "name",
-          acc.getUsername(),
-          "activationLink",
-          "http://localhost:4000/api/v1/auth/active-account/" + account.getEmail()
-        )
-      );
+      log.info("{}=> import", acc.getId());
+
+      // Send email separately - don't fail import if email fails
+      try {
+        emailService.sendEmailWithTemplate(
+          acc.getEmail(),
+          "ACTIVE ACCOUNT",
+          "active-account",
+          Map.of(
+            "name",
+            acc.getUsername(),
+            "activationLink",
+            "http://localhost:4000/api/v1/auth/active-account/" + account.getEmail()
+          )
+        );
+      } catch (Exception emailException) {
+        // Log email error but don't fail the import
+        log.warn(
+          "Row {}: Failed to send activation email to '{}': {}",
+          row,
+          account.getEmail(),
+          emailException.getMessage()
+        );
+      }
+
       return true;
     } catch (EmailHasAlreadyBeenUsedException e) {
       log.info("Row {}: email '{}' has already been used", row, account.getEmail());
     } catch (Exception e) {
-      log.error("Row {}: unexpected error - {}", row, e.getMessage());
+      log.error(
+        "Row {}: unexpected error - {}: {}",
+        row,
+        e.getClass().getSimpleName(),
+        e.getMessage()
+      );
+      if (e.getCause() != null) {
+        log.error(
+          "Row {}: cause - {}: {}",
+          row,
+          e.getCause().getClass().getSimpleName(),
+          e.getCause().getMessage()
+        );
+      }
     }
     return false;
   }

@@ -2,10 +2,12 @@ package com.example.modules.users.repositories;
 
 import com.example.modules.auth.entities.Account;
 import com.example.modules.users.entities.User;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -17,4 +19,9 @@ public interface UsersRepository
   Optional<User> findByAccountEmail(String email);
 
   User findUserById(String id);
+
+  List<User> findAllByAccount_Email(String accountEmail);
+
+  @Query("SELECT u FROM User u WHERE u.account.email IN :emails")
+  List<User> findAllByAccount_EmailIn(@Param("emails") List<String> emails);
 }

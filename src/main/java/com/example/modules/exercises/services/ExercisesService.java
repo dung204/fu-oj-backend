@@ -79,12 +79,6 @@ public class ExercisesService {
     return exercise.orElseThrow(ExerciseNotFoundException::new);
   }
 
-  public Exercise temp_getExerciseById(String id) {
-    return exercisesRepository
-      .findOne(ExercisesSpecification.builder().withId(id).notDeleted().build())
-      .orElseThrow(ExerciseNotFoundException::new);
-  }
-
   /**
    * Tạo mới exercise
    */
@@ -95,7 +89,7 @@ public class ExercisesService {
       .withCode(request.getCode())
       .build();
 
-    if (exercisesRepository.findAll(codeSpec).stream().findFirst().isPresent()) {
+    if (exercisesRepository.exists(codeSpec)) {
       throw new IllegalArgumentException("Exercise code already exists: " + request.getCode());
     }
 
@@ -212,29 +206,6 @@ public class ExercisesService {
         );
         break;
     }
-
-    log.info("Found {} exercises", exercisesPage.getTotalElements());
-
-    // Map to DTO
-    return exercisesPage.map(
-      currentUser.getAccount().getRole() == Role.STUDENT
-        ? exerciseMapper::toExerciseResponseDTOWithPrivateTestCasesHidden
-        : exerciseMapper::toExerciseResponseDTOWithAllTestCases
-    );
-  }
-
-  public Page<ExerciseResponseDTO> temp_getExercises(ExerciseQueryDTO dto, User currentUser) {
-    Page<Exercise> exercisesPage = exercisesRepository.findAll(
-      ExercisesSpecification.builder()
-        .<ExercisesSpecification>or(
-          spec -> spec.containsCode(dto.getQuery()),
-          spec -> spec.containsTitle(dto.getQuery())
-        )
-        .hasOneOfTopics(dto.getTopic())
-        .onlyLatestVersion()
-        .build(),
-      dto.toPageRequest()
-    );
 
     log.info("Found {} exercises", exercisesPage.getTotalElements());
 

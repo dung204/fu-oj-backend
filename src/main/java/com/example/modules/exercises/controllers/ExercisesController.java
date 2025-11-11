@@ -71,27 +71,6 @@ public class ExercisesController {
   }
 
   @Operation(
-    summary = "Get all exercises with pagination and filters (for testing purposes, to be removed in the future)",
-    description = "Retrieves a paginated list of the latest version of exercises.\n" +
-      "This endpoint does not contain access logic, and should be used for testing purposes.\n" +
-      "For `STUDENT` roles, the details of private test cases will be hidden.",
-    responses = {
-      @ApiResponse(responseCode = "200", description = "Exercises retrieved successfully"),
-    }
-  )
-  @GetMapping("/temp")
-  public PaginatedSuccessResponseDTO<ExerciseResponseDTO> temp_getExercises(
-    @ParameterObject @Valid ExerciseQueryDTO query,
-    @CurrentUser User currentUser
-  ) {
-    return PaginatedSuccessResponseDTO.<ExerciseResponseDTO>builder()
-      .message("Exercises retrieved successfully")
-      .page(exercisesService.temp_getExercises(query, currentUser))
-      .filters(query.getFilters())
-      .build();
-  }
-
-  @Operation(
     summary = "Get exercise by ID",
     description = "Retrieves an exercise by its ID. Access is determined by the user's role:\n\n" +
       "*   **ADMIN**: Can access any exercise, including soft-deleted ones.\n" +
@@ -115,36 +94,6 @@ public class ExercisesController {
     @CurrentUser User currentUser
   ) {
     Exercise exercise = exercisesService.getExerciseById(exerciseId, currentUser);
-    ExerciseResponseDTO exerciseResponseDTO = currentUser.getAccount().getRole() == Role.STUDENT
-      ? exerciseMapper.toExerciseResponseDTOWithPrivateTestCasesHidden(exercise)
-      : exerciseMapper.toExerciseResponseDTOWithAllTestCases(exercise);
-
-    return SuccessResponseDTO.<ExerciseResponseDTO>builder()
-      .message("Exercise retrieved successfully")
-      .data(exerciseResponseDTO)
-      .build();
-  }
-
-  @Operation(
-    summary = "Get exercise by ID (for testing purposes, to be removed in the future)",
-    description = "Retrieves an exercise by its ID.\n\n" +
-      "This endpoint does not contain access logic, and should be used for testing purposes.\n",
-    responses = {
-      @ApiResponse(responseCode = "200", description = "Exercise retrieved successfully"),
-      @ApiResponse(
-        responseCode = "404",
-        description = "Exercise not found or user not authorized to access the exercise",
-        content = @Content
-      ),
-      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
-    }
-  )
-  @GetMapping("/{exerciseId}/temp")
-  public SuccessResponseDTO<ExerciseResponseDTO> temp_getExerciseById(
-    @PathVariable String exerciseId,
-    @CurrentUser User currentUser
-  ) {
-    Exercise exercise = exercisesService.temp_getExerciseById(exerciseId);
     ExerciseResponseDTO exerciseResponseDTO = currentUser.getAccount().getRole() == Role.STUDENT
       ? exerciseMapper.toExerciseResponseDTOWithPrivateTestCasesHidden(exercise)
       : exerciseMapper.toExerciseResponseDTOWithAllTestCases(exercise);

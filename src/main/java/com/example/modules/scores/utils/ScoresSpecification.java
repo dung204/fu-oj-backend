@@ -25,7 +25,7 @@ public class ScoresSpecification extends SpecificationBuilder<Score> {
     if (userEmail != null && !userEmail.trim().isEmpty()) {
       specifications.add((root, query, criteriaBuilder) ->
         criteriaBuilder.like(
-          criteriaBuilder.lower(root.get("user").get("email")),
+          criteriaBuilder.lower(root.get("user").get("account").get("email")),
           "%" + userEmail.toLowerCase() + "%"
         )
       );

@@ -130,6 +130,18 @@ public class CommentsService implements ICommentsService {
       currentUser
     );
 
+    //get comments send to redis
+    commentPublisher.publishCommentEvent(
+      CommentEvent.builder()
+        .type(CommentEventType.READ)
+        .exerciseId(exercise.getId())
+        .parentId(commentQueryDTO.getParentId())
+        .commentId(null)
+        .data(null)
+        .timestamp(System.currentTimeMillis())
+        .build()
+    );
+
     return commentsRepository
       .findAll(
         CommentsSpecification.builder()
