@@ -95,7 +95,7 @@ public class MinioService {
           // TODO: add custom expiry duration, if needed
           .build()
       )
-      .replaceAll("^http.*%s$".formatted(bucket), publicEndpoint)
+      .replaceAll("http.*%s".formatted(bucket), publicEndpoint)
       .replaceAll("\\?.+", "");
   }
 
