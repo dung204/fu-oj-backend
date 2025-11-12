@@ -31,8 +31,12 @@ public class AccountService {
       .toList();
   }
 
-  public void inActiveAccount(String id) {
+  public void actionAccount(boolean action, String id) {
     Account account = accountsRepository.findAccountById(id);
-    account.setDeletedTimestamp(Instant.now());
+    if (action) {
+      account.setDeletedTimestamp(null);
+    } else {
+      account.setDeletedTimestamp(Instant.now());
+    }
   }
 }

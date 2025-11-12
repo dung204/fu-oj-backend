@@ -28,9 +28,12 @@ public class AccountController {
       .build();
   }
 
-  @PutMapping("/in-active/{id}")
-  public SuccessResponseDTO<String> inActiveAccount(@PathVariable String id) {
-    accountService.inActiveAccount(id);
+  @PutMapping("/active")
+  public SuccessResponseDTO<String> actionAccount(
+    @RequestParam boolean action,
+    @RequestParam String id
+  ) {
+    accountService.actionAccount(action, id);
     return SuccessResponseDTO.<String>builder()
       .status(204)
       .message("in active account successful")
