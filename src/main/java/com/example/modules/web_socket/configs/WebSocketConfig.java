@@ -19,7 +19,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
   @Override
   public void configureMessageBroker(MessageBrokerRegistry config) {
     // Cho phép dùng prefix /topic để subscribe
-    config.enableSimpleBroker("/topic").setHeartbeatValue(new long[] { 10000, 10000 });
+    config.enableSimpleBroker("/topic");
 
     // Tất cả message từ client gửi lên bắt đầu bằng /app
     config.setApplicationDestinationPrefixes("/app");
