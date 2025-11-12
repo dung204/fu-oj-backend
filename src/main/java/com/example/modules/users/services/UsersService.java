@@ -29,7 +29,7 @@ public class UsersService {
 
   public UserProfileDTO updateProfile(User user, UpdateProfileDTO updateProfileDTO) {
     ObjectUtils.assign(user, updateProfileDTO);
-    if (user.getAccount().getRole() != Role.STUDENT) {
+    if (user.getAccount().getRole() == Role.ADMIN) {
       user.setRollNumber(null);
     }
 
