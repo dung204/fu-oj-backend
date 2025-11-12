@@ -40,4 +40,10 @@ public class AccountService {
     }
     accountsRepository.save(account);
   }
+
+  public void changeRoleAccount(String role, String id) {
+    Account account = accountsRepository.findAccountById(id);
+    account.setRole(Role.valueOf(role));
+    accountsRepository.save(account);
+  }
 }
