@@ -9,6 +9,24 @@ spring:
   data:
     redis:
       host: redis
+  mail:
+    host: ${EMAIL_HOST:smtp.gmail.com}
+    port: ${EMAIL_PORT:587}
+    username: ${EMAIL_USERNAME}
+    password: ${EMAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+          ssl:
+            trust: "*"
+          debug: ${EMAIL_DEBUG:false}
 
 minio:
   endpoint: http://minio:${MINIO_PORT:9000}

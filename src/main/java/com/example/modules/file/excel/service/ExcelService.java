@@ -130,11 +130,12 @@ public class ExcelService implements IExcelService {
         );
       } catch (Exception emailException) {
         // Log email error but don't fail the import
-        log.warn(
+        log.error(
           "Row {}: Failed to send activation email to '{}': {}",
           row,
           account.getEmail(),
-          emailException.getMessage()
+          emailException.getMessage(),
+          emailException
         );
       }
 
