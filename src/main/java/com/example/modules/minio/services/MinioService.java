@@ -29,6 +29,9 @@ public class MinioService {
   @Value("${minio.bucket}")
   private String bucket;
 
+  @Value("${minio.public_endpoint}")
+  private String publicEndpoint;
+
   private final MinioClient minioClient;
 
   /**
@@ -91,7 +94,9 @@ public class MinioService {
           .method(Method.GET)
           // TODO: add custom expiry duration, if needed
           .build()
-      );
+      )
+      .replaceAll("http.*%s".formatted(bucket), publicEndpoint)
+      .replaceAll("\\?.+", "");
   }
 
   /**

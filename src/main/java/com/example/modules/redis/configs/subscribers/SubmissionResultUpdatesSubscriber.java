@@ -29,7 +29,7 @@ public class SubmissionResultUpdatesSubscriber implements MessageListener {
         "/topic/submission-result-updates/" + payload.getSubmissionId(),
         payload
       );
-      log.debug(
+      log.info(
         "Sent WebSocket to /topic/submission-result-updates/{} -> {}",
         payload.getSubmissionId(),
         payload

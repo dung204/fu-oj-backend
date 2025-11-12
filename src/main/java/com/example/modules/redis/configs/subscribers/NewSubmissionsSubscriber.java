@@ -29,7 +29,7 @@ public class NewSubmissionsSubscriber implements MessageListener {
       Map<String, Object> payload = objectMapper.readValue(body, Map.class);
 
       messagingTemplate.convertAndSend("/topic/new-submissions", payload);
-      log.debug("Sent WebSocket to /topic/new-submissions -> {}", payload);
+      log.info("Sent WebSocket to /topic/new-submissions -> {}", payload);
     } catch (Exception e) {
       log.error("Error processing Redis pub/sub message", e);
     }

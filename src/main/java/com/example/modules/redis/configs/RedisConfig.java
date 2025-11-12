@@ -32,7 +32,6 @@ public class RedisConfig {
 
   private final ObjectMapper objectMapper;
   private final CommentSubscriber commentSubscriber;
-  private final ChannelTopic commentsTopic;
   private final SubmissionResultUpdatesSubscriber submissionResultUpdatesSubscriber;
   private final NewSubmissionsSubscriber newSubmissionsSubscriber;
 
@@ -41,6 +40,9 @@ public class RedisConfig {
 
   @Qualifier("newSubmissionsTopic")
   private final ChannelTopic newSubmissionsTopic;
+
+  @Qualifier("commentsTopic")
+  private final ChannelTopic commentsTopic;
 
   @Bean
   JedisConnectionFactory jedisConnectionFactory() {

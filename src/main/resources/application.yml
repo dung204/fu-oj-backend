@@ -75,6 +75,7 @@ minio:
   access_key: ${MINIO_ACCESS_KEY:minioadmin}
   secret_key: ${MINIO_SECRET_KEY:minioadmin}
   bucket: ${MINIO_BUCKET:bucket}
+  public_endpoint: ${MINIO_PUBLIC_ENDPOINT:http://localhost:${MINIO_PORT}/${MINIO_BUCKET:bucket}}
 
 jwt:
   access:
