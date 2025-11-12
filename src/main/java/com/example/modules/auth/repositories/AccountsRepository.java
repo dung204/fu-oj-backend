@@ -12,4 +12,6 @@ public interface AccountsRepository
   Optional<Account> findByEmail(String email);
 
   Account findAccountByEmail(String email);
+
+  Account findAccountById(String id);
 }
