@@ -38,5 +38,6 @@ public class AccountService {
     } else {
       account.setDeletedTimestamp(Instant.now());
     }
+    accountsRepository.save(account);
   }
 }
