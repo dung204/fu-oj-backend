@@ -58,6 +58,11 @@ jobs:
           echo "TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}" >> .env
           echo "TURNSTILE_VERIFY_URL=https://challenges.cloudflare.com/turnstile/v0/siteverify" >> .env
 
+          echo "EMAIL_USERNAME=${{ secrets.EMAIL_USERNAME }}" >> .env
+          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
+
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
