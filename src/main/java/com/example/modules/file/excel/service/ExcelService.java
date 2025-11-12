@@ -107,25 +107,27 @@ public class ExcelService implements IExcelService {
 
   private boolean registerAccountSafely(RegisterRequestDTO account, int row, User user) {
     try {
+      String password = account.getPassword();
       authService.register(account);
       Account acc = accountsRepository.findAccountByEmail(account.getEmail());
-      // set created by
+
       acc.setCreatedBy(user.getAccount().getUsername());
       acc.setDeletedTimestamp(Instant.now());
       accountsRepository.save(acc);
       log.info("{}=> import", acc.getId());
 
-      // Send email separately - don't fail import if email fails
       try {
         emailService.sendEmailWithTemplate(
           acc.getEmail(),
           "ACTIVE ACCOUNT",
           "active-account",
           Map.of(
-            "name",
-            acc.getUsername(),
+            "email",
+            account.getEmail(),
+            "password",
+            password,
             "activationLink",
-            "http://localhost:4000/api/v1/auth/active-account/" + account.getEmail()
+            "http://fu-oj-be.grounds2dish.com/api/v1/auth/active-account/" + account.getEmail()
           )
         );
       } catch (Exception emailException) {
