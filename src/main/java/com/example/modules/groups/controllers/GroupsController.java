@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
@@ -354,6 +355,19 @@ public class GroupsController {
       .message("Teacher:" + currentUser)
       .page(groupsService.getStudentsByGroupId(id, studentsSearchDTO, currentUser))
       .filters(studentsSearchDTO.getFilters())
+      .build();
+  }
+
+  @GetMapping("/{id}/little-students")
+  @ResponseStatus(HttpStatus.OK)
+  public SuccessResponseDTO<List<UserProfileDTO>> getLittleStudent(
+    @PathVariable String id,
+    @CurrentUser User currentUser
+  ) {
+    return SuccessResponseDTO.<List<UserProfileDTO>>builder()
+      .status(200)
+      .message("Get little students successfully")
+      .data(groupsService.getLittleStudentsByGroupId(id, currentUser))
       .build();
   }
 

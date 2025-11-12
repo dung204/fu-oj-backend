@@ -299,4 +299,10 @@ public class GroupService {
     }
     return sb.toString();
   }
+
+  public List<UserProfileDTO> getLittleStudentsByGroupId(String id, User currentUser) {
+    Group group = groupsRepository.findGroupById(id).orElseThrow(GroupNotFoundException::new);
+    List<User> userList = group.getStudents().stream().limit(3).toList();
+    return userList.stream().map(userMapper::toUserProfileDTO).toList();
+  }
 }
