@@ -1,7 +1,6 @@
 package com.example.modules.ai.service;
 
 import com.example.modules.ai.dtos.request.ChatRequest;
-import fpt.edu.vn.springai.dto.request.ChatRequest;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
