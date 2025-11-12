@@ -21,6 +21,14 @@ spring:
         jdbc:
           lob:
             non_contextual_creation: true
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        base-url: https://generativelanguage.googleapis.com
+        completions-path: /v1beta/openai/chat/completions
+        options:
+          model: gemini-2.0-flash
   output:
     ansi:
       enabled: always
