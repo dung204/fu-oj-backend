@@ -52,7 +52,6 @@ public class SubmissionsService {
   TestCasesRepository testCaseRepository;
   SubmissionResultRepository submissionResultRepository;
   ExercisesRepository exerciseRepository;
-  SubmissionResultMapper submissionResultMapper;
   SubmissionLimitService submissionLimitService;
   SubmissionMapper submissionMapper;
   SubmissionResultUpdatesPublisher submissionResultUpdatesPublisher;
