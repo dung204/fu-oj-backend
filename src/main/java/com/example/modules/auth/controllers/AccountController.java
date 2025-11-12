@@ -40,4 +40,17 @@ public class AccountController {
       .data(null)
       .build();
   }
+
+  @PutMapping("/role")
+  public SuccessResponseDTO<String> changeRoleAccount(
+    @RequestParam String role,
+    @RequestParam String id
+  ) {
+    accountService.changeRoleAccount(role, id);
+    return SuccessResponseDTO.<String>builder()
+      .status(204)
+      .message("change role account successful")
+      .data(null)
+      .build();
+  }
 }
