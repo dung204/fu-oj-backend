@@ -1,6 +1,7 @@
 package com.example.modules.file.excel.utils;
 
 import com.example.modules.auth.dtos.RegisterRequestDTO;
+import com.example.modules.file.excel.exceptions.AccountImportLimitExceeded;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,7 @@ public class ExcelHelper {
         String password = PasswordUtils.generateRandomPassword(8);
 
         accounts.add(new RegisterRequestDTO(user, password));
+        if (accounts.size() > 100) throw new AccountImportLimitExceeded();
       }
     }
     return accounts;

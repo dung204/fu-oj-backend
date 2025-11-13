@@ -7,6 +7,7 @@ import com.example.modules.auth.exceptions.EmailHasAlreadyBeenUsedException;
 import com.example.modules.auth.repositories.AccountsRepository;
 import com.example.modules.auth.services.AuthService;
 import com.example.modules.email.service.EmailService;
+import com.example.modules.file.excel.exceptions.AccountImportLimitExceeded;
 import com.example.modules.file.excel.exceptions.FileNotValidException;
 import com.example.modules.file.excel.utils.ExcelExporter;
 import com.example.modules.file.excel.utils.ExcelHelper;
@@ -51,6 +52,8 @@ public class ExcelService implements IExcelService {
       log.info("Unable to read Excel file: {}", e.getMessage());
     } catch (IllegalArgumentException e) {
       log.info(e.getMessage());
+    } catch (AccountImportLimitExceeded e) {
+      log.info("account limit exceeded: {}", e.getMessage());
     }
     return accountRegisterSuccessfully;
   }
