@@ -173,8 +173,13 @@ public class ExamRankingService {
       } else {
         ranking = existing.get(0);
         ranking.setTotalScore(totalScore);
-        ranking.setNumberOfExercises(numberOfExercises);
         ranking.setNumberOfCompletedExercises(numberOfCompletedExercises);
+        ranking.setNumberOfExercises(numberOfExercises);
+
+        // Nếu đã hoàn thành tất cả bài tập, set completed = true
+        if (userExamSubmissions.size() == numberOfExercises) {
+          ranking.setCompleted(true);
+        }
       }
 
       examRankingRepository.save(ranking);
@@ -257,8 +262,9 @@ public class ExamRankingService {
       .exam(exam)
       .user(user)
       .totalScore(null)
-      .numberOfExercises(null)
+      .numberOfExercises(dto.getNumberOfExercises())
       .numberOfCompletedExercises(null)
+      .completed(false)
       .build();
 
     ranking = examRankingRepository.save(ranking);

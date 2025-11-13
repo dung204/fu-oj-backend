@@ -175,6 +175,7 @@ public class ExamService {
       .description(dto.getDescription())
       .startTime(dto.getStartTime())
       .endTime(dto.getEndTime())
+      .timeLimit(dto.getTimeLimit())
       .build();
 
     exam = examRepository.save(exam);
