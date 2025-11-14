@@ -258,7 +258,7 @@ public class GroupService {
     Group group = Group.builder()
       .name(groupRequestDTO.getName())
       .description(groupRequestDTO.getDescription())
-      .isPublic(groupRequestDTO.isPublic())
+      .isPublic(groupRequestDTO.getIsPublic())
       .code(generateUniqueClassCode())
       .instructor(currentUser)
       .build();

@@ -18,6 +18,7 @@ public abstract class ExamResultMapper {
   @Mapping(target = "examTitle", source = "exam.title")
   @Mapping(target = "startTime", source = "exam.startTime")
   @Mapping(target = "endTime", source = "exam.endTime")
+  @Mapping(target = "timeLimit", source = "exam.timeLimit")
   @Mapping(target = "userId", source = "user.id")
   @Mapping(target = "userName", expression = "java(buildUserName(user))")
   @Mapping(target = "submissions", ignore = true)

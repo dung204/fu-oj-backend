@@ -30,7 +30,7 @@ public class ExamSubmission extends BaseEntity {
   @JoinColumn(name = "exercise_id", nullable = false)
   private Exercise exercise;
 
-  @Column(nullable = false)
+  //  @Column(nullable = false)
   private String submissionId; // FK đến submission hệ thống chấm
 
   private Double score;

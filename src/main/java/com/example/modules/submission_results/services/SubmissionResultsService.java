@@ -138,8 +138,8 @@ public class SubmissionResultsService {
     List<Submission> submissionsWithoutScore = submissionsRepository.findAll((root, query, cb) ->
       cb.and(
         cb.isNull(root.get("score")),
-        cb.isNull(root.get("deletedTimestamp")),
-        cb.isFalse(root.get("isExamination"))
+        cb.isNull(root.get("deletedTimestamp"))
+        //        cb.isFalse(root.get("isExamination"))
       )
     );
 
@@ -244,7 +244,9 @@ public class SubmissionResultsService {
         );
 
         // Cập nhật điểm user (cộng dần)
-        scoresService.updateUserScoreBySubmission(submission);
+        if (!submission.getIsExamination()) {
+          scoresService.updateUserScoreBySubmission(submission);
+        }
       } catch (Exception e) {
         log.error("Error updating score for submission {}", submission.getId(), e);
       }

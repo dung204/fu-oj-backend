@@ -32,4 +32,7 @@ public class ExamRanking extends BaseEntity {
 
   @Column(name = "number_of_execises", columnDefinition = "double precision default 0")
   private Double numberOfExercises;
+
+  @Column(name = "completed", columnDefinition = "boolean default false")
+  private Boolean completed = false;
 }
