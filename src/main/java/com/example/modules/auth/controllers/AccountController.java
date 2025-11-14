@@ -9,9 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(path = ACCOUNT_PREFIX, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -27,6 +25,32 @@ public class AccountController {
       .status(200)
       .message("get list account successfully")
       .data(accountService.getAccounts())
+      .build();
+  }
+
+  @PutMapping("/active")
+  public SuccessResponseDTO<String> actionAccount(
+    @RequestParam boolean action,
+    @RequestParam String id
+  ) {
+    accountService.actionAccount(action, id);
+    return SuccessResponseDTO.<String>builder()
+      .status(204)
+      .message("in active account successful")
+      .data(null)
+      .build();
+  }
+
+  @PutMapping("/role")
+  public SuccessResponseDTO<String> changeRoleAccount(
+    @RequestParam String role,
+    @RequestParam String id
+  ) {
+    accountService.changeRoleAccount(role, id);
+    return SuccessResponseDTO.<String>builder()
+      .status(204)
+      .message("change role account successful")
+      .data(null)
       .build();
   }
 }
