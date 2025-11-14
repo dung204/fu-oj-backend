@@ -4,9 +4,11 @@ import com.example.modules.exams.dtos.ExamRankingCreateDTO;
 import com.example.modules.exams.dtos.ExamRankingRequestDTO;
 import com.example.modules.exams.dtos.ExamRankingResponseDTO;
 import com.example.modules.exams.entities.Exam;
+import com.example.modules.exams.entities.ExamExercise;
 import com.example.modules.exams.entities.ExamRanking;
 import com.example.modules.exams.entities.ExamSubmission;
 import com.example.modules.exams.exceptions.ExamNotFoundException;
+import com.example.modules.exams.repositories.ExamExerciseRepository;
 import com.example.modules.exams.repositories.ExamRankingRepository;
 import com.example.modules.exams.repositories.ExamRepository;
 import com.example.modules.exams.repositories.ExamSubmissionRepository;
@@ -36,6 +38,7 @@ public class ExamRankingService {
   private final ExamSubmissionRepository examSubmissionRepository;
   private final ExamRankingRepository examRankingRepository;
   private final ExamRepository examRepository;
+  private final ExamExerciseRepository examExerciseRepository;
   private final UsersRepository usersRepository;
   private final ExamRankingMapper examRankingMapper;
 
@@ -144,14 +147,20 @@ public class ExamRankingService {
         userId
       );
 
+      // Get total exercises in exam (actual count from ExamExercise)
+      List<ExamExercise> examExercises = examExerciseRepository.findByExamId(examId);
+      double totalExercisesInExam = (double) examExercises.size();
+
       // Mỗi bài chỉ nộp 1 lần -> tính trực tiếp theo danh sách ExamSubmission
-      double numberOfExercises = (double) userExamSubmissions.size();
+      double numberOfSubmittedExercises = (double) userExamSubmissions.size();
       double numberOfCompletedExercises = (double) userExamSubmissions
         .stream()
         .map(ExamSubmission::getScore)
         .filter(s -> s != null && s >= 100.0)
         .count();
-      double totalScore = (numberOfCompletedExercises / numberOfExercises) * 100.0;
+      double totalScore = totalExercisesInExam > 0
+        ? (numberOfCompletedExercises / totalExercisesInExam) * 100.0
+        : 0.0;
 
       // Tìm hoặc tạo ExamRanking
       List<ExamRanking> existing = examRankingRepository.findAll((root, query, cb) ->
@@ -167,19 +176,26 @@ public class ExamRankingService {
           .exam(updatedExamSubmission.getExam())
           .user(updatedExamSubmission.getUser())
           .totalScore(totalScore)
-          .numberOfExercises(numberOfExercises)
+          .numberOfExercises(totalExercisesInExam)
           .numberOfCompletedExercises(numberOfCompletedExercises)
           .build();
       } else {
         ranking = existing.get(0);
         ranking.setTotalScore(totalScore);
         ranking.setNumberOfCompletedExercises(numberOfCompletedExercises);
-        ranking.setNumberOfExercises(numberOfExercises);
+        ranking.setNumberOfExercises(totalExercisesInExam);
+      }
 
-        // Nếu đã hoàn thành tất cả bài tập, set completed = true
-        if (userExamSubmissions.size() == numberOfExercises) {
-          ranking.setCompleted(true);
-        }
+      // OPTION 3: Check if user submitted all exercises -> mark as completed
+      if (numberOfSubmittedExercises >= totalExercisesInExam) {
+        log.info(
+          "User {} completed all {}/{} exercises for exam {}, marking as completed",
+          userId,
+          numberOfSubmittedExercises,
+          totalExercisesInExam,
+          examId
+        );
+        ranking.setCompleted(true);
       }
 
       examRankingRepository.save(ranking);

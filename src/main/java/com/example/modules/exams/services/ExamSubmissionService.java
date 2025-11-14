@@ -213,18 +213,36 @@ public class ExamSubmissionService {
 
     // 4. Build submission details
     List<ExamResultResponseDTO.ExamSubmissionDetail> submissionDetails = new ArrayList<>();
-    double totalScore = 0.0;
     int completedExercises = 0;
 
     for (ExamSubmission examSubmission : examSubmissions) {
-      // Get the actual submission
-      Submission submission = submissionsRepository
-        .findById(examSubmission.getSubmissionId())
-        .orElse(null);
+      ExamResultResponseDTO.ExamSubmissionDetail detail;
 
-      if (submission != null) {
-        ExamResultResponseDTO.ExamSubmissionDetail detail =
-          ExamResultResponseDTO.ExamSubmissionDetail.builder()
+      // Check if this is auto-submitted (submissionId = null)
+      if (examSubmission.getSubmissionId() == null) {
+        // Auto-submitted exercise: use data from ExamSubmission directly
+        detail = ExamResultResponseDTO.ExamSubmissionDetail.builder()
+          .exerciseId(examSubmission.getExercise().getId())
+          .exerciseTitle(examSubmission.getExercise().getTitle())
+          .exerciseCode(examSubmission.getExercise().getCode())
+          .submissionId(null) // No actual submission
+          .score(examSubmission.getScore()) // Always 0.0 for auto-submit
+          .isAccepted(false) // Auto-submit never accepted
+          .passedTestCases(0)
+          .totalTestCases(0)
+          .submittedAt(examSubmission.getCreatedTimestamp())
+          .build();
+
+        submissionDetails.add(detail);
+        // Score already 0, no need to add to totalScore or completedExercises
+      } else {
+        // Normal submission: get details from Submission entity
+        Submission submission = submissionsRepository
+          .findById(examSubmission.getSubmissionId())
+          .orElse(null);
+
+        if (submission != null) {
+          detail = ExamResultResponseDTO.ExamSubmissionDetail.builder()
             .exerciseId(examSubmission.getExercise().getId())
             .exerciseTitle(examSubmission.getExercise().getTitle())
             .exerciseCode(examSubmission.getExercise().getCode())
@@ -236,17 +254,19 @@ public class ExamSubmissionService {
             .submittedAt(examSubmission.getCreatedTimestamp())
             .build();
 
-        submissionDetails.add(detail);
+          submissionDetails.add(detail);
 
-        if (submission.getScore() != null) {
-          totalScore += submission.getPassedTestCases();
-        }
-
-        if (submission.getIsAccepted() != null && submission.getIsAccepted()) {
-          completedExercises++;
+          if (submission.getIsAccepted() != null && submission.getIsAccepted()) {
+            completedExercises++;
+          }
         }
       }
     }
+
+    Integer totalExercises = exam.getExamExercises() != null ? exam.getExamExercises().size() : 0;
+    Double totalScore = totalExercises > 0
+      ? (completedExercises / (double) totalExercises) * 100.0
+      : 0.0;
 
     // 5. Build response
     return ExamResultResponseDTO.builder()
@@ -259,7 +279,7 @@ public class ExamSubmissionService {
       .userName(user.getFirstName() + " " + user.getLastName())
       .submissions(submissionDetails)
       .totalScore(totalScore)
-      .totalExercises(exam.getExamExercises() != null ? exam.getExamExercises().size() : 0)
+      .totalExercises(totalExercises)
       .completedExercises(completedExercises)
       .build();
   }

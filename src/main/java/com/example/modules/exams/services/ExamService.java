@@ -26,8 +26,10 @@ import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.groups.entities.Group;
 import com.example.modules.groups.repositories.GroupsRepository;
+import com.example.modules.redis.services.RedisService;
 import com.example.modules.users.entities.User;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -58,6 +60,7 @@ public class ExamService {
   private final GroupsRepository groupsRepository;
   private final ExercisesRepository exercisesRepository;
   private final ExamMapper examMapper;
+  private final RedisService redisService;
 
   @Scheduled(fixedRate = 1, timeUnit = TimeUnit.MINUTES)
   @Transactional
@@ -209,7 +212,16 @@ public class ExamService {
     exam.setGroupExams(groupExams);
 
     log.info("Created exam {} for {} groups", exam.getCode(), groups.size());
-    return examMapper.toExamResponseDTO(exam);
+    ExamResponseDTO responseDTO = examMapper.toExamResponseDTO(exam);
+
+    // save exam DTO to redis cache (not entity to avoid serialization issues)
+    // calculate exam duration in minutes with time now and exam end time
+    long ttlMinutes = (exam.getEndTime() != null)
+      ? Math.max(ChronoUnit.MINUTES.between(Instant.now(), exam.getEndTime()), 1)
+      : 1;
+    redisService.set("exam:" + exam.getId(), responseDTO, Duration.ofMinutes(ttlMinutes));
+
+    return responseDTO;
   }
 
   /**
@@ -392,6 +404,19 @@ public class ExamService {
 
       log.info("Updated {} exercises for exam {}", newExercises.size(), exam.getId());
     }
+
+    // update exam DTO in redis cache
+    ExamResponseDTO responseDTO = examMapper.toExamResponseDTO(exam);
+    long ttlMinutes = (exam.getEndTime() != null)
+      ? Math.max(ChronoUnit.MINUTES.between(Instant.now(), exam.getEndTime()), 1)
+      : 1;
+
+    // delete existing cache first
+    if (redisService.exists("exam:" + exam.getId())) {
+      redisService.delete("exam:" + exam.getId());
+    }
+
+    redisService.set("exam:" + exam.getId(), responseDTO, Duration.ofMinutes(ttlMinutes));
 
     return examMapper.toExamResponseDTO(examRepository.save(exam));
   }
