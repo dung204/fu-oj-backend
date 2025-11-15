@@ -11,6 +11,7 @@ import com.example.modules.exams.dtos.ExamCreateDTO;
 import com.example.modules.exams.dtos.ExamResponseDTO;
 import com.example.modules.exams.dtos.ExamUpdateDTO;
 import com.example.modules.exams.dtos.ExamsSearchDTO;
+import com.example.modules.exams.dtos.StudentExamProgressDTO;
 import com.example.modules.exams.services.ExamService;
 import com.example.modules.exams.utils.ExamMapper;
 import com.example.modules.users.entities.User;
@@ -19,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -218,6 +220,56 @@ public class ExamController {
       .status(200)
       .message("Exam deleted successfully")
       .data(examService.deleteExam(id, currentUser))
+      .build();
+  }
+
+  @AllowRoles({ Role.INSTRUCTOR, Role.ADMIN })
+  @Operation(
+    summary = "Get student exam progress by exam ID and group ID",
+    description = "Retrieves the progress information of all students in a group for a specific exam.\n\n" +
+      "Returns information including:\n" +
+      "- Student information (name, roll number, email)\n" +
+      "- Total score from ExamRanking\n" +
+      "- Whether the student has joined the exam (has ExamRanking)\n" +
+      "- Whether the exam is completed (ExamRanking.completed = true)\n" +
+      "- Progress for each exercise (score, submission status)\n\n" +
+      "**Access Control:**\n" +
+      "- `INSTRUCTOR`: Can only access groups they own\n" +
+      "- `ADMIN`: Can access any group",
+    responses = {
+      @ApiResponse(
+        responseCode = "200",
+        description = "Student exam progress retrieved successfully"
+      ),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Exam not found in the specified group",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "403",
+        description = "Access denied - not authorized to view this group",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @GetMapping("/{examId}/groups/{groupId}/students-progress")
+  @ResponseStatus(HttpStatus.OK)
+  public SuccessResponseDTO<List<StudentExamProgressDTO>> getStudentExamProgress(
+    @PathVariable String examId,
+    @PathVariable String groupId,
+    @CurrentUser User currentUser
+  ) {
+    List<StudentExamProgressDTO> progress = examService.getStudentExamProgress(
+      examId,
+      groupId,
+      currentUser
+    );
+    return SuccessResponseDTO.<List<StudentExamProgressDTO>>builder()
+      .status(200)
+      .message("Student exam progress retrieved successfully")
+      .data(progress)
       .build();
   }
 }

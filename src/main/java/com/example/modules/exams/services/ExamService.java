@@ -6,8 +6,11 @@ import com.example.modules.exams.dtos.ExamCreateDTO;
 import com.example.modules.exams.dtos.ExamResponseDTO;
 import com.example.modules.exams.dtos.ExamUpdateDTO;
 import com.example.modules.exams.dtos.ExamsSearchDTO;
+import com.example.modules.exams.dtos.ExerciseProgressDTO;
+import com.example.modules.exams.dtos.StudentExamProgressDTO;
 import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamExercise;
+import com.example.modules.exams.entities.ExamRanking;
 import com.example.modules.exams.entities.ExamSubmission;
 import com.example.modules.exams.entities.GroupExam;
 import com.example.modules.exams.enums.ExamStatus;
@@ -16,6 +19,7 @@ import com.example.modules.exams.exceptions.ExamNotModifiableException;
 import com.example.modules.exams.exceptions.InvalidTimeRangeException;
 import com.example.modules.exams.exceptions.StartTimeTooSoonException;
 import com.example.modules.exams.repositories.ExamExerciseRepository;
+import com.example.modules.exams.repositories.ExamRankingRepository;
 import com.example.modules.exams.repositories.ExamRepository;
 import com.example.modules.exams.repositories.ExamSubmissionRepository;
 import com.example.modules.exams.repositories.GroupExamRepository;
@@ -33,7 +37,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -56,6 +62,7 @@ public class ExamService {
   private final ExamRepository examRepository;
   private final ExamExerciseRepository examExerciseRepository;
   private final ExamSubmissionRepository examSubmissionRepository;
+  private final ExamRankingRepository examRankingRepository;
   private final GroupExamRepository groupExamRepository;
   private final GroupsRepository groupsRepository;
   private final ExercisesRepository exercisesRepository;
@@ -486,5 +493,131 @@ public class ExamService {
       sb.append(CHARS.charAt(random.nextInt(CHARS.length())));
     }
     return sb.toString();
+  }
+
+  /**
+   * Lấy thông tin tiến độ làm bài của học sinh trong group cho exam
+   */
+  @Transactional(readOnly = true)
+  public List<StudentExamProgressDTO> getStudentExamProgress(
+    String examId,
+    String groupId,
+    User currentUser
+  ) {
+    // 1. Validate: Kiểm tra exam có thuộc group không
+    List<GroupExam> groupExams = groupExamRepository.findByExamIdAndGroupId(examId, groupId);
+    if (groupExams.isEmpty()) {
+      throw new ExamNotFoundException(
+        "Exam with id %s not found in group with id %s".formatted(examId, groupId)
+      );
+    }
+
+    // 2. Lấy group và kiểm tra quyền truy cập
+    Group group = groupsRepository
+      .findById(groupId)
+      .orElseThrow(() ->
+        new jakarta.persistence.EntityNotFoundException(
+          "Group with id %s not found".formatted(groupId)
+        )
+      );
+
+    // Kiểm tra quyền: INSTRUCTOR phải là owner của group, ADMIN có thể xem tất cả
+    if (
+      currentUser.getAccount().getRole() == Role.INSTRUCTOR &&
+      !group.getInstructor().getId().equals(currentUser.getId())
+    ) {
+      throw new org.springframework.security.access.AccessDeniedException(
+        "You don't have permission to access this group"
+      );
+    }
+
+    // 3. Lấy danh sách students trong group
+    List<User> students = group.getStudents();
+    if (students == null || students.isEmpty()) {
+      return List.of();
+    }
+
+    // 4. Lấy danh sách bài tập trong exam
+    List<ExamExercise> examExercises = examExerciseRepository.findByExamId(examId);
+
+    // 5. Lấy tất cả ExamRanking cho exam này
+    List<ExamRanking> rankings = examRankingRepository.findByExamId(examId);
+    Map<String, ExamRanking> rankingMap = rankings
+      .stream()
+      .collect(Collectors.toMap(r -> r.getUser().getId(), r -> r, (r1, r2) -> r1));
+
+    // 6. Lấy tất cả ExamSubmission cho exam này
+    List<ExamSubmission> submissions = examSubmissionRepository.findByExamId(examId);
+    Map<String, List<ExamSubmission>> submissionMap = submissions
+      .stream()
+      .collect(
+        Collectors.groupingBy(
+          es -> es.getUser().getId() + "_" + es.getExercise().getId(),
+          HashMap::new,
+          Collectors.toList()
+        )
+      );
+
+    // 7. Tạo response cho mỗi student
+    return students
+      .stream()
+      .map(student -> {
+        String userId = student.getId();
+        ExamRanking ranking = rankingMap.get(userId);
+
+        // Lấy thông tin từ ExamRanking
+        Double totalScore = ranking != null ? ranking.getTotalScore() : null;
+        Boolean hasJoined = ranking != null;
+        Boolean isCompleted = ranking != null && Boolean.TRUE.equals(ranking.getCompleted());
+
+        // Tạo danh sách exercise progress - chỉ khi đã join mới có dữ liệu
+        List<ExerciseProgressDTO> exerciseProgressList;
+        if (!hasJoined) {
+          // Chưa join thì trả về mảng rỗng
+          exerciseProgressList = List.of();
+        } else {
+          // Đã join thì tạo danh sách các bài tập
+          exerciseProgressList = examExercises
+            .stream()
+            .map(examExercise -> {
+              String exerciseId = examExercise.getExercise().getId();
+              String key = userId + "_" + exerciseId;
+              List<ExamSubmission> studentSubmissions = submissionMap.getOrDefault(key, List.of());
+
+              // Lấy điểm cao nhất từ các submissions (nếu có nhiều submissions)
+              Double score = studentSubmissions
+                .stream()
+                .map(ExamSubmission::getScore)
+                .filter(s -> s != null)
+                .max(Double::compareTo)
+                .orElse(null);
+
+              Boolean hasSubmitted = !studentSubmissions.isEmpty();
+
+              return ExerciseProgressDTO.builder()
+                .exerciseId(exerciseId)
+                .exerciseCode(examExercise.getExercise().getCode())
+                .exerciseTitle(examExercise.getExercise().getTitle())
+                .order(examExercise.getOrder())
+                .score(score)
+                .hasSubmitted(hasSubmitted)
+                .build();
+            })
+            .collect(Collectors.toList());
+        }
+
+        return StudentExamProgressDTO.builder()
+          .userId(userId)
+          .rollNumber(student.getRollNumber())
+          .firstName(student.getFirstName())
+          .lastName(student.getLastName())
+          .email(student.getAccount() != null ? student.getAccount().getEmail() : null)
+          .totalScore(totalScore)
+          .hasJoined(hasJoined)
+          .isCompleted(isCompleted)
+          .submissionExercises(exerciseProgressList)
+          .build();
+      })
+      .collect(Collectors.toList());
   }
 }
