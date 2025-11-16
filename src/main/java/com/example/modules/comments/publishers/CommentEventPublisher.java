@@ -1,4 +1,4 @@
-package com.example.modules.redis.configs.publishers;
+package com.example.modules.comments.publishers;
 
 import com.example.modules.redis.event_type.comment.CommentEvent;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CommentPublisher {
+public class CommentEventPublisher {
 
   private final RedisTemplate<String, Object> redisTemplate;
 

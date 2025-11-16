@@ -1,4 +1,4 @@
-package com.example.modules.redis.configs.publishers;
+package com.example.modules.submissions.publishers;
 
 import com.example.modules.submissions.dtos.SubmissionResponseDTO;
 import lombok.AccessLevel;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class NewSubmissionsPublisher {
+public class NewSubmissionsEventPublisher {
 
   RedisTemplate<String, Object> redisTemplate;
 

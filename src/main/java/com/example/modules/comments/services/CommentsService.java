@@ -9,13 +9,13 @@ import com.example.modules.comments.dtos.CommentUpdateDTO;
 import com.example.modules.comments.entities.Comment;
 import com.example.modules.comments.exceptions.CommentNotFoundException;
 import com.example.modules.comments.exceptions.CommentOperationNotAllowedException;
+import com.example.modules.comments.publishers.CommentEventPublisher;
 import com.example.modules.comments.repositories.CommentsRepository;
 import com.example.modules.comments.utils.CommentMapper;
 import com.example.modules.comments.utils.CommentsSpecification;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.services.ExercisesService;
 import com.example.modules.groups.entities.Group;
-import com.example.modules.redis.configs.publishers.CommentPublisher;
 import com.example.modules.redis.event_type.comment.CommentEvent;
 import com.example.modules.redis.event_type.comment.CommentEventType;
 import com.example.modules.system_config.entities.SystemConfigs;
@@ -38,7 +38,7 @@ public class CommentsService implements ICommentsService {
   CommentsRepository commentsRepository;
   ExercisesService exercisesService;
   CommentMapper commentMapper;
-  CommentPublisher commentPublisher;
+  CommentEventPublisher commentPublisher;
   SystemConfigsRepository systemConfigsRepository;
 
   @Override

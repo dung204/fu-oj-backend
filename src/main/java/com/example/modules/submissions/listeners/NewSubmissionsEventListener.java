@@ -1,4 +1,4 @@
-package com.example.modules.redis.configs.subscribers;
+package com.example.modules.submissions.listeners;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class NewSubmissionsSubscriber implements MessageListener {
+public class NewSubmissionsEventListener implements MessageListener {
 
   SimpMessagingTemplate messagingTemplate;
   ObjectMapper objectMapper;

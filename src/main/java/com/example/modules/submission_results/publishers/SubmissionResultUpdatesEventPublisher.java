@@ -1,4 +1,4 @@
-package com.example.modules.redis.configs.publishers;
+package com.example.modules.submission_results.publishers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SubmissionResultUpdatesPublisher {
+public class SubmissionResultUpdatesEventPublisher {
 
   private final RedisTemplate<String, Object> redisTemplate;
 

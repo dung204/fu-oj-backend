@@ -1,4 +1,4 @@
-package com.example.modules.redis.configs.subscribers;
+package com.example.modules.submission_results.listeners;
 
 import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SubmissionResultUpdatesSubscriber implements MessageListener {
+public class SubmissionResultUpdatesEventListener implements MessageListener {
 
   private final SimpMessagingTemplate messagingTemplate;
   private final ObjectMapper objectMapper;

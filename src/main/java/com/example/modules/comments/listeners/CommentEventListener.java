@@ -1,4 +1,4 @@
-package com.example.modules.redis.configs.subscribers;
+package com.example.modules.comments.listeners;
 
 import com.example.modules.redis.event_type.comment.CommentEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CommentSubscriber implements MessageListener {
+public class CommentEventListener implements MessageListener {
 
   private final ObjectMapper objectMapper;
   private final SimpMessagingTemplate simpMessagingTemplate;
