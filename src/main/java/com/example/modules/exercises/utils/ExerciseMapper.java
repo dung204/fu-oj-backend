@@ -45,13 +45,17 @@ public abstract class ExerciseMapper {
     return testCases
       .stream()
       .map(tc -> {
+        // Map to DTO first (don't modify entity!)
+        TestCaseResponseDTO dto = testCaseMapper.toTestCaseResponseDTO(tc);
+
+        // Then hide private data in DTO only
         if (!tc.getIsPublic()) {
-          tc.setInput(null);
-          tc.setOutput(null);
-          tc.setNote(null);
+          dto.setInput(null);
+          dto.setOutput(null);
+          dto.setNote(null);
         }
 
-        return testCaseMapper.toTestCaseResponseDTO(tc);
+        return dto;
       })
       .toList();
   }

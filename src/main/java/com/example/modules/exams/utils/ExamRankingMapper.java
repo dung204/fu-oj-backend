@@ -26,6 +26,7 @@ public abstract class ExamRankingMapper {
       .examTitle(exam.getTitle())
       .startTime(exam.getStartTime())
       .endTime(exam.getEndTime())
+      .timeLimit(exam.getTimeLimit())
       .userId(user != null ? user.getId() : null)
       .userName(user != null ? buildUserName(user) : null)
       .build();

@@ -20,4 +20,6 @@ public class ExamRankingResponseDTO extends EntityDTO {
   private ExamResultResponseDTO exam;
 
   private Double totalScore;
+
+  private boolean completed;
 }

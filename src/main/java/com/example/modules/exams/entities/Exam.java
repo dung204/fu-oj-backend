@@ -57,3 +57,9 @@ public class Exam extends BaseEntity {
   @OneToMany(mappedBy = "exam", fetch = FetchType.LAZY)
   private List<ExamRanking> rankings;
 }
+
+/**
+ * Nên đưa exam vào redis để check nhanh hơn
+ * bởi vì bài exam thường có số lượng lớn học sinh tham gia và cần xử lý nhanh
+ * và giảm tải cho database + ít khi update
+ */
