@@ -20,8 +20,4 @@ public class CourseUpdateDTO {
   @Schema(implementation = String.class)
   @Builder.Default
   private JsonNullable<String> description = JsonNullable.undefined();
-
-  @Schema(implementation = String.class)
-  @Builder.Default
-  private JsonNullable<String> certificateTemplateName = JsonNullable.undefined();
 }

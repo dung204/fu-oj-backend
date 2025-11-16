@@ -15,6 +15,4 @@ public class CourseCreateDTO {
 
   @NotBlank
   private String description;
-
-  private String certificateTemplateName;
 }

@@ -31,9 +31,6 @@ public class Course extends BaseEntity {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String description;
 
-  @Column(nullable = false, columnDefinition = "TEXT")
-  private String certificateTemplateName;
-
   @ManyToMany
   @JoinTable(
     name = "course_exercises",
