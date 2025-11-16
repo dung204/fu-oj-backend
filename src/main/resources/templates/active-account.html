@@ -36,7 +36,7 @@
 
               <!-- Greeting -->
               <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 24px; font-weight: 600;">
-                Welcome, <span th:text="${name}">user</span>! 🎉
+                Welcome, <span th:text="${email}">user</span>! 🎉
               </h2>
 
               <!-- Main Message -->
@@ -49,6 +49,19 @@
                 To complete your registration and start using our platform, please activate your account by clicking the
                 button below:
               </p>
+
+              <!-- Account Credentials -->
+              <div style="margin: 0 0 30px 0; color: #555555; font-size: 16px; line-height: 1.6;">
+                <p style="margin: 0 0 10px 0;">
+                  Your login information:
+                </p>
+                <p style="margin: 4px 0;">
+                  <strong style="color: #ff6b35;">Email:</strong> <span th:text="${email}">user@example.com</span>
+                </p>
+                <p style="margin: 4px 0;">
+                  <strong style="color: #ff6b35;">Password:</strong> <span th:text="${password}">password</span>
+                </p>
+              </div>
 
               <!-- Activation Button -->
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"

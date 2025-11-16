@@ -39,6 +39,11 @@
       "name": "minio.bucket",
       "type": "java.lang.String",
       "description": "Name of the bucket to be created in MinIO (if not exists)."
+    },
+    {
+      "name": "minio.public_endpoint",
+      "type": "java.lang.String",
+      "description": "The public-facing base URL used to construct links for clients to access files. This can be different from the internal `minio.endpoint`, especially when using a reverse proxy or CDN."
     }
   ]
 }

@@ -8,7 +8,6 @@ import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.redis.configs.publishers.NewSubmissionsPublisher;
 import com.example.modules.redis.configs.publishers.SubmissionResultUpdatesPublisher;
-import com.example.modules.submission_results.dtos.SubmissionResultResponseDTO;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
 import com.example.modules.submissions.dtos.RunCodeRequest;

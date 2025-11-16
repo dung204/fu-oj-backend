@@ -7,6 +7,7 @@ import com.example.modules.auth.exceptions.EmailHasAlreadyBeenUsedException;
 import com.example.modules.auth.repositories.AccountsRepository;
 import com.example.modules.auth.services.AuthService;
 import com.example.modules.email.service.EmailService;
+import com.example.modules.file.excel.exceptions.AccountImportLimitExceeded;
 import com.example.modules.file.excel.exceptions.FileNotValidException;
 import com.example.modules.file.excel.utils.ExcelExporter;
 import com.example.modules.file.excel.utils.ExcelHelper;
@@ -51,6 +52,8 @@ public class ExcelService implements IExcelService {
       log.info("Unable to read Excel file: {}", e.getMessage());
     } catch (IllegalArgumentException e) {
       log.info(e.getMessage());
+    } catch (AccountImportLimitExceeded e) {
+      log.info("account limit exceeded: {}", e.getMessage());
     }
     return accountRegisterSuccessfully;
   }
@@ -107,34 +110,37 @@ public class ExcelService implements IExcelService {
 
   private boolean registerAccountSafely(RegisterRequestDTO account, int row, User user) {
     try {
+      String password = account.getPassword();
       authService.register(account);
       Account acc = accountsRepository.findAccountByEmail(account.getEmail());
-      // set created by
+
       acc.setCreatedBy(user.getAccount().getUsername());
       acc.setDeletedTimestamp(Instant.now());
       accountsRepository.save(acc);
       log.info("{}=> import", acc.getId());
 
-      // Send email separately - don't fail import if email fails
       try {
         emailService.sendEmailWithTemplate(
           acc.getEmail(),
           "ACTIVE ACCOUNT",
           "active-account",
           Map.of(
-            "name",
-            acc.getUsername(),
+            "email",
+            account.getEmail(),
+            "password",
+            password,
             "activationLink",
-            "http://localhost:4000/api/v1/auth/active-account/" + account.getEmail()
+            "http://fu-oj-be.grounds2dish.com/api/v1/auth/active-account/" + account.getEmail()
           )
         );
       } catch (Exception emailException) {
         // Log email error but don't fail the import
-        log.warn(
+        log.error(
           "Row {}: Failed to send activation email to '{}': {}",
           row,
           account.getEmail(),
-          emailException.getMessage()
+          emailException.getMessage(),
+          emailException
         );
       }
 

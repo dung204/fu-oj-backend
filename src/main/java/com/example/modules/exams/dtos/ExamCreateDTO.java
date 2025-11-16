@@ -31,6 +31,8 @@ public class ExamCreateDTO {
   @NotNull
   private Instant endTime;
 
+  private Double timeLimit;
+
   @Schema(example = SwaggerExamples.EXAM_STATUS)
   @AllowedStrings(values = { "DRAFT", "UPCOMING" })
   private String status = ExamStatus.DRAFT.getValue();

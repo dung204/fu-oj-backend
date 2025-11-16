@@ -258,7 +258,7 @@ public class GroupService {
     Group group = Group.builder()
       .name(groupRequestDTO.getName())
       .description(groupRequestDTO.getDescription())
-      .isPublic(groupRequestDTO.isPublic())
+      .isPublic(groupRequestDTO.getIsPublic())
       .code(generateUniqueClassCode())
       .instructor(currentUser)
       .build();
@@ -298,5 +298,11 @@ public class GroupService {
       sb.append(CHARS.charAt(random.nextInt(CHARS.length())));
     }
     return sb.toString();
+  }
+
+  public List<UserProfileDTO> getLittleStudentsByGroupId(String id, User currentUser) {
+    Group group = groupsRepository.findGroupById(id).orElseThrow(GroupNotFoundException::new);
+    List<User> userList = group.getStudents().stream().limit(3).toList();
+    return userList.stream().map(userMapper::toUserProfileDTO).toList();
   }
 }
