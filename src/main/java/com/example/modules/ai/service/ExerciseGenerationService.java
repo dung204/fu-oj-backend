@@ -74,7 +74,7 @@ public class ExerciseGenerationService {
       throw new RuntimeException("Lỗi khi tạo bài tập. Vui lòng thử lại sau.", e);
     } catch (Exception e) {
       log.error("Unexpected error in exercise generation: {}", e.getMessage(), e);
-      throw new RuntimeException("Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.", e);
+      throw new RuntimeException(e.getMessage(), e);
     }
   }
 
@@ -96,9 +96,12 @@ public class ExerciseGenerationService {
   private String buildSystemPrompt() {
     return (
       "You are an AI assistant specialized in creating programming exercises for teachers. " +
-      "Your task is to generate EXACTLY N programming exercises in JSON array format. " +
-      "Return ONLY valid JSON array, NO explanatory text, NO markdown, NO code blocks. " +
-      "The response must be a pure JSON array starting with '[' and ending with ']'."
+      "Your ONLY task is to generate EXACTLY N programming exercises in JSON array format based on the user's request. " +
+      "You MUST ONLY respond to requests related to creating programming exercises. " +
+      "If the user asks anything unrelated to exercise generation, return this exact JSON: {\"error\": \"Tôi không hỗ trợ dịch vụ này\"}. " +
+      "Otherwise, return ONLY valid JSON array, NO explanatory text, NO markdown, NO code blocks. " +
+      "The response must be a pure JSON array starting with '[' and ending with ']'. " +
+      "You must follow the user's requirements strictly regarding topic, difficulty levels, and formatting."
     );
   }
 
@@ -185,15 +188,27 @@ public class ExerciseGenerationService {
       }
       cleanedResponse = cleanedResponse.trim();
 
-      // Tìm JSON array trong response (có thể có text trước/sau)
+      // Tìm JSON array hoặc JSON object trong response (có thể có text trước/sau)
       int startIdx = cleanedResponse.indexOf('[');
       int endIdx = cleanedResponse.lastIndexOf(']');
+      int startObjIdx = cleanedResponse.indexOf('{');
+      int endObjIdx = cleanedResponse.lastIndexOf('}');
 
-      if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
+      // Ưu tiên tìm JSON object (có thể là error message)
+      if (startObjIdx != -1 && endObjIdx != -1 && endObjIdx > startObjIdx) {
+        cleanedResponse = cleanedResponse.substring(startObjIdx, endObjIdx + 1);
+      } else if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
         cleanedResponse = cleanedResponse.substring(startIdx, endIdx + 1);
       }
 
       JsonNode jsonNode = objectMapper.readTree(cleanedResponse);
+
+      // Kiểm tra nếu có error message (câu hỏi không liên quan)
+      if (jsonNode.has("error")) {
+        String errorMessage = jsonNode.get("error").asText();
+        log.warn("AI returned error: {}", errorMessage);
+        throw new RuntimeException("Tôi không hỗ trợ dịch vụ này");
+      }
 
       // Xử lý JSON array trực tiếp
       List<ExercisePreviewDTO> exercises = new ArrayList<>();
@@ -208,6 +223,12 @@ public class ExerciseGenerationService {
           ExercisePreviewDTO exercise = parseExercise(exerciseNode, topicId);
           exercises.add(exercise);
         }
+      }
+
+      // Kiểm tra nếu không có exercises nào được tạo
+      if (exercises.isEmpty()) {
+        log.warn("No exercises generated from AI response");
+        throw new RuntimeException("Tôi không hỗ trợ dịch vụ này");
       }
 
       return new ExerciseGenerationResponse(exercises);
