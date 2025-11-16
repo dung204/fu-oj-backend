@@ -2,6 +2,7 @@ package com.example.modules.courses.services;
 
 import com.example.base.utils.ObjectUtils;
 import com.example.modules.auth.enums.Role;
+import com.example.modules.certificates.publishers.CourseUpdatedEventPublisher;
 import com.example.modules.courses.dtos.CourseCreateDTO;
 import com.example.modules.courses.dtos.CourseExerciseRequestDTO;
 import com.example.modules.courses.dtos.CourseResponseDTO;
@@ -42,13 +43,13 @@ public class CoursesService {
   CourseMapper courseMapper;
   SubmissionsRepository submissionsRepository;
   ExercisesRepository exercisesRepository;
+  CourseUpdatedEventPublisher courseUpdatedEventPublisher;
 
   @Transactional
   public CourseResponseDTO createCourse(CourseCreateDTO courseCreateDTO) {
     Course course = Course.builder()
       .title(courseCreateDTO.getTitle())
       .description(courseCreateDTO.getDescription())
-      .certificateTemplateName(courseCreateDTO.getCertificateTemplateName())
       .build();
 
     return courseMapper.toCourseResponseDTO(coursesRepository.save(course));
@@ -148,6 +149,7 @@ public class CoursesService {
 
     course.getExercises().removeAll(exercises);
     coursesRepository.save(course);
+    courseUpdatedEventPublisher.publish(courseId);
   }
 
   @Transactional
@@ -171,9 +173,9 @@ public class CoursesService {
     return response;
   }
 
-  private Progress getCourseProgress(Course course, User currentUser) {
+  public Progress getCourseProgress(Course course, User user) {
     long solvedCount = submissionsRepository.countDistinctAcceptedExercisesForUser(
-      currentUser.getId(),
+      user.getId(),
       course.getExercises().stream().map(Exercise::getId).toList()
     );
     long totalCount = course.getExercises().size();

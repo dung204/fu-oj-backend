@@ -20,9 +20,4 @@ public class CourseResponseDTO extends EntityDTO {
 
   @Schema(description = "A detailed description of the course content and objectives.")
   private String description;
-
-  @Schema(
-    description = "The name of the template used for generating certificates upon course completion."
-  )
-  private String certificateTemplateName;
 }

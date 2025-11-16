@@ -50,4 +50,22 @@ public class CoursesSpecification extends SpecificationBuilder<Course> {
     }
     return this;
   }
+
+  public CoursesSpecification withExerciseId(String exerciseId) {
+    if (exerciseId != null && !exerciseId.isBlank()) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.equal(root.join("exercises").get("id"), exerciseId)
+      );
+    }
+    return this;
+  }
+
+  public CoursesSpecification withEnrolledStudentId(String studentId) {
+    if (studentId != null && !studentId.isBlank()) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.equal(root.join("enrolledStudents").get("id"), studentId)
+      );
+    }
+    return this;
+  }
 }

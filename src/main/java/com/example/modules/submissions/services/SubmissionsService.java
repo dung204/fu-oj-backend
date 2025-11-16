@@ -23,7 +23,6 @@ import com.example.modules.submissions.enums.Verdict;
 import com.example.modules.submissions.exceptions.SubmissionNotFound;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.submissions.utils.SubmissionMapper;
-import com.example.modules.submissions.utils.SubmissionResultMapper;
 import com.example.modules.submissions.utils.SubmissionsSpecification;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
@@ -51,7 +50,6 @@ public class SubmissionsService {
   TestCasesRepository testCaseRepository;
   SubmissionResultRepository submissionResultRepository;
   ExercisesRepository exerciseRepository;
-  SubmissionResultMapper submissionResultMapper;
   SubmissionLimitService submissionLimitService;
   SubmissionMapper submissionMapper;
   SubmissionResultUpdatesPublisher submissionResultUpdatesPublisher;
