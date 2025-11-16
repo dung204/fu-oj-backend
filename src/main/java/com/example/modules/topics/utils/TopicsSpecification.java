@@ -20,4 +20,13 @@ public class TopicsSpecification extends SpecificationBuilder<Topic> {
     }
     return this;
   }
+
+  public TopicsSpecification withName(String name) {
+    if (name != null && !name.trim().isEmpty()) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.equal(criteriaBuilder.lower(root.get("name")), name.toLowerCase().trim())
+      );
+    }
+    return this;
+  }
 }
