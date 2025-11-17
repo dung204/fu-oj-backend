@@ -13,6 +13,7 @@ import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.exercises.utils.ExerciseMapper;
 import com.example.modules.exercises.utils.ExercisesSpecification;
 import com.example.modules.groups.entities.Group;
+import com.example.modules.submissions.entities.Submission;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.topics.entities.Topic;
@@ -43,6 +44,7 @@ public class ExercisesService {
   TopicsRepository topicsRepository;
   TestCasesRepository testCasesRepository;
   ExerciseMapper exerciseMapper;
+  private final SubmissionRepository submissionRepository;
 
   /**
    * Lấy exercise theo ID (chỉ lấy public test cases - dành cho student)
@@ -252,6 +254,40 @@ public class ExercisesService {
     User currentUser
   ) {
     Exercise oldExercise = getExerciseById(id, currentUser);
+
+    // if the exercise is draft or no submissions, allow in-place update
+    Submission submission = submissionRepository.getSubmissionByExercise(oldExercise);
+
+    if (oldExercise.getVisibility().equals(Visibility.DRAFT) || submission == null) {
+      // Kiểm tra trùng code nếu code thay đổi
+      if (!oldExercise.getCode().equals(request.getCode())) {
+        boolean exists = exercisesRepository.existsByCode((request.getCode()));
+        if (exists) {
+          throw new IllegalArgumentException("Exercise code already exists: " + request.getCode());
+        }
+      }
+
+      // Gán các thay đổi mới từ request
+      ObjectUtils.assign(oldExercise, request);
+
+      // Update topics
+      if (request.getTopicIds() != null) {
+        if (request.getTopicIds().isEmpty()) {
+          oldExercise.setTopics(new ArrayList<>());
+        } else {
+          List<Topic> topics = topicsRepository.findAllById(request.getTopicIds());
+          if (topics.size() != request.getTopicIds().size()) {
+            throw new EntityNotFoundException("Some topic IDs not found");
+          }
+          oldExercise.setTopics(topics);
+        }
+      }
+
+      Exercise savedExercise = exercisesRepository.save(oldExercise);
+      log.info("Updated exercise in-place: {}", savedExercise.getId());
+
+      return exerciseMapper.toExerciseResponseDTOWithAllTestCases(savedExercise);
+    }
 
     // Kiểm tra trùng code nếu code thay đổi
     if (!oldExercise.getCode().equals(request.getCode())) {
