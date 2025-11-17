@@ -23,8 +23,8 @@ public class ExerciseGenerationController {
 
   @PostMapping("/generate")
   @Operation(
-    summary = "Tạo bài tập từ prompt",
-    description = "Nhận prompt từ giáo viên và trả về danh sách bài tập preview (chưa lưu vào database)"
+    summary = "Tạo bài tập tự động",
+    description = "Tạo bài tập tự động dựa trên topic, độ khó và số lượng test cases. Trả về danh sách bài tập preview (chưa lưu vào database)"
   )
   public ResponseEntity<ExerciseGenerationResponse> generateExercises(
     @Valid @RequestBody ExerciseGenerationRequest request

@@ -54,14 +54,14 @@ public class Exercise extends BaseEntity {
   private Double memory = 65536d; // kilobytes
 
   @Column(
-    columnDefinition = "varchar(255) default 'EASY' check (difficulty in ('EASY','MEDIUM','HARD'))"
+    columnDefinition = "varchar(1000) default 'EASY' check (difficulty in ('EASY','MEDIUM','HARD'))"
   )
   @Enumerated(EnumType.STRING)
   @Builder.Default
   private Difficulty difficulty = Difficulty.EASY;
 
   @Column(
-    columnDefinition = "varchar(255) default 'DRAFT' check (visibility in ('PUBLIC','PRIVATE','DRAFT'))"
+    columnDefinition = "varchar(1000) default 'DRAFT' check (visibility in ('PUBLIC','PRIVATE','DRAFT'))"
   )
   @Enumerated(EnumType.STRING)
   @Builder.Default
