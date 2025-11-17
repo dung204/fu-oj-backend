@@ -13,12 +13,10 @@ import com.example.modules.courses.utils.CoursesSpecification;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.repositories.UsersRepository;
 import com.example.modules.users.utils.UsersSpecification;
-import io.lettuce.core.RedisBusyException;
 import jakarta.annotation.PostConstruct;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.RedisSystemException;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.stream.StreamListener;
@@ -44,8 +42,8 @@ public class SubmissionAcceptedEventListener
       redisTemplate
         .opsForStream()
         .createGroup(SubmissionAcceptedEventPublisher.STREAM_KEY, GROUP_NAME);
-    } catch (RedisSystemException e) {
-      if (e.getCause() instanceof RedisBusyException) {
+    } catch (Exception e) {
+      if (e.getMessage().contains("BUSYGROUP")) {
         log.info(
           "Consumer group '{}' already exists for stream: '{}'.",
           GROUP_NAME,

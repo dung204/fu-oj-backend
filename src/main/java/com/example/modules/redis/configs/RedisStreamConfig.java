@@ -59,7 +59,7 @@ public class RedisStreamConfig {
   ) {
     return container.receive(
       Consumer.from(
-        SubmissionAcceptedEventListener.GROUP_NAME,
+        CourseUpdatedEventListener.GROUP_NAME,
         "worker-%s".formatted(UUID.randomUUID())
       ),
       StreamOffset.create(CourseUpdatedEventPublisher.STREAM_KEY, ReadOffset.lastConsumed()),

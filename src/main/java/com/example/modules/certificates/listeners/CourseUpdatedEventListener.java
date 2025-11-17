@@ -11,11 +11,9 @@ import com.example.modules.courses.repositories.CoursesRepository;
 import com.example.modules.courses.services.CoursesService;
 import com.example.modules.courses.utils.CoursesSpecification;
 import com.example.modules.users.entities.User;
-import io.lettuce.core.RedisBusyException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.RedisSystemException;
 import org.springframework.data.redis.connection.stream.ObjectRecord;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.stream.StreamListener;
@@ -27,7 +25,7 @@ import org.springframework.stereotype.Service;
 public class CourseUpdatedEventListener
   implements StreamListener<String, ObjectRecord<String, CourseUpdatedEventDTO>> {
 
-  private static final String GROUP_NAME = "certificate-course-update-workers";
+  public static final String GROUP_NAME = "certificate-course-update-workers";
 
   private final RedisTemplate<String, Object> redisTemplate;
   private final CoursesRepository coursesRepository;
@@ -38,8 +36,8 @@ public class CourseUpdatedEventListener
   private void createConsumerGroup() {
     try {
       redisTemplate.opsForStream().createGroup(CourseUpdatedEventPublisher.STREAM_KEY, GROUP_NAME);
-    } catch (RedisSystemException e) {
-      if (e.getCause() instanceof RedisBusyException) {
+    } catch (Exception e) {
+      if (e.getMessage().contains("BUSYGROUP")) {
         log.info(
           "Consumer group '{}' already exists for stream '{}'.",
           GROUP_NAME,
