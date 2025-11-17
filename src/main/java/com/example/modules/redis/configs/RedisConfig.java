@@ -1,8 +1,8 @@
 package com.example.modules.redis.configs;
 
-import com.example.modules.redis.configs.subscribers.CommentSubscriber;
-import com.example.modules.redis.configs.subscribers.NewSubmissionsSubscriber;
-import com.example.modules.redis.configs.subscribers.SubmissionResultUpdatesSubscriber;
+import com.example.modules.comments.listeners.CommentEventListener;
+import com.example.modules.submission_results.listeners.SubmissionResultUpdatesEventListener;
+import com.example.modules.submissions.listeners.NewSubmissionsEventListener;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -31,9 +31,9 @@ public class RedisConfig {
   private String password;
 
   private final ObjectMapper objectMapper;
-  private final CommentSubscriber commentSubscriber;
-  private final SubmissionResultUpdatesSubscriber submissionResultUpdatesSubscriber;
-  private final NewSubmissionsSubscriber newSubmissionsSubscriber;
+  private final CommentEventListener commentEventListener;
+  private final SubmissionResultUpdatesEventListener submissionResultUpdatesEventListener;
+  private final NewSubmissionsEventListener newSubmissionsEventListener;
 
   @Qualifier("submissionResultUpdatesTopic")
   private final ChannelTopic submissionResultUpdatesTopic;
@@ -74,9 +74,12 @@ public class RedisConfig {
   RedisMessageListenerContainer redisMessageListenerContainer() {
     RedisMessageListenerContainer container = new RedisMessageListenerContainer();
     container.setConnectionFactory(jedisConnectionFactory());
-    container.addMessageListener(commentSubscriber, commentsTopic);
-    container.addMessageListener(submissionResultUpdatesSubscriber, submissionResultUpdatesTopic);
-    container.addMessageListener(newSubmissionsSubscriber, newSubmissionsTopic);
+    container.addMessageListener(commentEventListener, commentsTopic);
+    container.addMessageListener(
+      submissionResultUpdatesEventListener,
+      submissionResultUpdatesTopic
+    );
+    container.addMessageListener(newSubmissionsEventListener, newSubmissionsTopic);
 
     return container;
   }

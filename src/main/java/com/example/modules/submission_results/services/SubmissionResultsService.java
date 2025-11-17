@@ -3,6 +3,7 @@ package com.example.modules.submission_results.services;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.Judge0.utils.Base64Utils;
+import com.example.modules.certificates.publishers.SubmissionAcceptedEventPublisher;
 import com.example.modules.exercises.enums.Visibility;
 import com.example.modules.scores.services.ScoresService;
 import com.example.modules.submission_results.entities.SubmissionResult;
@@ -11,7 +12,9 @@ import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.enums.Verdict;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import java.util.List;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -20,12 +23,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SubmissionResultsService {
 
-  private final SubmissionResultRepository submissionResultRepository;
-  private final Judge0Service judge0Service;
-  private final SubmissionsRepository submissionsRepository;
-  private final ScoresService scoresService;
+  SubmissionResultRepository submissionResultRepository;
+  Judge0Service judge0Service;
+  SubmissionsRepository submissionsRepository;
+  ScoresService scoresService;
+  SubmissionAcceptedEventPublisher submissionAcceptedEventPublisher;
 
   /**
    * Scheduled task chạy mỗi 1 phút để:
@@ -233,6 +238,13 @@ public class SubmissionResultsService {
         submission.setScore(score);
 
         submissionsRepository.save(submission);
+
+        if (submission.getIsAccepted()) {
+          submissionAcceptedEventPublisher.publish(
+            submission.getUser().getId(),
+            submission.getExercise().getId()
+          );
+        }
 
         log.info(
           "Updated submission {}: passed={}/{}, isAccepted={}, score={}",

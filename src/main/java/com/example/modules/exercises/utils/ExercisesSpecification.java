@@ -112,4 +112,14 @@ public class ExercisesSpecification extends SpecificationBuilder<Exercise> {
     });
     return this;
   }
+
+  public ExercisesSpecification withCourseId(String courseId) {
+    if (courseId != null && !courseId.isEmpty()) {
+      specifications.add((root, query, cb) -> {
+        query.distinct(true);
+        return cb.equal(root.get("courses").get("id"), courseId);
+      });
+    }
+    return this;
+  }
 }
