@@ -3,7 +3,6 @@ package com.example.modules.file.excel.service;
 import com.example.modules.auth.dtos.RegisterRequestDTO;
 import com.example.modules.auth.entities.Account;
 import com.example.modules.auth.enums.Role;
-import com.example.modules.auth.exceptions.EmailHasAlreadyBeenUsedException;
 import com.example.modules.auth.repositories.AccountsRepository;
 import com.example.modules.auth.services.AuthService;
 import com.example.modules.email.service.EmailService;
@@ -12,14 +11,14 @@ import com.example.modules.file.excel.exceptions.FileNotValidException;
 import com.example.modules.file.excel.utils.ExcelExporter;
 import com.example.modules.file.excel.utils.ExcelHelper;
 import com.example.modules.users.entities.User;
+import com.example.modules.users.repositories.UsersRepository;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,9 +27,10 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class ExcelService implements IExcelService {
 
-  private final AuthService authService;
   private final AccountsRepository accountsRepository;
   private final EmailService emailService;
+  private final PasswordEncoder passwordEncoder;
+  private final UsersRepository usersRepository;
 
   @Override
   public List<RegisterRequestDTO> importAccountFromExcel(MultipartFile file, User user) {
@@ -39,15 +39,44 @@ public class ExcelService implements IExcelService {
       if (!validateFile(file)) {
         throw new FileNotValidException();
       }
-      List<RegisterRequestDTO> accounts = ExcelHelper.parseExcel(file);
-      for (int i = 0; i < accounts.size(); i++) {
-        RegisterRequestDTO register = accounts.get(i);
-        int rowNumber = i + 2; // skip header
-        if (!isValidRow(register, rowNumber)) continue;
-        if (registerAccountSafely(register, rowNumber, user)) {
-          accountRegisterSuccessfully.add(register);
+      ExcelHelper.processExcelWithChunk(file, accounts -> {
+        List<RegisterRequestDTO> dtoList = new ArrayList<>(500);
+        List<RegisterRequestDTO> validAccounts = new ArrayList<>();
+        List<String> emails = new ArrayList<>();
+
+        for (int i = 0; i < accounts.size(); i++) {
+          RegisterRequestDTO register = accounts.get(i);
+          int rowNumber = i + 2;
+          if (isValidRow(register, rowNumber)) {
+            validAccounts.add(register);
+            emails.add(register.getEmail());
+          }
         }
-      }
+
+        if (validAccounts.isEmpty()) {
+          return;
+        }
+        List<Account> existingAccounts = accountsRepository.findByEmailIn(emails);
+        Set<String> existingEmails = existingAccounts
+          .stream()
+          .map(Account::getEmail)
+          .collect(Collectors.toSet());
+
+        for (RegisterRequestDTO register : validAccounts) {
+          if (!existingEmails.contains(register.getEmail())) {
+            dtoList.add(register);
+            if (dtoList.size() == 500) {
+              registerBatchAccounts(dtoList, user);
+              accountRegisterSuccessfully.addAll(dtoList);
+              dtoList.clear();
+            }
+          }
+        }
+        if (!dtoList.isEmpty()) {
+          registerBatchAccounts(dtoList, user);
+          accountRegisterSuccessfully.addAll(dtoList);
+        }
+      });
     } catch (IOException e) {
       log.info("Unable to read Excel file: {}", e.getMessage());
     } catch (IllegalArgumentException e) {
@@ -108,20 +137,35 @@ public class ExcelService implements IExcelService {
     return true;
   }
 
-  private boolean registerAccountSafely(RegisterRequestDTO account, int row, User user) {
-    try {
-      String password = account.getPassword();
-      authService.register(account);
-      Account acc = accountsRepository.findAccountByEmail(account.getEmail());
+  private void registerBatchAccounts(List<RegisterRequestDTO> dtoList, User user) {
+    List<Account> accounts = new ArrayList<>(500);
+    Map<String, String> emailToPlainPassword = new LinkedHashMap<>();
+    List<User> users = new ArrayList<>(500);
 
-      acc.setCreatedBy(user.getAccount().getUsername());
-      acc.setDeletedTimestamp(Instant.now());
-      accountsRepository.save(acc);
-      log.info("{}=> import", acc.getId());
-
+    for (RegisterRequestDTO account : dtoList) {
+      emailToPlainPassword.put(account.getEmail(), account.getPassword());
+      Account savedAccount = Account.builder()
+        .email(account.getEmail())
+        .password(passwordEncoder.encode(account.getPassword()))
+        .createdBy(user.getAccount().getUsername())
+        .deletedTimestamp(Instant.now())
+        .build();
+      accounts.add(savedAccount);
+    }
+    // batch accounts
+    List<Account> savedAccounts = accountsRepository.saveAll(accounts);
+    for (Account account : savedAccounts) {
+      User savedUser = User.builder().account(account).build();
+      users.add(savedUser);
+    }
+    // batch users
+    usersRepository.saveAll(users);
+    // for gui emai
+    for (Account account : savedAccounts) {
       try {
+        String password = emailToPlainPassword.get(account.getEmail());
         emailService.sendEmailWithTemplate(
-          acc.getEmail(),
+          account.getEmail(),
           "ACTIVE ACCOUNT",
           "active-account",
           Map.of(
@@ -136,33 +180,12 @@ public class ExcelService implements IExcelService {
       } catch (Exception emailException) {
         // Log email error but don't fail the import
         log.error(
-          "Row {}: Failed to send activation email to '{}': {}",
-          row,
+          "Failed to send activation email to '{}': {}",
           account.getEmail(),
           emailException.getMessage(),
           emailException
         );
       }
-
-      return true;
-    } catch (EmailHasAlreadyBeenUsedException e) {
-      log.info("Row {}: email '{}' has already been used", row, account.getEmail());
-    } catch (Exception e) {
-      log.error(
-        "Row {}: unexpected error - {}: {}",
-        row,
-        e.getClass().getSimpleName(),
-        e.getMessage()
-      );
-      if (e.getCause() != null) {
-        log.error(
-          "Row {}: cause - {}: {}",
-          row,
-          e.getCause().getClass().getSimpleName(),
-          e.getCause().getMessage()
-        );
-      }
     }
-    return false;
   }
 }
