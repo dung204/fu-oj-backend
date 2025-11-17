@@ -2,6 +2,7 @@ package com.example.base.utils;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import lombok.AccessLevel;
@@ -147,6 +148,11 @@ public class SpecificationBuilder<T> {
 
   public <S extends SpecificationBuilder<T>> S withId(String id) {
     specifications.add((root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("id"), id));
+    return (S) this;
+  }
+
+  public <S extends SpecificationBuilder<T>> S withIds(Collection<String> ids) {
+    specifications.add((root, query, criteriaBuilder) -> root.get("id").in(ids));
     return (S) this;
   }
 

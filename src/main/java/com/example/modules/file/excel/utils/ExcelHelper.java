@@ -5,39 +5,47 @@ import com.example.modules.file.excel.exceptions.AccountImportLimitExceeded;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.web.multipart.MultipartFile;
 
 public class ExcelHelper {
 
-  public static List<RegisterRequestDTO> parseExcel(MultipartFile file) throws IOException {
-    List<RegisterRequestDTO> accounts = new ArrayList<>();
-
+  public static void processExcelWithChunk(
+    MultipartFile file,
+    Consumer<List<RegisterRequestDTO>> consumer
+  ) throws IOException {
+    List<RegisterRequestDTO> chunk = new ArrayList<>(1000);
     try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
       Sheet sheet = workbook.getSheetAt(0);
       Row header = sheet.getRow(0);
 
       if (
         header == null ||
-        !"studentId".equalsIgnoreCase(header.getCell(0).getStringCellValue().trim()) ||
-        !"name".equalsIgnoreCase(header.getCell(1).getStringCellValue().trim()) ||
-        !"mail".equalsIgnoreCase(header.getCell(2).getStringCellValue().trim())
+        !"studentId".equalsIgnoreCase(getString(header.getCell(0))) ||
+        !"name".equalsIgnoreCase(getString(header.getCell(1))) ||
+        !"mail".equalsIgnoreCase(getString(header.getCell(2)))
       ) {
         throw new IllegalArgumentException("File Excel not correct format");
       }
-
       for (int i = 1; i <= sheet.getLastRowNum(); i++) {
         Row row = sheet.getRow(i);
         if (row == null) continue;
-        String user = getString(row.getCell(2));
-        if (user.isEmpty()) continue;
-        String password = PasswordUtils.generateRandomPassword(8);
 
-        accounts.add(new RegisterRequestDTO(user, password));
-        if (accounts.size() > 100) throw new AccountImportLimitExceeded();
+        String email = getString(row.getCell(2));
+        if (email.isEmpty()) continue;
+
+        String password = PasswordUtils.generateRandomPassword(8);
+        chunk.add(new RegisterRequestDTO(email, password));
+        if (chunk.size() >= 1000) {
+          consumer.accept(chunk);
+          chunk.clear();
+        }
+      }
+      if (!chunk.isEmpty()) {
+        consumer.accept(chunk);
       }
     }
-    return accounts;
   }
 
   private static String getString(Cell cell) {
