@@ -2,18 +2,18 @@ package com.example.modules.users.entities;
 
 import com.example.base.entities.BaseEntity;
 import com.example.modules.auth.entities.Account;
-import com.example.modules.certifications.entities.Certification;
+import com.example.modules.certificates.entities.Certificate;
+import com.example.modules.courses.entities.Course;
 import com.example.modules.groups.entities.Group;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,8 +23,11 @@ import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
-@EqualsAndHashCode(callSuper = true, exclude = { "account", "joinedGroups", "certifications" })
-@ToString(exclude = { "account", "joinedGroups", "certifications" })
+@EqualsAndHashCode(
+  callSuper = true,
+  exclude = { "account", "joinedGroups", "certifications", "enrolledCourses" }
+)
+@ToString(exclude = { "account", "joinedGroups", "certifications", "enrolledCourses" })
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -54,13 +57,11 @@ public class User extends BaseEntity {
   private Account account;
 
   @ManyToMany(mappedBy = "students")
-  private List<Group> joinedGroups;
+  private Set<Group> joinedGroups;
 
-  @ManyToMany(fetch = FetchType.LAZY)
-  @JoinTable(
-    name = "user_certifications",
-    joinColumns = @JoinColumn(name = "user_id"),
-    inverseJoinColumns = @JoinColumn(name = "certification_id")
-  )
-  private List<Certification> certifications;
+  @ManyToMany(mappedBy = "enrolledStudents")
+  private Set<Course> enrolledCourses;
+
+  @OneToMany(mappedBy = "user")
+  private Set<Certificate> certifications;
 }

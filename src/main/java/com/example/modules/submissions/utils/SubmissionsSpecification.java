@@ -49,6 +49,22 @@ public class SubmissionsSpecification extends SpecificationBuilder<Submission> {
     return this;
   }
 
+  public SubmissionsSpecification withExerciseIds(Collection<String> exerciseIds) {
+    if (exerciseIds != null && !exerciseIds.isEmpty()) {
+      specifications.add((root, query, criteriaBuilder) ->
+        root.get("exercise").get("id").in(exerciseIds)
+      );
+    }
+    return this;
+  }
+
+  public SubmissionsSpecification acceptedOnly() {
+    specifications.add((root, query, criteriaBuilder) ->
+      criteriaBuilder.isTrue(root.get("isAccepted"))
+    );
+    return this;
+  }
+
   public SubmissionsSpecification isOneOfStatuses(Collection<String> statuses) {
     if (statuses == null || statuses.isEmpty()) {
       return this;

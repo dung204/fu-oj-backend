@@ -1,6 +1,7 @@
 package com.example.modules.exercises.entities;
 
 import com.example.base.entities.BaseEntity;
+import com.example.modules.courses.entities.Course;
 import com.example.modules.exams.entities.ExamExercise;
 import com.example.modules.exercises.enums.Difficulty;
 import com.example.modules.exercises.enums.Visibility;
@@ -53,14 +54,14 @@ public class Exercise extends BaseEntity {
   private Double memory = 65536d; // kilobytes
 
   @Column(
-    columnDefinition = "varchar(255) default 'EASY' check (difficulty in ('EASY','MEDIUM','HARD'))"
+    columnDefinition = "varchar(1000) default 'EASY' check (difficulty in ('EASY','MEDIUM','HARD'))"
   )
   @Enumerated(EnumType.STRING)
   @Builder.Default
   private Difficulty difficulty = Difficulty.EASY;
 
   @Column(
-    columnDefinition = "varchar(255) default 'DRAFT' check (visibility in ('PUBLIC','PRIVATE','DRAFT'))"
+    columnDefinition = "varchar(1000) default 'DRAFT' check (visibility in ('PUBLIC','PRIVATE','DRAFT'))"
   )
   @Enumerated(EnumType.STRING)
   @Builder.Default
@@ -82,4 +83,7 @@ public class Exercise extends BaseEntity {
 
   @OneToMany(mappedBy = "exercise", fetch = FetchType.LAZY)
   private List<ExamExercise> examExercises;
+
+  @ManyToMany(mappedBy = "exercises")
+  private List<Course> courses;
 }

@@ -6,9 +6,8 @@ import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.Judge0.utils.Base64Utils;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
-import com.example.modules.redis.configs.publishers.NewSubmissionsPublisher;
-import com.example.modules.redis.configs.publishers.SubmissionResultUpdatesPublisher;
 import com.example.modules.submission_results.entities.SubmissionResult;
+import com.example.modules.submission_results.publishers.SubmissionResultUpdatesEventPublisher;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
 import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.RunCodeResponseDTO;
@@ -21,9 +20,9 @@ import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.enums.Verdict;
 import com.example.modules.submissions.exceptions.SubmissionNotFound;
+import com.example.modules.submissions.publishers.NewSubmissionsEventPublisher;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.submissions.utils.SubmissionMapper;
-import com.example.modules.submissions.utils.SubmissionResultMapper;
 import com.example.modules.submissions.utils.SubmissionsSpecification;
 import com.example.modules.test_cases.entities.TestCase;
 import com.example.modules.test_cases.repositories.TestCasesRepository;
@@ -51,11 +50,10 @@ public class SubmissionsService {
   TestCasesRepository testCaseRepository;
   SubmissionResultRepository submissionResultRepository;
   ExercisesRepository exerciseRepository;
-  SubmissionResultMapper submissionResultMapper;
   SubmissionLimitService submissionLimitService;
   SubmissionMapper submissionMapper;
-  SubmissionResultUpdatesPublisher submissionResultUpdatesPublisher;
-  NewSubmissionsPublisher newSubmissionsPublisher;
+  SubmissionResultUpdatesEventPublisher submissionResultUpdatesPublisher;
+  NewSubmissionsEventPublisher newSubmissionsPublisher;
 
   public Page<SubmissionResponseDTO> getAllSubmissions(SubmissionsSearchDTO submissionsSearchDTO) {
     return submissionsRepository

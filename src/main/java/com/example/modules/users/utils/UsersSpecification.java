@@ -1,6 +1,7 @@
 package com.example.modules.users.utils;
 
 import com.example.base.utils.SpecificationBuilder;
+import com.example.modules.auth.enums.Role;
 import com.example.modules.users.entities.User;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -17,6 +18,19 @@ public class UsersSpecification extends SpecificationBuilder<User> {
       // especially in count queries where it's not needed and can cause errors.
       if (query.getResultType() != Long.class && query.getResultType() != long.class) {
         root.fetch("joinedGroups", JoinType.LEFT);
+      }
+      // We return an empty predicate because this specification is only for fetching, not filtering.
+      return criteriaBuilder.conjunction();
+    });
+    return this;
+  }
+
+  public UsersSpecification fetchEnrolledCourses() {
+    specifications.add((root, query, criteriaBuilder) -> {
+      // This check is important to avoid adding the fetch multiple times,
+      // especially in count queries where it's not needed and can cause errors.
+      if (query.getResultType() != Long.class && query.getResultType() != long.class) {
+        root.fetch("enrolledCourses", JoinType.LEFT);
       }
       // We return an empty predicate because this specification is only for fetching, not filtering.
       return criteriaBuilder.conjunction();
@@ -70,6 +84,15 @@ public class UsersSpecification extends SpecificationBuilder<User> {
     if (email != null && !email.trim().isEmpty()) {
       specifications.add((root, query, criteriaBuilder) -> {
         return criteriaBuilder.equal(root.get("account").get("email"), email);
+      });
+    }
+    return this;
+  }
+
+  public UsersSpecification withAccountRole(Role role) {
+    if (role != null) {
+      specifications.add((root, query, criteriaBuilder) -> {
+        return criteriaBuilder.equal(root.get("account").get("role"), role.getValue());
       });
     }
     return this;
