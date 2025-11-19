@@ -39,7 +39,7 @@ public class CertificatesController {
 
   CertificatesService certificatesService;
 
-  @AllowRoles(Role.ADMIN)
+  @AllowRoles({ Role.ADMIN, Role.STUDENT, Role.INSTRUCTOR })
   @Operation(
     summary = "Retrieve all existing certificates (for ADMIN only)",
     responses = {
@@ -60,7 +60,7 @@ public class CertificatesController {
       .build();
   }
 
-  @AllowRoles(Role.ADMIN)
+  @AllowRoles({ Role.ADMIN, Role.STUDENT, Role.INSTRUCTOR })
   @Operation(
     summary = "Issue a certificate (for ADMIN only)",
     description = "This endpoint should be used in case the scheduled task does not issue a certificate of a course to a user or other exceptions may happen.\n\n" +

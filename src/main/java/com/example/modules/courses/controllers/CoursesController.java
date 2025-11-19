@@ -49,7 +49,7 @@ public class CoursesController {
   CoursesService coursesService;
   ExercisesService exercisesService;
 
-  @AllowRoles(Role.ADMIN)
+  @AllowRoles({ Role.ADMIN, Role.INSTRUCTOR })
   @Operation(
     summary = "Create a new course (for ADMIN only)",
     responses = {
@@ -72,7 +72,7 @@ public class CoursesController {
       .build();
   }
 
-  @AllowRoles(Role.ADMIN)
+  @AllowRoles({ Role.ADMIN, Role.INSTRUCTOR })
   @Operation(
     summary = "Update an existing course (for ADMIN only)",
     responses = {
@@ -96,7 +96,7 @@ public class CoursesController {
       .build();
   }
 
-  @AllowRoles(Role.ADMIN)
+  @AllowRoles({ Role.ADMIN, Role.INSTRUCTOR })
   @Operation(
     summary = "Deleted an existing course (for ADMIN only)",
     responses = {
@@ -180,7 +180,7 @@ public class CoursesController {
       .build();
   }
 
-  @AllowRoles(Role.ADMIN)
+  @AllowRoles({ Role.ADMIN, Role.INSTRUCTOR })
   @Operation(
     summary = "Add exercises to a course (for ADMIN only)",
     description = "Only exercises with `visibility` of `PUBLIC` are allowed",
@@ -210,7 +210,7 @@ public class CoursesController {
     coursesService.addExercisesToCourse(id, courseExerciseRequestDTO);
   }
 
-  @AllowRoles(Role.ADMIN)
+  @AllowRoles({ Role.ADMIN, Role.INSTRUCTOR })
   @Operation(
     summary = "Remove exercises from a course (for ADMIN only)",
     responses = {
@@ -239,7 +239,7 @@ public class CoursesController {
     coursesService.removeExercisesFromCourse(id, courseExerciseRequestDTO);
   }
 
-  @AllowRoles(Role.STUDENT)
+  @AllowRoles({ Role.STUDENT, Role.ADMIN, Role.INSTRUCTOR })
   @Operation(
     summary = "Enroll the current authenticated user in a course (for STUDENT only)",
     responses = {
