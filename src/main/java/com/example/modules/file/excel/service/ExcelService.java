@@ -174,7 +174,7 @@ public class ExcelService implements IExcelService {
             "password",
             password,
             "activationLink",
-            "http://fu-oj-be.grounds2dish.com/api/v1/auth/active-account/" + account.getEmail()
+            "http://localhost:5173/auth/active-account?email=" + account.getEmail()
           )
         );
       } catch (Exception emailException) {
