@@ -18,7 +18,7 @@ public class CoursesSpecification extends SpecificationBuilder<Course> {
       // This check is important to avoid adding the fetch multiple times,
       // especially in count queries where it's not needed and can cause errors.
       if (query.getResultType() != Long.class && query.getResultType() != long.class) {
-        root.fetch("students", JoinType.LEFT);
+        root.fetch("enrolledStudents", JoinType.LEFT);
       }
       // We return an empty predicate because this specification is only for fetching, not filtering.
       return criteriaBuilder.conjunction();
