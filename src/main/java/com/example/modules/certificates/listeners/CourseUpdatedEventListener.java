@@ -2,7 +2,6 @@ package com.example.modules.certificates.listeners;
 
 import com.example.modules.certificates.dtos.CourseUpdatedEventDTO;
 import com.example.modules.certificates.entities.Certificate;
-import com.example.modules.certificates.publishers.CourseUpdatedEventPublisher;
 import com.example.modules.certificates.repositories.CertificatesRepository;
 import com.example.modules.certificates.utils.CertificatesSpecification;
 import com.example.modules.courses.dtos.CourseWithProgressDTO.Progress;
@@ -10,91 +9,81 @@ import com.example.modules.courses.entities.Course;
 import com.example.modules.courses.repositories.CoursesRepository;
 import com.example.modules.courses.services.CoursesService;
 import com.example.modules.courses.utils.CoursesSpecification;
+import com.example.modules.redis.configs.listeners.RedisStreamListener;
 import com.example.modules.users.entities.User;
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.connection.stream.ObjectRecord;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.stream.StreamListener;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
-public class CourseUpdatedEventListener
-  implements StreamListener<String, ObjectRecord<String, CourseUpdatedEventDTO>> {
+public class CourseUpdatedEventListener extends RedisStreamListener<CourseUpdatedEventDTO> {
 
-  public static final String GROUP_NAME = "certificate-course-update-workers";
-
-  private final RedisTemplate<String, Object> redisTemplate;
   private final CoursesRepository coursesRepository;
   private final CoursesService coursesService;
   private final CertificatesRepository certificatesRepository;
 
-  @PostConstruct
-  private void createConsumerGroup() {
-    try {
-      redisTemplate.opsForStream().createGroup(CourseUpdatedEventPublisher.STREAM_KEY, GROUP_NAME);
-    } catch (Exception e) {
-      if (e.getMessage().contains("BUSYGROUP")) {
-        log.info(
-          "Consumer group '{}' already exists for stream '{}'.",
-          GROUP_NAME,
-          CourseUpdatedEventPublisher.STREAM_KEY
-        );
-      } else {
-        log.error("Error creating consumer group: {}", e.getMessage());
-      }
-    }
+  public CourseUpdatedEventListener(
+    StringRedisTemplate redisTemplate,
+    ObjectMapper objectMapper,
+    CoursesRepository coursesRepository,
+    CoursesService coursesService,
+    CertificatesRepository certificatesRepository
+  ) {
+    super(redisTemplate, objectMapper);
+    this.coursesRepository = coursesRepository;
+    this.coursesService = coursesService;
+    this.certificatesRepository = certificatesRepository;
   }
 
   @Override
-  public void onMessage(ObjectRecord<String, CourseUpdatedEventDTO> message) {
-    CourseUpdatedEventDTO event = message.getValue();
-    log.info("Received course updated event [Message ID: {}]", message);
+  public String getStreamKey() {
+    return "certificates:events:course-updated";
+  }
 
-    try {
-      Course course = coursesRepository
-        .findOne(
-          CoursesSpecification.builder()
-            .fetchEnrolledStudents()
-            .withId(event.courseId())
-            .notDeleted()
-            .build()
-        )
-        .get();
+  @Override
+  public String getConsumerGroup() {
+    return "certificate-course-update-workers";
+  }
 
-      for (User student : course.getEnrolledStudents()) {
-        boolean hasCertExisted = certificatesRepository.exists(
-          CertificatesSpecification.builder()
-            .withCourseId(course.getId())
-            .withStudentId(student.getId())
-            .notDeleted()
-            .build()
-        );
-        if (hasCertExisted) continue;
+  @Override
+  public Class<CourseUpdatedEventDTO> getTargetType() {
+    return CourseUpdatedEventDTO.class;
+  }
 
-        Progress progress = coursesService.getCourseProgress(course, student);
-        if (progress.getIsCompleted()) {
-          Certificate certificate = Certificate.builder().course(course).user(student).build();
-          certificatesRepository.save(certificate);
-          log.info(
-            "Successfully issued new certificate for student '{}' in course '{}'.",
-            student.getId(),
-            course.getTitle()
-          );
-        }
-      }
+  @Override
+  protected void process(String messageId, CourseUpdatedEventDTO dto) {
+    Course course = coursesRepository
+      .findOne(
+        CoursesSpecification.builder()
+          .fetchEnrolledStudents()
+          .withId(dto.getCourseId())
+          .notDeleted()
+          .build()
+      )
+      .get();
 
-      redisTemplate.opsForStream().acknowledge(GROUP_NAME, message);
-      log.info("Successfully processed and acknowledged message '{}'", message.getId());
-    } catch (Exception e) {
-      log.error(
-        "Failed to process message {}. It will be retired later. Error: {}",
-        message.getId(),
-        e.getMessage()
+    for (User student : course.getEnrolledStudents()) {
+      boolean hasCertExisted = certificatesRepository.exists(
+        CertificatesSpecification.builder()
+          .withCourseId(course.getId())
+          .withStudentId(student.getId())
+          .notDeleted()
+          .build()
       );
+      if (hasCertExisted) continue;
+
+      Progress progress = coursesService.getCourseProgress(course, student);
+      if (progress.getIsCompleted()) {
+        Certificate certificate = Certificate.builder().course(course).user(student).build();
+        certificatesRepository.save(certificate);
+        log.info(
+          "Successfully issued new certificate for student '{}' in course '{}'.",
+          student.getId(),
+          course.getTitle()
+        );
+      }
     }
   }
 }

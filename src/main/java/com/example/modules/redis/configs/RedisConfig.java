@@ -1,8 +1,6 @@
 package com.example.modules.redis.configs;
 
 import com.example.modules.comments.listeners.CommentEventListener;
-import com.example.modules.submission_results.listeners.SubmissionResultUpdatesEventListener;
-import com.example.modules.submissions.listeners.NewSubmissionsEventListener;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -32,14 +30,6 @@ public class RedisConfig {
 
   private final ObjectMapper objectMapper;
   private final CommentEventListener commentEventListener;
-  private final SubmissionResultUpdatesEventListener submissionResultUpdatesEventListener;
-  private final NewSubmissionsEventListener newSubmissionsEventListener;
-
-  @Qualifier("submissionResultUpdatesTopic")
-  private final ChannelTopic submissionResultUpdatesTopic;
-
-  @Qualifier("newSubmissionsTopic")
-  private final ChannelTopic newSubmissionsTopic;
 
   @Qualifier("commentsTopic")
   private final ChannelTopic commentsTopic;
@@ -57,8 +47,11 @@ public class RedisConfig {
   RedisTemplate<String, Object> redisTemplate() {
     RedisTemplate<String, Object> template = new RedisTemplate<>();
 
+    StringRedisSerializer keySerializer = new StringRedisSerializer();
+
     template.setConnectionFactory(jedisConnectionFactory());
-    template.setKeySerializer(new StringRedisSerializer());
+    template.setKeySerializer(keySerializer);
+    template.setHashKeySerializer(keySerializer);
 
     GenericJackson2JsonRedisSerializer jsonRedisSerializer = new GenericJackson2JsonRedisSerializer(
       objectMapper
@@ -75,12 +68,6 @@ public class RedisConfig {
     RedisMessageListenerContainer container = new RedisMessageListenerContainer();
     container.setConnectionFactory(jedisConnectionFactory());
     container.addMessageListener(commentEventListener, commentsTopic);
-    container.addMessageListener(
-      submissionResultUpdatesEventListener,
-      submissionResultUpdatesTopic
-    );
-    container.addMessageListener(newSubmissionsEventListener, newSubmissionsTopic);
-
     return container;
   }
 }

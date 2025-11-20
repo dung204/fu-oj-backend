@@ -44,7 +44,7 @@ public class Judge0Service {
     List<String> testInputs,
     List<String> expectedOutputs
   ) {
-    String url = JUDGE0_API + "/submissions/batch?base64_encoded=true&wait=false";
+    String url = JUDGE0_API + "/submissions/batch?base64_encoded=true";
 
     // Encode source code sang Base64
     String encodedSourceCode = Base64.getEncoder().encodeToString(
@@ -86,7 +86,6 @@ public class Judge0Service {
       submission.put("language_id", Integer.parseInt(languageId));
       submission.put("stdin", encodedInput);
       submission.put("expected_output", encodedOutput);
-      submission.put("callback_url", CALLBACK_URL);
       submissions.add(submission);
     }
 
@@ -127,7 +126,7 @@ public class Judge0Service {
     return pollBatchResults(tokens);
   }
 
-  private List<Judge0SubmissionResponseDTO> pollBatchResults(List<String> tokens) {
+  public List<Judge0SubmissionResponseDTO> pollBatchResults(List<String> tokens) {
     String baseUrl = JUDGE0_API + "/submissions/batch?base64_encoded=true&fields=*&tokens=";
     String tokensParam = String.join(",", tokens);
     String pollUrl = baseUrl + tokensParam;

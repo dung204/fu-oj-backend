@@ -4,14 +4,11 @@ import static com.example.base.utils.AppRoutes.SUBMISSIONS_PREFIX;
 
 import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
-import com.example.modules.Judge0.dtos.Judge0CallbackRequestDTO;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.auth.annotations.AllowRoles;
 import com.example.modules.auth.annotations.CurrentUser;
-import com.example.modules.auth.annotations.Public;
 import com.example.modules.auth.enums.Role;
-import com.example.modules.submission_results.dtos.SubmissionResultResponseDTO;
 import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
@@ -26,13 +23,11 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -102,15 +97,6 @@ public class SubmissionsController {
       .message("Submission created successfully")
       .data(submissionsService.createSubmissionBase64(request, currentUser))
       .build();
-  }
-
-  @Public
-  @Operation(summary = "Handle callback from Judge0")
-  @PutMapping("/callback")
-  public ResponseEntity<Void> handleCallback(@RequestBody Judge0CallbackRequestDTO callback) {
-    log.info("Received callback from Judge0: {}", callback);
-    submissionsService.handleCallback(callback);
-    return ResponseEntity.ok().build();
   }
 
   @Operation(

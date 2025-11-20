@@ -3,8 +3,9 @@ package com.example.modules.submission_results.services;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.Judge0.utils.Base64Utils;
-import com.example.modules.certificates.publishers.SubmissionAcceptedEventPublisher;
+import com.example.modules.certificates.dtos.SubmissionAcceptedEventDTO;
 import com.example.modules.exercises.enums.Visibility;
+import com.example.modules.redis.publishers.RedisStreamPublisher;
 import com.example.modules.scores.services.ScoresService;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
@@ -30,7 +31,7 @@ public class SubmissionResultsService {
   Judge0Service judge0Service;
   SubmissionsRepository submissionsRepository;
   ScoresService scoresService;
-  SubmissionAcceptedEventPublisher submissionAcceptedEventPublisher;
+  RedisStreamPublisher redisStreamPublisher;
 
   /**
    * Scheduled task chạy mỗi 1 phút để:
@@ -240,9 +241,12 @@ public class SubmissionResultsService {
         submissionsRepository.save(submission);
 
         if (submission.getIsAccepted()) {
-          submissionAcceptedEventPublisher.publish(
-            submission.getUser().getId(),
-            submission.getExercise().getId()
+          redisStreamPublisher.send(
+            "certificates:events:submission-accepted",
+            new SubmissionAcceptedEventDTO(
+              submission.getUser().getId(),
+              submission.getExercise().getId()
+            )
           );
         }
 

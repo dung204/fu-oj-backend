@@ -2,6 +2,7 @@ package com.example.modules.courses.services;
 
 import com.example.base.utils.ObjectUtils;
 import com.example.modules.auth.enums.Role;
+import com.example.modules.certificates.dtos.CourseUpdatedEventDTO;
 import com.example.modules.certificates.publishers.CourseUpdatedEventPublisher;
 import com.example.modules.courses.dtos.CourseCreateDTO;
 import com.example.modules.courses.dtos.CourseExerciseRequestDTO;
@@ -20,6 +21,7 @@ import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.exceptions.ExerciseNotFoundException;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.exercises.utils.ExercisesSpecification;
+import com.example.modules.redis.publishers.RedisStreamPublisher;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.users.entities.User;
 import java.util.List;
@@ -44,6 +46,7 @@ public class CoursesService {
   SubmissionsRepository submissionsRepository;
   ExercisesRepository exercisesRepository;
   CourseUpdatedEventPublisher courseUpdatedEventPublisher;
+  RedisStreamPublisher redisStreamPublisher;
 
   @Transactional
   public CourseResponseDTO createCourse(CourseCreateDTO courseCreateDTO) {
@@ -149,7 +152,10 @@ public class CoursesService {
 
     course.getExercises().removeAll(exercises);
     coursesRepository.save(course);
-    courseUpdatedEventPublisher.publish(courseId);
+    redisStreamPublisher.send(
+      "certificates:events:course-updated",
+      new CourseUpdatedEventDTO(courseId)
+    );
   }
 
   @Transactional

@@ -1,18 +1,18 @@
 package com.example.modules.submissions.services;
 
-import com.example.modules.Judge0.dtos.Judge0CallbackRequestDTO;
 import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.Judge0.utils.Base64Utils;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.repositories.ExercisesRepository;
+import com.example.modules.redis.publishers.RedisStreamPublisher;
 import com.example.modules.submission_results.entities.SubmissionResult;
-import com.example.modules.submission_results.publishers.SubmissionResultUpdatesEventPublisher;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
 import com.example.modules.submissions.dtos.RunCodeRequest;
 import com.example.modules.submissions.dtos.RunCodeResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionRequest;
 import com.example.modules.submissions.dtos.SubmissionResponseDTO;
+import com.example.modules.submissions.dtos.SubmissionResultUpdateEventDTO;
 import com.example.modules.submissions.dtos.SubmissionStatisticsRequestDTO;
 import com.example.modules.submissions.dtos.SubmissionStatisticsResponseDTO;
 import com.example.modules.submissions.dtos.SubmissionsSearchDTO;
@@ -20,7 +20,6 @@ import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.enums.Verdict;
 import com.example.modules.submissions.exceptions.SubmissionNotFound;
-import com.example.modules.submissions.publishers.NewSubmissionsEventPublisher;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.submissions.utils.SubmissionMapper;
 import com.example.modules.submissions.utils.SubmissionsSpecification;
@@ -36,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -52,8 +50,7 @@ public class SubmissionsService {
   ExercisesRepository exerciseRepository;
   SubmissionLimitService submissionLimitService;
   SubmissionMapper submissionMapper;
-  SubmissionResultUpdatesEventPublisher submissionResultUpdatesPublisher;
-  NewSubmissionsEventPublisher newSubmissionsPublisher;
+  RedisStreamPublisher redisStreamPublisher;
 
   public Page<SubmissionResponseDTO> getAllSubmissions(SubmissionsSearchDTO submissionsSearchDTO) {
     return submissionsRepository
@@ -87,139 +84,44 @@ public class SubmissionsService {
 
     // get all test cases of exercise
     List<TestCase> testCases = testCaseRepository.findAllByExerciseId((exercise.getId()));
+    boolean isExamination = request.isExamination();
 
-    boolean isExamination = false;
-    if (request.isExamination()) {
-      isExamination = true;
-    }
     // create submission
-    Submission submission = Submission.builder()
-      .user(currentUser)
-      .exercise(exercise)
-      .sourceCode(request.getSourceCode())
-      .languageCode(request.getLanguageCode())
-      .time(null)
-      .memory(null)
-      .passedTestCases(0)
-      .totalTestCases(testCases.size())
-      .isAccepted(false)
-      .score(null)
-      .isExamination(isExamination)
-      .build();
-    submission = submissionsRepository.save(submission);
+    Submission submission = submissionsRepository.save(
+      Submission.builder()
+        .user(currentUser)
+        .exercise(exercise)
+        .sourceCode(request.getSourceCode())
+        .languageCode(request.getLanguageCode())
+        .time(null)
+        .memory(null)
+        .passedTestCases(0)
+        .totalTestCases(testCases.size())
+        .isAccepted(false)
+        .score(null)
+        .isExamination(isExamination)
+        .build()
+    );
 
     // bàn lại format lưu test case với ae sau
     List<String> testInputs = testCases.stream().map(TestCase::getInput).toList();
 
     List<String> expectedOutputs = testCases.stream().map(TestCase::getOutput).toList();
 
-    // Gửi batch lên Judge0 -> nhận list token
-    List<String> tokens = judge0Service.createBatchSubmissionBase64(
-      request.getSourceCode(),
-      request.getLanguageCode(),
-      testInputs,
-      expectedOutputs
+    redisStreamPublisher.send(
+      "submissions:events:submission-result-updates",
+      new SubmissionResultUpdateEventDTO(
+        submission.getId(),
+        submission.getSourceCode(),
+        submission.getLanguageCode(),
+        testInputs,
+        expectedOutputs
+      )
     );
-
-    // Gắn từng token với từng test case -> lưu SubmissionResult với verdict = IN_QUEUE
-    for (int i = 0; i < testCases.size(); i++) {
-      SubmissionResult result = SubmissionResult.builder()
-        .submission(submission)
-        .testCase(testCases.get(i))
-        .token(tokens.get(i))
-        .verdict(Verdict.IN_QUEUE.getValue())
-        .build();
-
-      log.info("Submission {}, token: {}, verdict: {}", i, tokens.get(i), Verdict.IN_QUEUE);
-      submissionResultRepository.save(result);
-    }
 
     log.info("Submission {} created with {} test cases", submission.getId(), testCases.size());
     SubmissionResponseDTO responseDTO = submissionMapper.toSubmissionResponseDTO(submission);
-    newSubmissionsPublisher.publishNewSubmission(responseDTO);
     return responseDTO;
-  }
-
-  /**
-   * Khi Judge0 callback về, update từng test case
-   * <p>
-   * data: {
-   * "stdout": "NQo=\n",
-   * "time": "0.134",
-   * "memory": 13856,
-   * "stderr": null,
-   * "token": "583b7296-9ac6-4136-a654-5904bc549b88",
-   * "compile_output": null,
-   * "message": null,
-   * "status": {
-   * "id": 4,
-   * "description": "Wrong Answer"
-   * }
-   * }
-   */
-  @Transactional
-  public void handleCallback(Judge0CallbackRequestDTO callback) {
-    log.info("Received callback result: {}", callback);
-
-    //1. Extract basic fields
-    String token = callback.getToken();
-
-    //2. Decode base64 safely using Base64Utils
-    String decodedStdout = Base64Utils.decodeBase64Safe(callback.getStdout());
-    String decodedStderr = Base64Utils.decodeBase64Safe(callback.getStderr());
-    String decodedCompileOutput = Base64Utils.decodeBase64Safe(callback.getCompileOutput());
-
-    if (decodedStderr != null && !decodedStderr.isEmpty()) {
-      log.error("Decoded stderr: {}", decodedStderr);
-      //      throw new RuntimeException("Decoded stderr: " + decodedStderr);
-    }
-
-    //3. Find submission result in DB
-    SubmissionResult sr = submissionResultRepository
-      .findByToken(token)
-      .orElseThrow(() ->
-        new ResponseStatusException(HttpStatus.NOT_FOUND, "Unknown token: " + token)
-      );
-
-    String expected = sr.getTestCase().getOutput() != null
-      ? sr.getTestCase().getOutput().trim()
-      : "";
-
-    String actual = decodedStdout != null ? decodedStdout.trim() : "";
-
-    //4. Determine verdict
-    Judge0SubmissionResponseDTO judge0SubmissionResponse = judge0Service.getSubmission(token);
-    Verdict verdict = Verdict.getVerdictFromJudge0Response(judge0SubmissionResponse);
-
-    //5. Update submission result
-    sr.setVerdict(verdict.getValue());
-    sr.setActualOutput(decodedStdout);
-    sr.setStderr(decodedStderr);
-    submissionResultRepository.save(sr);
-
-    boolean isPublic = sr.getTestCase().getIsPublic();
-
-    //6. Publish Redis message -> send WebSocket to FE (via SubmissionSubscriber)
-    TestCaseResultDTO testCaseResult = TestCaseResultDTO.builder()
-      .submissionId(sr.getSubmission().getId())
-      .token(sr.getToken())
-      .userId(sr.getSubmission().getUser().getId())
-      .testCaseId(sr.getTestCase().getId())
-      .input(isPublic ? sr.getTestCase().getInput() : null)
-      .expectedOutput(isPublic ? expected : null)
-      .actualOutput(isPublic ? actual : null)
-      .stderr(isPublic ? decodedStderr : null)
-      .compileOutput(decodedCompileOutput)
-      .time(callback.getTime())
-      .memory(callback.getMemory())
-      .verdict(verdict)
-      .passed(verdict == Verdict.ACCEPTED)
-      .isPublic(isPublic)
-      .build();
-
-    submissionResultUpdatesPublisher.publishSubmissionResultUpdate(testCaseResult);
-
-    log.info("Callback for token {} => {}", token, verdict);
   }
 
   public RunCodeResponseDTO runCode(RunCodeRequest request) {
@@ -339,7 +241,8 @@ public class SubmissionsService {
     // attach results to submission entity for mapper usage
     submission.setSubmissionResults(submissionResults);
 
-    // map to response dto (SubmissionMapper handles nested mappings & derived fields)
+    // map to response dto (SubmissionMapper handles nested mappings & derived
+    // fields)
     return submissionMapper.toSubmissionResponseDTO(submission);
   }
 

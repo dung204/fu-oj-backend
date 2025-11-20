@@ -1,6 +1,14 @@
 package com.example.modules.certificates.dtos;
 
-import java.io.Serializable;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public record SubmissionAcceptedEventDTO(String studentId, String exerciseId) implements
-  Serializable {}
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class SubmissionAcceptedEventDTO {
+
+  String studentId;
+  String exerciseId;
+}
