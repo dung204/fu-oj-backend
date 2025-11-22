@@ -18,6 +18,10 @@ public abstract class GroupMapper {
     target = "studentsCount",
     expression = "java(group.getStudents() != null ? group.getStudents().size() : 0)"
   )
+  @Mapping(
+    target = "aLittleStudent",
+    expression = "java(group.getStudents() != null ? group.getStudents().stream().limit(5).map(user -> UserMapper.INSTANCE.toUserProfileDTO(user)).toList() : java.util.Collections.emptyList())"
+  )
   @Mapping(target = "joined", ignore = true)
   public abstract GroupResponseDTO toGroupResponseDTO(Group group);
 }

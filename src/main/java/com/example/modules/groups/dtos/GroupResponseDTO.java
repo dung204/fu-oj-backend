@@ -3,6 +3,7 @@ package com.example.modules.groups.dtos;
 import com.example.base.dtos.EntityDTO;
 import com.example.modules.users.dtos.UserProfileDTO;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -23,6 +24,7 @@ public class GroupResponseDTO extends EntityDTO {
   private Boolean isActive;
   private UserProfileDTO owner;
   private Integer studentsCount;
+  private List<UserProfileDTO> aLittleStudent;
 
   // This field should be null for ADMIN & INSTRUCTOR, true/false for STUDENT
   @JsonInclude(JsonInclude.Include.NON_NULL)
