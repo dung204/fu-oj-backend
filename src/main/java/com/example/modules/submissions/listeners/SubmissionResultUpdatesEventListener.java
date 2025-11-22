@@ -4,6 +4,8 @@ import com.example.modules.Judge0.dtos.Judge0SubmissionResponseDTO;
 import com.example.modules.Judge0.services.Judge0Service;
 import com.example.modules.Judge0.utils.Base64Utils;
 import com.example.modules.redis.configs.listeners.RedisStreamListener;
+import com.example.modules.submission_results.entities.SubmissionResult;
+import com.example.modules.submission_results.repositories.SubmissionResultRepository;
 import com.example.modules.submissions.dtos.SubmissionResultUpdateEventDTO;
 import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.example.modules.submissions.entities.Submission;
@@ -28,6 +30,7 @@ public class SubmissionResultUpdatesEventListener
   private final Judge0Service judge0Service;
   private final SubmissionsRepository submissionsRepository;
   private final TestCasesRepository testCasesRepository;
+  private final SubmissionResultRepository submissionResultRepository;
 
   public SubmissionResultUpdatesEventListener(
     StringRedisTemplate redisTemplate,
@@ -35,13 +38,15 @@ public class SubmissionResultUpdatesEventListener
     SimpMessagingTemplate messagingTemplate,
     Judge0Service judge0Service,
     SubmissionsRepository submissionsRepository,
-    TestCasesRepository testCasesRepository
+    TestCasesRepository testCasesRepository,
+    SubmissionResultRepository submissionResultRepository
   ) {
     super(redisTemplate, objectMapper);
     this.messagingTemplate = messagingTemplate;
     this.judge0Service = judge0Service;
     this.submissionsRepository = submissionsRepository;
     this.testCasesRepository = testCasesRepository;
+    this.submissionResultRepository = submissionResultRepository;
   }
 
   @Override
@@ -73,13 +78,13 @@ public class SubmissionResultUpdatesEventListener
       submission.getExercise().getId()
     );
 
-    List<String> token = judge0Service.createBatchSubmissionBase64(
+    List<String> tokens = judge0Service.createBatchSubmissionBase64(
       sourceCode,
       languageId,
       testInputs,
       expectedOutputs
     );
-    List<Judge0SubmissionResponseDTO> results = judge0Service.pollBatchResults(token);
+    List<Judge0SubmissionResponseDTO> results = judge0Service.pollBatchResults(tokens);
 
     log.info("Received {} results from Judge0", results.size());
 
@@ -113,6 +118,19 @@ public class SubmissionResultUpdatesEventListener
         .build();
 
       processedResults.add(testResult);
+
+      submissionResultRepository.save(
+        SubmissionResult.builder()
+          .submission(submission)
+          .testCase(testCases.get(i))
+          .token(tokens.get(i))
+          .actualOutput(decodedStdout)
+          .stderr(decodedStderr)
+          .verdict(verdict.getValue())
+          .time(result.getTime())
+          .memory(result.getMemory().toString())
+          .build()
+      );
     }
 
     messagingTemplate.convertAndSend(
