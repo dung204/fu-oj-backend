@@ -33,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -81,26 +82,33 @@ public class CoursesService {
     coursesRepository.save(course);
   }
 
-  public Page<CourseResponseDTO> findAllCourses(CoursesSearchDTO coursesSearchDTO) {
+  public Page<CourseResponseDTO> findAllCourses(
+    CoursesSearchDTO coursesSearchDTO,
+    User currentUser
+  ) {
+    Specification<Course> spec = currentUser.getAccount().getRole() == Role.ADMIN
+      ? CoursesSpecification.builder().containsTitle(coursesSearchDTO.getTitle()).build()
+      : CoursesSpecification.builder()
+        .containsTitle(coursesSearchDTO.getTitle())
+        .notDeleted()
+        .build();
+
     return coursesRepository
-      .findAll(
-        CoursesSpecification.builder()
-          .containsTitle(coursesSearchDTO.getTitle())
-          .notDeleted()
-          .build(),
-        coursesSearchDTO.toPageRequest()
-      )
+      .findAll(spec, coursesSearchDTO.toPageRequest())
       .map(courseMapper::toCourseResponseDTO);
   }
 
   public CourseWithProgressDTO getCourseDetailsAndProgressByCourseId(String id, User currentUser) {
-    Course course = coursesRepository
-      .findOne(CoursesSpecification.builder().fetchExercises().withId(id).notDeleted().build())
-      .orElseThrow(CourseNotFoundException::new);
+    Role role = currentUser.getAccount().getRole();
+    Specification<Course> spec = role == Role.ADMIN
+      ? CoursesSpecification.builder().fetchExercises().withId(id).build()
+      : CoursesSpecification.builder().fetchExercises().withId(id).notDeleted().build();
+
+    Course course = coursesRepository.findOne(spec).orElseThrow(CourseNotFoundException::new);
 
     CourseWithProgressDTO response = courseMapper.toCourseWithProgressDTO(course);
 
-    if (currentUser.getAccount().getRole() == Role.STUDENT) {
+    if (role == Role.STUDENT) {
       response.setProgress(getCourseProgress(course, currentUser));
     }
 

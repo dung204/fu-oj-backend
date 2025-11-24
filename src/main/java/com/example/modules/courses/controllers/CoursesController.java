@@ -131,11 +131,12 @@ public class CoursesController {
   )
   @GetMapping
   public PaginatedSuccessResponseDTO<CourseResponseDTO> getAllCourses(
-    @ParameterObject @Valid CoursesSearchDTO coursesSearchDTO
+    @ParameterObject @Valid CoursesSearchDTO coursesSearchDTO,
+    @CurrentUser User currentUser
   ) {
     return PaginatedSuccessResponseDTO.<CourseResponseDTO>builder()
       .message("Courses retrieved successfully.")
-      .page(coursesService.findAllCourses(coursesSearchDTO))
+      .page(coursesService.findAllCourses(coursesSearchDTO, currentUser))
       .filters(coursesSearchDTO.getFilters())
       .build();
   }
