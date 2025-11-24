@@ -1,5 +1,6 @@
 package com.example.modules.submission_results.dtos;
 
+import com.example.modules.test_cases.dtos.TestCaseResponseDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,4 +21,6 @@ public class SubmissionResultResponseDTO {
   private String time;
 
   private String memory;
+
+  private TestCaseResponseDTO testCase;
 }
