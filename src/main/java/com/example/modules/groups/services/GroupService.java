@@ -98,8 +98,7 @@ public class GroupService {
             .orderByCreatedTimestampDesc()
             .<GroupsSpecification>conditionally(
               "joined".equals(groupsSearchDTO.getFilter()),
-              spec -> spec.joinedBy(currentUser.getId()),
-              GroupsSpecification::publicOnly
+              spec -> spec.joinedBy(currentUser.getId())
             )
             .notDeleted()
             .build(),
