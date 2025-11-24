@@ -44,7 +44,7 @@ public class ExercisesService {
   TopicsRepository topicsRepository;
   TestCasesRepository testCasesRepository;
   ExerciseMapper exerciseMapper;
-  private final SubmissionRepository submissionRepository;
+  SubmissionRepository submissionRepository;
 
   /**
    * Lấy exercise theo ID (chỉ lấy public test cases - dành cho student)

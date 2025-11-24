@@ -3,7 +3,6 @@ package com.example.modules.courses.services;
 import com.example.base.utils.ObjectUtils;
 import com.example.modules.auth.enums.Role;
 import com.example.modules.certificates.dtos.CourseUpdatedEventDTO;
-import com.example.modules.certificates.publishers.CourseUpdatedEventPublisher;
 import com.example.modules.courses.dtos.CourseCreateDTO;
 import com.example.modules.courses.dtos.CourseExerciseRequestDTO;
 import com.example.modules.courses.dtos.CourseResponseDTO;
@@ -21,6 +20,8 @@ import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.exceptions.ExerciseNotFoundException;
 import com.example.modules.exercises.repositories.ExercisesRepository;
 import com.example.modules.exercises.utils.ExercisesSpecification;
+import com.example.modules.minio.dtos.MinioFileResponse;
+import com.example.modules.minio.services.MinioService;
 import com.example.modules.redis.publishers.RedisStreamPublisher;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.users.entities.User;
@@ -34,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -45,8 +47,8 @@ public class CoursesService {
   CourseMapper courseMapper;
   SubmissionsRepository submissionsRepository;
   ExercisesRepository exercisesRepository;
-  CourseUpdatedEventPublisher courseUpdatedEventPublisher;
   RedisStreamPublisher redisStreamPublisher;
+  MinioService minioService;
 
   @Transactional
   public CourseResponseDTO createCourse(CourseCreateDTO courseCreateDTO) {
@@ -82,7 +84,10 @@ public class CoursesService {
   public Page<CourseResponseDTO> findAllCourses(CoursesSearchDTO coursesSearchDTO) {
     return coursesRepository
       .findAll(
-        CoursesSpecification.builder().containsTitle(coursesSearchDTO.getTitle()).build(),
+        CoursesSpecification.builder()
+          .containsTitle(coursesSearchDTO.getTitle())
+          .notDeleted()
+          .build(),
         coursesSearchDTO.toPageRequest()
       )
       .map(courseMapper::toCourseResponseDTO);
@@ -177,6 +182,17 @@ public class CoursesService {
     response.setProgress(getCourseProgress(course, currentUser));
 
     return response;
+  }
+
+  @Transactional
+  public CourseResponseDTO updateCourseImage(String id, MultipartFile file) throws Exception {
+    Course course = coursesRepository
+      .findOne(CoursesSpecification.builder().withId(id).notDeleted().build())
+      .orElseThrow(CourseNotFoundException::new);
+    MinioFileResponse payload = minioService.uploadFile(file, "courses");
+
+    course.setImage(payload.getFileName());
+    return courseMapper.toCourseResponseDTO(course);
   }
 
   public Progress getCourseProgress(Course course, User user) {

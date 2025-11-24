@@ -34,8 +34,8 @@ spring:
       enabled: always
   servlet:
     multipart:
-      max-file-size: 2MB
-      max-request-size: 2MB
+      max-file-size: -1
+      max-request-size: -1
   datasource:
     url: jdbc:postgresql://localhost:${DB_PORT:5432}/${DB_DATABASE_NAME:fu_oj_backend}
     username: ${DB_USERNAME:postgres}

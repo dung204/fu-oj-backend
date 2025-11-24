@@ -2,6 +2,7 @@ package com.example.modules.courses.controllers;
 
 import static com.example.base.utils.AppRoutes.COURSES_PREFIX;
 
+import com.example.base.annotations.File;
 import com.example.base.dtos.PaginatedSuccessResponseDTO;
 import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.AllowRoles;
@@ -29,6 +30,7 @@ import lombok.experimental.FieldDefaults;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.util.unit.DataUnit;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -36,8 +38,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping(path = COURSES_PREFIX, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -263,6 +267,41 @@ public class CoursesController {
     return SuccessResponseDTO.<CourseResponseDTO>builder()
       .message("Enrolled in course successfully.")
       .data(coursesService.enrollInCourse(id, currentUser))
+      .build();
+  }
+
+  @AllowRoles({ Role.ADMIN, Role.INSTRUCTOR })
+  @Operation(
+    summary = "Update course image (for ADMIN & INSTRUCTOR only)",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Course image updated successfully"),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid file (size > 1MB or not an image) or request",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(
+        responseCode = "403",
+        description = "User is not an ADMIN or INSTRUCTOR",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "404", description = "Course not found", content = @Content),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @PatchMapping(path = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public SuccessResponseDTO<CourseResponseDTO> updateCourseImage(
+    @PathVariable String id,
+    @RequestPart("file") @Valid @File(
+      maxSize = 1,
+      sizeUnit = DataUnit.MEGABYTES,
+      allowedTypes = "image/*"
+    ) MultipartFile file
+  ) throws Exception {
+    return SuccessResponseDTO.<CourseResponseDTO>builder()
+      .message("Course image updated successfully")
+      .data(coursesService.updateCourseImage(id, file))
       .build();
   }
 }
