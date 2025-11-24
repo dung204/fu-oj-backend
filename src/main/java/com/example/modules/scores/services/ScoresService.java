@@ -87,7 +87,7 @@ public class ScoresService {
     }
 
     // Bonus: Không bị Wrong Answer nào (+5)
-    if (submission.getIsAccepted() && !hasWrongAnswer(submission)) {
+    if (submission.getIsAccepted() && !hasWrongAnswer(submission) && submission.getIsAccepted()) {
       bonus += 5;
       log.info("Bonus +5: Không có Wrong Answer cho submission {}", submission.getId());
     }
@@ -95,7 +95,8 @@ public class ScoresService {
     // tôi nghĩ là bonus thêm nữa: +10 nếu thời gian submit nhỏ hơn thời gian yêu cầu của đề bài
     if (
       submission.getTime() != null &&
-      Double.valueOf(submission.getTime()) < submission.getExercise().getTimeLimit()
+      Double.valueOf(submission.getTime()) < submission.getExercise().getTimeLimit() &&
+      submission.getIsAccepted()
     ) {
       bonus += 10;
       log.info(

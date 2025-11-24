@@ -79,7 +79,7 @@ public class ExamScheduleService {
 
     // b2: check if time limit exceeded
     Instant startTime = examRanking.getCreatedTimestamp(); // ex: 2025-11-14T10:00:00Z
-    Instant deadline = startTime.plus(timeLimit.longValue(), ChronoUnit.MINUTES); // ex: 2025-11-14T11:30:00Z with time limit 90 minutes
+    Instant deadline = startTime.plus(timeLimit.longValue() + 1, ChronoUnit.MINUTES); // ex: 2025-11-14T11:30:00Z with time limit 90 minutes + 1 phút buffer
 
     if (now.isBefore(deadline)) {
       log.debug("Exam ranking {} not yet expired (deadline: {})", examRanking.getId(), deadline);
