@@ -387,4 +387,35 @@ public class ExercisesService {
     exercisesRepository.save(exercise);
     log.info("Deleted exercise: {}", id);
   }
+
+  /**
+   * Cập nhật visibility cho nhiều exercises
+   */
+  @Transactional
+  public void updateExercisesVisibility(List<String> exerciseIds, String visibilityValue) {
+    Visibility visibility = Visibility.getValue(visibilityValue);
+    int updatedCount = 0;
+
+    for (String exerciseId : exerciseIds) {
+      try {
+        Optional<Exercise> exerciseOpt = exercisesRepository.findById(exerciseId);
+
+        if (exerciseOpt.isEmpty()) {
+          log.warn("Exercise with ID {} not found, skipping", exerciseId);
+          continue;
+        }
+
+        Exercise exercise = exerciseOpt.get();
+        exercise.setVisibility(visibility);
+        exercisesRepository.save(exercise);
+        updatedCount++;
+
+        log.info("Updated visibility for exercise {} to {}", exerciseId, visibilityValue);
+      } catch (Exception e) {
+        log.error("Error updating exercise {}: {}", exerciseId, e.getMessage());
+      }
+    }
+
+    log.info("Updated visibility for {} out of {} exercises", updatedCount, exerciseIds.size());
+  }
 }
