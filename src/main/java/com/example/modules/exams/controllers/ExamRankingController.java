@@ -11,16 +11,21 @@ import com.example.modules.exams.services.ExamRankingService;
 import com.example.modules.users.entities.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -90,5 +95,48 @@ public class ExamRankingController {
       .message("Rankings retrieved successfully")
       .data(rankings)
       .build();
+  }
+
+  @Operation(
+    summary = "Export exam rankings to Excel",
+    description = """
+    Export danh sách rankings của một group exam ra file Excel (.xlsx).
+    File sẽ bao gồm các thông tin: Roll Number, Email, First Name, Last Name,
+    Total Score, Completed Exercises, Total Exercises, Completed.
+    """,
+    responses = {
+      @ApiResponse(
+        responseCode = "200",
+        description = "Export thành công. Trả về file Excel.",
+        content = @Content(
+          mediaType = "application/octet-stream",
+          schema = @Schema(type = "string", format = "binary")
+        )
+      ),
+      @ApiResponse(
+        responseCode = "400",
+        description = "GroupExamId không hợp lệ",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "500",
+        description = "Lỗi khi tạo file Excel",
+        content = @Content
+      ),
+    }
+  )
+  @GetMapping("/export")
+  @ResponseStatus(HttpStatus.OK)
+  public ResponseEntity<byte[]> exportExamRankings(
+    @RequestParam(name = "groupExamId", required = true) String groupExamId
+  ) throws IOException {
+    byte[] excelFile = examRankingService.exportExamRankingsToExcel(groupExamId);
+    return ResponseEntity.ok()
+      .header(
+        HttpHeaders.CONTENT_DISPOSITION,
+        "attachment; filename=exam-rankings-" + groupExamId + ".xlsx"
+      )
+      .contentType(MediaType.APPLICATION_OCTET_STREAM)
+      .body(excelFile);
   }
 }
