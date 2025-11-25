@@ -10,15 +10,15 @@ import lombok.experimental.SuperBuilder;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = true, exclude = { "exam", "user" })
-@ToString(exclude = { "exam", "user" })
+@EqualsAndHashCode(callSuper = true, exclude = { "groupExam", "user" })
+@ToString(exclude = { "groupExam", "user" })
 @Entity
 @Table(name = "exam_rankings")
 public class ExamRanking extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "exam_id", nullable = false)
-  private Exam exam;
+  @JoinColumn(name = "group_exam_id", nullable = false)
+  private GroupExam groupExam;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
@@ -34,5 +34,6 @@ public class ExamRanking extends BaseEntity {
   private Double numberOfExercises;
 
   @Column(name = "completed", columnDefinition = "boolean default false")
+  @Builder.Default
   private Boolean completed = false;
 }

@@ -15,7 +15,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class ExamSubmissionResponseDTO extends EntityDTO {
 
-  private String examId;
+  private String groupExamId;
   private String userId;
   private String exerciseId;
   private String submissionId;

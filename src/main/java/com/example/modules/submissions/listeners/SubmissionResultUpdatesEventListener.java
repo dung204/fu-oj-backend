@@ -6,6 +6,7 @@ import com.example.modules.Judge0.utils.Base64Utils;
 import com.example.modules.redis.configs.listeners.RedisStreamListener;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
+import com.example.modules.submission_results.services.SubmissionResultsService;
 import com.example.modules.submissions.dtos.SubmissionResultUpdateEventDTO;
 import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.example.modules.submissions.entities.Submission;
@@ -31,6 +32,7 @@ public class SubmissionResultUpdatesEventListener
   private final SubmissionsRepository submissionsRepository;
   private final TestCasesRepository testCasesRepository;
   private final SubmissionResultRepository submissionResultRepository;
+  private final SubmissionResultsService submissionResultsService;
 
   public SubmissionResultUpdatesEventListener(
     StringRedisTemplate redisTemplate,
@@ -39,7 +41,8 @@ public class SubmissionResultUpdatesEventListener
     Judge0Service judge0Service,
     SubmissionsRepository submissionsRepository,
     TestCasesRepository testCasesRepository,
-    SubmissionResultRepository submissionResultRepository
+    SubmissionResultRepository submissionResultRepository,
+    SubmissionResultsService submissionResultsService
   ) {
     super(redisTemplate, objectMapper);
     this.messagingTemplate = messagingTemplate;
@@ -47,6 +50,7 @@ public class SubmissionResultUpdatesEventListener
     this.submissionsRepository = submissionsRepository;
     this.testCasesRepository = testCasesRepository;
     this.submissionResultRepository = submissionResultRepository;
+    this.submissionResultsService = submissionResultsService;
   }
 
   @Override
@@ -128,9 +132,11 @@ public class SubmissionResultUpdatesEventListener
           .stderr(decodedStderr)
           .verdict(verdict.getValue())
           .time(result.getTime())
-          .memory(result.getMemory().toString())
+          .memory(result.getMemory() != null ? result.getMemory().toString() : null)
           .build()
       );
+
+      submissionResultsService.updateSubmissionScore(submission);
     }
 
     messagingTemplate.convertAndSend(

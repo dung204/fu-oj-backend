@@ -3,18 +3,19 @@ package com.example.modules.exams.services;
 import com.example.modules.exams.dtos.ExamRankingCreateDTO;
 import com.example.modules.exams.dtos.ExamRankingRequestDTO;
 import com.example.modules.exams.dtos.ExamRankingResponseDTO;
-import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamExercise;
 import com.example.modules.exams.entities.ExamRanking;
 import com.example.modules.exams.entities.ExamSubmission;
+import com.example.modules.exams.entities.GroupExam;
 import com.example.modules.exams.exceptions.ExamNotFoundException;
 import com.example.modules.exams.repositories.ExamExerciseRepository;
 import com.example.modules.exams.repositories.ExamRankingRepository;
-import com.example.modules.exams.repositories.ExamRepository;
 import com.example.modules.exams.repositories.ExamSubmissionRepository;
+import com.example.modules.exams.repositories.GroupExamRepository;
 import com.example.modules.exams.utils.ExamRankingMapper;
 import com.example.modules.exams.utils.ExamRankingSpecification;
 import com.example.modules.submission_results.entities.SubmissionResult;
+import com.example.modules.submission_results.repositories.SubmissionResultRepository;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.enums.Verdict;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
@@ -37,10 +38,11 @@ public class ExamRankingService {
   private final SubmissionsRepository submissionsRepository;
   private final ExamSubmissionRepository examSubmissionRepository;
   private final ExamRankingRepository examRankingRepository;
-  private final ExamRepository examRepository;
+  private final GroupExamRepository groupExamRepository;
   private final ExamExerciseRepository examExerciseRepository;
   private final UsersRepository usersRepository;
   private final ExamRankingMapper examRankingMapper;
+  private final SubmissionResultRepository submissionResultRepository;
 
   /**
    * Scheduled task chạy mỗi 1 phút để:
@@ -135,17 +137,26 @@ public class ExamRankingService {
 
   /**
    * Cập nhật điểm cho ExamSubmission dựa trên submissionId
+   * Cập nhật ExamRanking theo GroupExam của submission
    */
   private void upsertExamRanking(ExamSubmission updatedExamSubmission) {
     try {
-      String examId = updatedExamSubmission.getExam().getId();
+      GroupExam groupExam = updatedExamSubmission.getGroupExam();
+      if (groupExam == null || groupExam.getExam() == null) {
+        log.warn(
+          "ExamSubmission {} has no valid groupExam, skipping ranking update",
+          updatedExamSubmission.getId()
+        );
+        return;
+      }
+
+      String groupExamId = groupExam.getId();
+      String examId = groupExam.getExam().getId();
       String userId = updatedExamSubmission.getUser().getId();
 
-      // Tính tổng điểm từ tất cả ExamSubmission của (exam, user)
-      List<ExamSubmission> userExamSubmissions = examSubmissionRepository.findByExamIdAndUserId(
-        examId,
-        userId
-      );
+      // Tính tổng điểm từ tất cả ExamSubmission của (groupExam, user)
+      List<ExamSubmission> userExamSubmissions =
+        examSubmissionRepository.findByGroupExamIdAndUserId(groupExamId, userId);
 
       // Get total exercises in exam (actual count from ExamExercise)
       List<ExamExercise> examExercises = examExerciseRepository.findByExamId(examId);
@@ -162,10 +173,10 @@ public class ExamRankingService {
         ? (numberOfCompletedExercises / totalExercisesInExam) * 100.0
         : 0.0;
 
-      // Tìm hoặc tạo ExamRanking
+      // Tìm hoặc tạo ExamRanking theo (groupExam, user)
       List<ExamRanking> existing = examRankingRepository.findAll((root, query, cb) ->
         cb.and(
-          cb.equal(root.get("exam").get("id"), examId),
+          cb.equal(root.get("groupExam").get("id"), groupExamId),
           cb.equal(root.get("user").get("id"), userId)
         )
       );
@@ -173,7 +184,7 @@ public class ExamRankingService {
       ExamRanking ranking;
       if (existing.isEmpty()) {
         ranking = ExamRanking.builder()
-          .exam(updatedExamSubmission.getExam())
+          .groupExam(groupExam)
           .user(updatedExamSubmission.getUser())
           .totalScore(totalScore)
           .numberOfExercises(totalExercisesInExam)
@@ -186,14 +197,14 @@ public class ExamRankingService {
         ranking.setNumberOfExercises(totalExercisesInExam);
       }
 
-      // OPTION 3: Check if user submitted all exercises -> mark as completed
+      // Check if user submitted all exercises -> mark as completed
       if (numberOfSubmittedExercises >= totalExercisesInExam) {
         log.info(
-          "User {} completed all {}/{} exercises for exam {}, marking as completed",
+          "User {} completed all {}/{} exercises for groupExam {}, marking as completed",
           userId,
           numberOfSubmittedExercises,
           totalExercisesInExam,
-          examId
+          groupExamId
         );
         ranking.setCompleted(true);
       }
@@ -219,7 +230,7 @@ public class ExamRankingService {
     }
 
     var spec = ExamRankingSpecification.builder()
-      .withExamId(dto.getExamId())
+      .withGroupExamId(dto.getGroupExamId())
       .withUserId(effectiveUserId)
       .withTotalScore(dto.getTotalScore())
       .withMinScore(dto.getMinScore())
@@ -236,16 +247,16 @@ public class ExamRankingService {
   }
 
   /**
-   * Tạo ExamRanking với chỉ exam và user, các field score để null
+   * Tạo ExamRanking với chỉ groupExam và user, các field score để null
    * Scheduler sẽ tự động tính toán và cập nhật sau
    */
   @Transactional
   public ExamRankingResponseDTO createExamRanking(ExamRankingCreateDTO dto, User currentUser) {
-    // 1. Validate exam exists
-    Exam exam = examRepository
-      .findById(dto.getExamId())
+    // 1. Validate groupExam exists
+    GroupExam groupExam = groupExamRepository
+      .findById(dto.getGroupExamId())
       .orElseThrow(() ->
-        new ExamNotFoundException("Exam with id " + dto.getExamId() + " not found")
+        new ExamNotFoundException("GroupExam with id " + dto.getGroupExamId() + " not found")
       );
 
     // 2. Validate user exists
@@ -258,7 +269,7 @@ public class ExamRankingService {
     // 3. Kiểm tra xem ExamRanking đã tồn tại chưa
     List<ExamRanking> existing = examRankingRepository.findAll((root, query, cb) ->
       cb.and(
-        cb.equal(root.get("exam").get("id"), dto.getExamId()),
+        cb.equal(root.get("groupExam").get("id"), dto.getGroupExamId()),
         cb.equal(root.get("user").get("id"), dto.getUserId()),
         cb.isNull(root.get("deletedTimestamp"))
       )
@@ -266,8 +277,8 @@ public class ExamRankingService {
 
     if (!existing.isEmpty()) {
       log.info(
-        "ExamRanking already exists for exam {} and user {}",
-        dto.getExamId(),
+        "ExamRanking already exists for groupExam {} and user {}",
+        dto.getGroupExamId(),
         dto.getUserId()
       );
       return examRankingMapper.toExamRankingResponseDto(existing.get(0));
@@ -275,7 +286,7 @@ public class ExamRankingService {
 
     // 4. Tạo ExamRanking mới với các field score = null
     ExamRanking ranking = ExamRanking.builder()
-      .exam(exam)
+      .groupExam(groupExam)
       .user(user)
       .totalScore(null)
       .numberOfExercises(dto.getNumberOfExercises())
@@ -285,7 +296,11 @@ public class ExamRankingService {
 
     ranking = examRankingRepository.save(ranking);
 
-    log.info("Created ExamRanking for exam {} and user {}", dto.getExamId(), dto.getUserId());
+    log.info(
+      "Created ExamRanking for groupExam {} and user {}",
+      dto.getGroupExamId(),
+      dto.getUserId()
+    );
 
     return examRankingMapper.toExamRankingResponseDto(ranking);
   }

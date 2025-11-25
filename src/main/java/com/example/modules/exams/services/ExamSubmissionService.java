@@ -46,23 +46,28 @@ public class ExamSubmissionService {
   private final UsersRepository usersRepository;
 
   /**
-   * Nộp bài cho exam (từng bài 1)
+   * Nộp bài cho group exam (từng bài 1)
    * Preconditions:
    * - Phải trong khoảng startTime và endTime
-   * - Sinh viên phải có trong group của exam
+   * - Sinh viên phải có trong group của groupExam
    * - Exercise phải thuộc exam
    */
-  @Transactional
+  //  @Transactional
   public ExamSubmissionResponseDTO createExamSubmission(
     ExamSubmissionCreateDTO dto,
     User currentUser
   ) {
-    // 1. Validate exam exists
-    Exam exam = examRepository
-      .findById(dto.getExamId())
+    // 1. Validate groupExam exists
+    GroupExam groupExam = groupExamRepository
+      .findById(dto.getGroupExamId())
       .orElseThrow(() ->
-        new ExamNotFoundException("Exam with id " + dto.getExamId() + " not found")
+        new ExamNotFoundException("GroupExam with id " + dto.getGroupExamId() + " not found")
       );
+
+    Exam exam = groupExam.getExam();
+    if (exam == null) {
+      throw new ExamNotFoundException("Exam not found for GroupExam " + dto.getGroupExamId());
+    }
 
     // 2. Check time constraints
     Instant now = Instant.now();
@@ -75,25 +80,17 @@ public class ExamSubmissionService {
       throw new ExamEndedException("Exam ended at " + exam.getEndTime() + ", current time: " + now);
     }
 
-    // 3. Check if student is in any group that has this exam
-    List<GroupExam> groupExams = groupExamRepository.findByExamId(exam.getId());
+    // 3. Check if student is in the group
+    boolean isInGroup = groupExam
+      .getGroup()
+      .getStudents()
+      .stream()
+      .anyMatch(student -> student.getId().equals(currentUser.getId()));
 
-    if (!groupExams.isEmpty()) {
-      boolean isInAnyGroup = groupExams
-        .stream()
-        .anyMatch(groupExam ->
-          groupExam
-            .getGroup()
-            .getStudents()
-            .stream()
-            .anyMatch(student -> student.getId().equals(currentUser.getId()))
-        );
-
-      if (!isInAnyGroup) {
-        throw new StudentNotInGroupException(
-          "Student " + currentUser.getId() + " is not in any group assigned to exam " + exam.getId()
-        );
-      }
+    if (!isInGroup) {
+      throw new StudentNotInGroupException(
+        "Student " + currentUser.getId() + " is not in group for groupExam " + dto.getGroupExamId()
+      );
     }
 
     // 4. Validate exercise exists and belongs to exam
@@ -108,24 +105,24 @@ public class ExamSubmissionService {
 
     if (!exerciseInExam) {
       throw new ExerciseNotInExamException(
-        "Exercise " + dto.getExerciseId() + " is not part of exam " + dto.getExamId()
+        "Exercise " + dto.getExerciseId() + " is not part of exam " + exam.getId()
       );
     }
 
-    // 4.1 check if user has already submitted for this exercise in this exam
+    // 4.1 check if user has already submitted for this exercise in this groupExam
     List<ExamSubmission> existingSubmission =
-      examSubmissionRepository.findByExamIdAndUserIdAndExerciseId(
-        dto.getExamId(),
+      examSubmissionRepository.findByGroupExamIdAndUserIdAndExerciseId(
+        dto.getGroupExamId(),
         currentUser.getId(),
         dto.getExerciseId()
       );
 
     if (existingSubmission != null && existingSubmission.size() > 0) {
       log.info(
-        "User {} has already submitted for exercise {} in exam {}",
+        "User {} has already submitted for exercise {} in groupExam {}",
         currentUser.getId(),
         dto.getExerciseId(),
-        dto.getExamId()
+        dto.getGroupExamId()
       );
       throw new DuplicateExamSubmissionException("User has already submitted for exercise");
     }
@@ -144,7 +141,7 @@ public class ExamSubmissionService {
 
     // 6. Create ExamSubmission record
     ExamSubmission examSubmission = ExamSubmission.builder()
-      .exam(exam)
+      .groupExam(groupExam)
       .user(currentUser)
       .exercise(exercise)
       .submissionId(submissionResponse.getId())
@@ -154,15 +151,15 @@ public class ExamSubmissionService {
     examSubmission = examSubmissionRepository.save(examSubmission);
 
     log.info(
-      "Created exam submission for user {} on exam {} exercise {}",
+      "Created exam submission for user {} on groupExam {} exercise {}",
       currentUser.getId(),
-      dto.getExamId(),
+      dto.getGroupExamId(),
       dto.getExerciseId()
     );
 
     return ExamSubmissionResponseDTO.builder()
       .id(examSubmission.getId())
-      .examId(exam.getId())
+      .groupExamId(groupExam.getId())
       .userId(currentUser.getId())
       .exerciseId(exercise.getId())
       .submissionId(submissionResponse.getId())
@@ -171,16 +168,13 @@ public class ExamSubmissionService {
   }
 
   /**
-   * lấy tất cả exercise submission của user trong exam
+   * lấy tất cả exercise submission của user trong exam hoặc groupExam
    */
-  @Transactional(readOnly = true)
   public ExamResultResponseDTO getExamResult(ExamResultRequestDTO dto, User currentUser) {
-    // 1. Validate exam exists
-    Exam exam = examRepository
-      .findById(dto.getExamId())
-      .orElseThrow(() ->
-        new ExamNotFoundException("Exam with id " + dto.getExamId() + " not found")
-      );
+    // 1. Validate: phải có examId hoặc groupExamId
+    if (dto.getExamId() == null && dto.getGroupExamId() == null) {
+      throw new IllegalArgumentException("Either examId or groupExamId must be provided");
+    }
 
     // 2. Validate user exists và check quyền truy cập
     // STUDENT chỉ được xem kết quả của chính mình
@@ -203,13 +197,38 @@ public class ExamSubmissionService {
         new UserNotFoundException("User with id " + effectiveUserId + " not found")
       );
 
-    var spec = ExamSubmissionSpecification.builder()
-      .withExamId(dto.getExamId())
-      .withUserId(effectiveUserId)
-      .notDeleted()
-      .build();
+    // 3. Query submissions based on examId or groupExamId
+    List<ExamSubmission> examSubmissions;
+    Exam exam;
 
-    List<ExamSubmission> examSubmissions = examSubmissionRepository.findAll(spec);
+    if (dto.getGroupExamId() != null) {
+      // Query by groupExamId
+      GroupExam groupExam = groupExamRepository
+        .findById(dto.getGroupExamId())
+        .orElseThrow(() ->
+          new ExamNotFoundException("GroupExam with id " + dto.getGroupExamId() + " not found")
+        );
+      exam = groupExam.getExam();
+
+      var spec = ExamSubmissionSpecification.builder()
+        .withGroupExamId(dto.getGroupExamId())
+        .withUserId(effectiveUserId)
+        .notDeleted()
+        .build();
+      examSubmissions = examSubmissionRepository.findAll(spec);
+    } else {
+      // Query by examId (across all groupExams)
+      exam = examRepository
+        .findById(dto.getExamId())
+        .orElseThrow(() ->
+          new ExamNotFoundException("Exam with id " + dto.getExamId() + " not found")
+        );
+
+      examSubmissions = examSubmissionRepository.findByGroupExam_Exam_IdAndUserId(
+        dto.getExamId(),
+        effectiveUserId
+      );
+    }
 
     // 4. Build submission details
     List<ExamResultResponseDTO.ExamSubmissionDetail> submissionDetails = new ArrayList<>();

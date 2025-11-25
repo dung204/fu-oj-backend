@@ -37,16 +37,16 @@ public class ExamSubmissionController {
   @Operation(
     summary = "Submit an exercise solution for an exam (for STUDENT only)",
     description = """
-    Submit source code for a specific exercise in an exam.
+    Submit source code for a specific exercise in a group exam.
 
     **Preconditions:**
     - Current time must be between exam startTime and endTime
-    - Student must be enrolled in the exam's group
+    - Student must be enrolled in the groupExam's group
     - Exercise must be part of the exam
 
     **Process:**
     - Creates a submission through the standard submission flow
-    - Links the submission to the exam
+    - Links the submission to the groupExam
     - Score will be calculated after Judge0 callback
     """,
     responses = {
@@ -85,9 +85,9 @@ public class ExamSubmissionController {
     @CurrentUser User currentUser
   ) {
     log.info(
-      "Creating exam submission for user {} on exam {} exercise {}",
+      "Creating exam submission for user {} on groupExam {} exercise {}",
       currentUser.getId(),
-      dto.getExamId(),
+      dto.getGroupExamId(),
       dto.getExerciseId()
     );
 
@@ -107,7 +107,8 @@ public class ExamSubmissionController {
   @Operation(
     summary = "Get exam result for a specific student",
     description = """
-    Retrieve all submissions and results for a student in a specific exam.
+    Retrieve all submissions and results for a student in a specific exam or groupExam.
+    Provide either examId (to view across all groups) or groupExamId (for specific group).
 
     **Response includes:**
     - Exam details (title, code, time range)
@@ -152,7 +153,12 @@ public class ExamSubmissionController {
       );
     }
 
-    log.info("Fetching exam result for exam {} and user {}", dto.getExamId(), dto.getUserId());
+    log.info(
+      "Fetching exam result for examId={} groupExamId={} userId={}",
+      dto.getExamId(),
+      dto.getGroupExamId(),
+      dto.getUserId()
+    );
 
     ExamResultResponseDTO response = examSubmissionService.getExamResult(dto, currentUser);
 

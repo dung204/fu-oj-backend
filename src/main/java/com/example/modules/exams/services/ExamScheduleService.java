@@ -4,6 +4,7 @@ import com.example.modules.exams.entities.Exam;
 import com.example.modules.exams.entities.ExamExercise;
 import com.example.modules.exams.entities.ExamRanking;
 import com.example.modules.exams.entities.ExamSubmission;
+import com.example.modules.exams.entities.GroupExam;
 import com.example.modules.exams.repositories.ExamExerciseRepository;
 import com.example.modules.exams.repositories.ExamRankingRepository;
 import com.example.modules.exams.repositories.ExamSubmissionRepository;
@@ -69,7 +70,13 @@ public class ExamScheduleService {
   private void processExamRanking(ExamRanking examRanking, Instant now) {
     log.info("Processing exam ranking with id: {}", examRanking.getId());
 
-    Exam exam = examRanking.getExam();
+    GroupExam groupExam = examRanking.getGroupExam();
+    if (groupExam == null || groupExam.getExam() == null) {
+      log.warn("ExamRanking {} has no valid groupExam, skipping", examRanking.getId());
+      return;
+    }
+
+    Exam exam = groupExam.getExam();
     Double timeLimit = exam.getTimeLimit(); // timeLimit in minutes
 
     if (timeLimit == null || timeLimit <= 0) {
@@ -79,7 +86,7 @@ public class ExamScheduleService {
 
     // b2: check if time limit exceeded
     Instant startTime = examRanking.getCreatedTimestamp(); // ex: 2025-11-14T10:00:00Z
-    Instant deadline = startTime.plus(timeLimit.longValue(), ChronoUnit.MINUTES); // ex: 2025-11-14T11:30:00Z with time limit 90 minutes
+    Instant deadline = startTime.plus(timeLimit.longValue() + 1, ChronoUnit.MINUTES); // ex: 2025-11-14T11:30:00Z with time limit 90 minutes + 1 phút buffer
 
     if (now.isBefore(deadline)) {
       log.debug("Exam ranking {} not yet expired (deadline: {})", examRanking.getId(), deadline);
@@ -95,9 +102,9 @@ public class ExamScheduleService {
     List<ExamExercise> examExercises = examExerciseRepository.findByExamId(exam.getId());
     int totalExercises = examExercises.size();
 
-    // get already submitted exercises by user
-    List<ExamSubmission> existingSubmissions = examSubmissionRepository.findByExamIdAndUserId(
-      exam.getId(),
+    // get already submitted exercises by user for this groupExam
+    List<ExamSubmission> existingSubmissions = examSubmissionRepository.findByGroupExamIdAndUserId(
+      groupExam.getId(),
       examRanking.getUser().getId()
     );
     int submittedCount = existingSubmissions.size();
@@ -105,10 +112,10 @@ public class ExamScheduleService {
     // OPTION 3: Check if user already submitted all exercises
     if (submittedCount >= totalExercises) {
       log.info(
-        "User {} already submitted all {} exercises for exam {}, just marking as completed",
+        "User {} already submitted all {} exercises for groupExam {}, just marking as completed",
         examRanking.getUser().getId(),
         totalExercises,
-        exam.getId()
+        groupExam.getId()
       );
 
       examRanking.setCompleted(true);
@@ -135,7 +142,7 @@ public class ExamScheduleService {
       if (!submittedExerciseIds.contains(exercise.getId())) {
         // create exam submission with score=0, no submissionId
         ExamSubmission autoSubmission = ExamSubmission.builder()
-          .exam(exam)
+          .groupExam(groupExam)
           .user(examRanking.getUser())
           .exercise(exercise)
           .submissionId(null) // no actual submission

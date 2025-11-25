@@ -29,7 +29,7 @@ public class DashBoardInstructorController {
   private final DashBoardInstructorService dashBoardInstructorService;
 
   @GetMapping("/")
-  @AllowRoles({ Role.INSTRUCTOR, Role.ADMIN })
+  @AllowRoles({ Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN })
   @Operation(
     summary = "Lấy thống kê dashboard cho instructor",
     description = """

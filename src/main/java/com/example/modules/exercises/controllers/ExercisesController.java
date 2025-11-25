@@ -14,6 +14,7 @@ import com.example.modules.comments.services.CommentsService;
 import com.example.modules.exercises.dtos.ExerciseQueryDTO;
 import com.example.modules.exercises.dtos.ExerciseRequestDTO;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
+import com.example.modules.exercises.dtos.UpdateExercisesVisibilityRequestDTO;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.services.ExercisesService;
 import com.example.modules.exercises.utils.ExerciseMapper;
@@ -465,6 +466,33 @@ public class ExercisesController {
       .status(201)
       .message("Comment created successfully")
       .data(commentsService.createComment(exerciseId, commentRequestDTO, currentUser))
+      .build();
+  }
+
+  @AllowRoles({ Role.ADMIN, Role.INSTRUCTOR })
+  @Operation(
+    summary = "Update visibility for multiple exercises (for ADMIN and INSTRUCTOR only)",
+    description = "Updates the visibility of multiple exercises at once. Exercises that do not exist will be skipped and logged.\n\n" +
+      "This endpoint is available to users with the `ADMIN` or `INSTRUCTOR` role.",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Exercises visibility updated successfully"),
+      @ApiResponse(responseCode = "400", description = "Invalid request data", content = @Content),
+      @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
+      @ApiResponse(
+        responseCode = "403",
+        description = "User's role is not `ADMIN` or `INSTRUCTOR`",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @PatchMapping("/visibility")
+  public SuccessResponseDTO<Void> updateExercisesVisibility(
+    @Valid @RequestBody UpdateExercisesVisibilityRequestDTO request
+  ) {
+    exercisesService.updateExercisesVisibility(request.getExerciseIds(), request.getVisibility());
+    return SuccessResponseDTO.<Void>builder()
+      .message("Exercises visibility updated successfully")
       .build();
   }
 }

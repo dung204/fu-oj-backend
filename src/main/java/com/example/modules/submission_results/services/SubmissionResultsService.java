@@ -41,25 +41,25 @@ public class SubmissionResultsService {
    * <li>Tìm các Submission chưa có điểm và đã hoàn thành → tính điểm</li>
    * </ol>
    */
-  @Scheduled(fixedRate = 60000) // 60000ms = 1 phút
-  @Transactional
-  public void checkPendingSubmissions() {
-    log.info("=== Starting scheduled check for pending submissions ===");
-
-    // PART 1: Cập nhật các submission result đang pending
-    updatePendingSubmissionResults();
-
-    // PART 2: Tính điểm cho các submission đã hoàn thành nhưng chưa có điểm
-    updateSubmissionsWithoutScore();
-
-    log.info("=== Scheduled check completed ===");
-  }
+  //  @Scheduled(fixedRate = 60000) // 60000ms = 1 phút
+  //  @Transactional
+  //  public void checkPendingSubmissions() {
+  //    log.info("=== Starting scheduled check for pending submissions ===");
+  //
+  //    // PART 1: Cập nhật các submission result đang pending
+  ////    updatePendingSubmissionResults();
+  //
+  //    // PART 2: Tính điểm cho các submission đã hoàn thành nhưng chưa có điểm
+  ////    updateSubmissionsWithoutScore();
+  //
+  //    log.info("=== Scheduled check completed ===");
+  //  }
 
   /**
    * Part 1: Cập nhật các SubmissionResult có verdict IN_QUEUE hoặc PROCESSING
    */
   @Transactional
-  protected void updatePendingSubmissionResults() {
+  public void updatePendingSubmissionResults() {
     List<SubmissionResult> pendingResults = submissionResultRepository.findByVerdictIn(
       List.of(Verdict.IN_QUEUE.getValue(), Verdict.PROCESSING.getValue())
     );
@@ -139,7 +139,7 @@ public class SubmissionResultsService {
    * và đã hoàn thành tất cả test cases → tính điểm
    */
   @Transactional
-  protected void updateSubmissionsWithoutScore() {
+  public void updateSubmissionsWithoutScore() {
     // Tìm các submission chưa có điểm (score is null) + không phải là bài kiểm tra + chưa bị xóa
     List<Submission> submissionsWithoutScore = submissionsRepository.findAll((root, query, cb) ->
       cb.and(
@@ -165,7 +165,7 @@ public class SubmissionResultsService {
    * Sau đó cập nhật tổng điểm user
    */
   @Transactional
-  protected void updateSubmissionsScore(List<Submission> submissions) {
+  public void updateSubmissionsScore(List<Submission> submissions) {
     for (Submission submission : submissions) {
       try {
         // Refresh submission với tất cả submission results
@@ -266,6 +266,105 @@ public class SubmissionResultsService {
       } catch (Exception e) {
         log.error("Error updating score for submission {}", submission.getId(), e);
       }
+    }
+  }
+
+  @Transactional
+  public void updateSubmissionScore(Submission submission) {
+    try {
+      // Refresh submission với tất cả submission results
+      submission = submissionsRepository.findById(submission.getId()).orElse(null);
+
+      if (submission == null) {}
+
+      // Kiểm tra xem tất cả submission results đã hoàn thành chưa
+      List<SubmissionResult> results = submission.getSubmissionResults();
+      boolean allCompleted = results
+        .stream()
+        .noneMatch(
+          sr ->
+            Verdict.IN_QUEUE.getValue().equals(sr.getVerdict()) ||
+            Verdict.PROCESSING.getValue().equals(sr.getVerdict())
+        );
+
+      if (!allCompleted) {
+        log.debug("Submission {} chưa hoàn thành hết test cases", submission.getId());
+      }
+
+      // find exercise to get visibility
+      if (
+        (submission.getExercise() != null &&
+          submission.getExercise().getVisibility().equals(Visibility.PRIVATE)) ||
+        submission.getExercise().getVisibility().equals(Visibility.DRAFT)
+      ) {
+        log.debug(
+          "Submission {} belongs to a private exercise, skipping score update",
+          submission.getId()
+        );
+      }
+
+      // Tính passedTestCases
+      long passedCount = results
+        .stream()
+        .filter(sr -> Verdict.ACCEPTED.getValue().equals(sr.getVerdict()))
+        .count();
+
+      // calculate time average base on time of all submission results
+      Double averageTime = results
+        .stream()
+        .map(SubmissionResult::getTime)
+        .filter(time -> time != null)
+        .mapToDouble(time -> Double.parseDouble(time))
+        .average()
+        .orElse(0.0);
+
+      // caculate average memory of all submission results
+      Double averageMemory = results
+        .stream()
+        .map(SubmissionResult::getMemory)
+        .filter(memory -> memory != null)
+        .mapToDouble(time -> Double.parseDouble(time))
+        .average()
+        .orElse(0.0);
+
+      // Cập nhật submission
+      submission.setPassedTestCases((int) passedCount);
+      submission.setTotalTestCases(results.size());
+      submission.setIsAccepted(passedCount == results.size());
+      submission.setTime(String.valueOf(averageTime));
+      submission.setMemory(String.valueOf(averageMemory));
+
+      // Tính điểm
+      double score = scoresService.calculateSubmissionScore(submission);
+      submission.setScore(score);
+
+      submissionsRepository.save(submission);
+
+      if (submission.getIsAccepted()) {
+        redisStreamPublisher.send(
+          "certificates:events:submission-accepted",
+          new SubmissionAcceptedEventDTO(
+            submission.getUser().getId(),
+            submission.getExercise().getId()
+          )
+        );
+      }
+
+      log.info(
+        "Updated submission {}: passed={}/{}, isAccepted={}, score={}",
+        submission.getId(),
+        passedCount,
+        results.size(),
+        submission.getIsAccepted(),
+        score
+      );
+
+      // Cập nhật điểm user (cộng dần)
+      if (!submission.getIsExamination()) {
+        scoresService.updateUserScoreBySubmission(submission);
+      }
+    } catch (Exception e) {
+      log.error("Error updating score for submission {}", submission.getId(), e);
     }
   }
 }

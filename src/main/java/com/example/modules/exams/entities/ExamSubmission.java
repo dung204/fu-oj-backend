@@ -10,8 +10,8 @@ import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
-@EqualsAndHashCode(callSuper = true, exclude = { "exam", "user", "exercise" })
-@ToString(exclude = { "exam", "user", "exercise" })
+@EqualsAndHashCode(callSuper = true, exclude = { "groupExam", "user", "exercise" })
+@ToString(exclude = { "groupExam", "user", "exercise" })
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -19,8 +19,8 @@ import lombok.experimental.SuperBuilder;
 public class ExamSubmission extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "exam_id", nullable = false)
-  private Exam exam;
+  @JoinColumn(name = "group_exam_id", nullable = false)
+  private GroupExam groupExam;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
