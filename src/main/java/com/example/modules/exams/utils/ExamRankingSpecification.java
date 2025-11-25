@@ -12,9 +12,11 @@ public class ExamRankingSpecification extends SpecificationBuilder<ExamRanking> 
     return new ExamRankingSpecification();
   }
 
-  public ExamRankingSpecification withExamId(String examId) {
-    if (examId != null && !examId.trim().isEmpty()) {
-      specifications.add((root, query, cb) -> cb.equal(root.get("exam").get("id"), examId));
+  public ExamRankingSpecification withGroupExamId(String groupExamId) {
+    if (groupExamId != null && !groupExamId.trim().isEmpty()) {
+      specifications.add((root, query, cb) ->
+        cb.equal(root.get("groupExam").get("id"), groupExamId)
+      );
     }
     return this;
   }

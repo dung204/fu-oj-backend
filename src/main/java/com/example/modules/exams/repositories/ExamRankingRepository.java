@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ExamRankingRepository
   extends JpaRepository<ExamRanking, String>, JpaSpecificationExecutor<ExamRanking> {
-  Optional<ExamRanking> findByExamIdAndUserId(String examId, String userId);
+  Optional<ExamRanking> findByGroupExamIdAndUserId(String groupExamId, String userId);
 
-  List<ExamRanking> findByExamId(String examId);
+  List<ExamRanking> findByGroupExamId(String groupExamId);
 }

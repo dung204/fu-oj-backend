@@ -319,8 +319,10 @@ public class ExamService {
       );
     }
 
-    // 2. Check if there are any submissions for this exam
-    List<ExamSubmission> submissions = examSubmissionRepository.findByExamId(exam.getId());
+    // 2. Check if there are any submissions for this exam (across all groupExams)
+    List<ExamSubmission> submissions = examSubmissionRepository.findByGroupExam_Exam_Id(
+      exam.getId()
+    );
     if (submissions != null && !submissions.isEmpty()) {
       throw new ExamNotModifiableException("Cannot update exam that already has submissions.");
     }
@@ -512,6 +514,9 @@ public class ExamService {
       );
     }
 
+    // Lấy GroupExam đầu tiên (thường chỉ có 1)
+    GroupExam groupExam = groupExams.get(0);
+
     // 2. Lấy group và kiểm tra quyền truy cập
     Group group = groupsRepository
       .findById(groupId)
@@ -540,14 +545,16 @@ public class ExamService {
     // 4. Lấy danh sách bài tập trong exam
     List<ExamExercise> examExercises = examExerciseRepository.findByExamId(examId);
 
-    // 5. Lấy tất cả ExamRanking cho exam này
-    List<ExamRanking> rankings = examRankingRepository.findByExamId(examId);
+    // 5. Lấy tất cả ExamRanking cho groupExam này
+    List<ExamRanking> rankings = examRankingRepository.findByGroupExamId(groupExam.getId());
     Map<String, ExamRanking> rankingMap = rankings
       .stream()
       .collect(Collectors.toMap(r -> r.getUser().getId(), r -> r, (r1, r2) -> r1));
 
-    // 6. Lấy tất cả ExamSubmission cho exam này
-    List<ExamSubmission> submissions = examSubmissionRepository.findByExamId(examId);
+    // 6. Lấy tất cả ExamSubmission cho groupExam này
+    List<ExamSubmission> submissions = examSubmissionRepository.findByGroupExamId(
+      groupExam.getId()
+    );
     Map<String, List<ExamSubmission>> submissionMap = submissions
       .stream()
       .collect(

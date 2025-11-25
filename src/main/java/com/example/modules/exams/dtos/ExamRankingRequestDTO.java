@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class ExamRankingRequestDTO {
 
-  private String examId;
+  private String groupExamId;
   private String userId;
   private Double totalScore;
 

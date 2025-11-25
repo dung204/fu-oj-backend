@@ -9,11 +9,8 @@ import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @Data
-@EqualsAndHashCode(
-  callSuper = true,
-  exclude = { "groupExams", "examExercises", "examSubmissions", "rankings" }
-)
-@ToString(exclude = { "groupExams", "examExercises", "examSubmissions", "rankings" })
+@EqualsAndHashCode(callSuper = true, exclude = { "groupExams", "examExercises" })
+@ToString(exclude = { "groupExams", "examExercises" })
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -50,12 +47,6 @@ public class Exam extends BaseEntity {
     fetch = FetchType.LAZY
   )
   private List<ExamExercise> examExercises;
-
-  @OneToMany(mappedBy = "exam", fetch = FetchType.LAZY)
-  private List<ExamSubmission> examSubmissions;
-
-  @OneToMany(mappedBy = "exam", fetch = FetchType.LAZY)
-  private List<ExamRanking> rankings;
 }
 
 /**
