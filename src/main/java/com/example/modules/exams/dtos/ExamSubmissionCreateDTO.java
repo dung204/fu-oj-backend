@@ -9,8 +9,8 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class ExamSubmissionCreateDTO extends SubmissionRequest {
 
-  @NotBlank(message = "ExamId is required")
-  private String examId;
+  @NotBlank(message = "GroupExamId is required")
+  private String groupExamId;
 
   @NotBlank(message = "ExerciseId is required")
   private String exerciseId;

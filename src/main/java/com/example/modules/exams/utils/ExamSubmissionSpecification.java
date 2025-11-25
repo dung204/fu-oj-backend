@@ -12,9 +12,20 @@ public class ExamSubmissionSpecification extends SpecificationBuilder<ExamSubmis
     return new ExamSubmissionSpecification();
   }
 
+  public ExamSubmissionSpecification withGroupExamId(String groupExamId) {
+    if (groupExamId != null && !groupExamId.trim().isEmpty()) {
+      specifications.add((root, query, cb) ->
+        cb.equal(root.get("groupExam").get("id"), groupExamId)
+      );
+    }
+    return this;
+  }
+
   public ExamSubmissionSpecification withExamId(String examId) {
     if (examId != null && !examId.trim().isEmpty()) {
-      specifications.add((root, query, cb) -> cb.equal(root.get("exam").get("id"), examId));
+      specifications.add((root, query, cb) ->
+        cb.equal(root.get("groupExam").get("exam").get("id"), examId)
+      );
     }
     return this;
   }

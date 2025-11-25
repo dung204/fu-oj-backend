@@ -9,13 +9,18 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ExamSubmissionRepository
   extends JpaRepository<ExamSubmission, String>, JpaSpecificationExecutor<ExamSubmission> {
-  List<ExamSubmission> findByExamIdAndUserId(String examId, String userId);
+  List<ExamSubmission> findByGroupExamIdAndUserId(String groupExamId, String userId);
 
-  List<ExamSubmission> findByExamId(String examId);
+  List<ExamSubmission> findByGroupExamId(String groupExamId);
 
-  List<ExamSubmission> findByExamIdAndUserIdAndExerciseId(
-    String examId,
+  List<ExamSubmission> findByGroupExamIdAndUserIdAndExerciseId(
+    String groupExamId,
     String userId,
     String exerciseId
   );
+
+  // Helper methods để tìm theo examId (qua groupExam.exam.id)
+  List<ExamSubmission> findByGroupExam_Exam_Id(String examId);
+
+  List<ExamSubmission> findByGroupExam_Exam_IdAndUserId(String examId, String userId);
 }

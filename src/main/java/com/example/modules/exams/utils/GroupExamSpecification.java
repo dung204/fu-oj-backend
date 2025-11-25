@@ -31,6 +31,15 @@ public class GroupExamSpecification extends SpecificationBuilder<GroupExam> {
     return this;
   }
 
+  public GroupExamSpecification withOwnerId(String ownerId) {
+    if (ownerId != null && !ownerId.isBlank()) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("group").get("instructor").get("id"), ownerId)
+      );
+    }
+    return this;
+  }
+
   public GroupExamSpecification withStatus(String status) {
     if (status != null && !status.isEmpty()) {
       specifications.add((root, query, criteriaBuilder) ->

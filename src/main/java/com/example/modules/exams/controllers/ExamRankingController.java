@@ -3,9 +3,7 @@ package com.example.modules.exams.controllers;
 import static com.example.base.utils.AppRoutes.EXAM_RANKINGS_PREFIX;
 
 import com.example.base.dtos.SuccessResponseDTO;
-import com.example.modules.auth.annotations.AllowRoles;
 import com.example.modules.auth.annotations.CurrentUser;
-import com.example.modules.auth.enums.Role;
 import com.example.modules.exams.dtos.ExamRankingCreateDTO;
 import com.example.modules.exams.dtos.ExamRankingRequestDTO;
 import com.example.modules.exams.dtos.ExamRankingResponseDTO;
@@ -37,9 +35,9 @@ public class ExamRankingController {
 
   @Operation(
     summary = "Create exam ranking (for INSTRUCTOR and ADMIN)",
-    description = "Tạo ExamRanking với chỉ exam và user. Các field điểm (totalScore, numberOfExercises, numberOfCompletedExercises) sẽ là null.\n\n" +
+    description = "Tạo ExamRanking với chỉ groupExam và user. Các field điểm (totalScore, numberOfExercises, numberOfCompletedExercises) sẽ là null.\n\n" +
       "Scheduler sẽ tự động tính toán và cập nhật điểm khi student submit bài.\n\n" +
-      "Nếu ExamRanking đã tồn tại cho cặp (exam, user), API sẽ trả về ExamRanking hiện tại.",
+      "Nếu ExamRanking đã tồn tại cho cặp (groupExam, user), API sẽ trả về ExamRanking hiện tại.",
     responses = {
       @ApiResponse(responseCode = "201", description = "ExamRanking created successfully"),
       @ApiResponse(
@@ -50,7 +48,7 @@ public class ExamRankingController {
       @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
       @ApiResponse(
         responseCode = "404",
-        description = "Exam or User not found",
+        description = "GroupExam or User not found",
         content = @Content
       ),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
@@ -72,7 +70,7 @@ public class ExamRankingController {
 
   @Operation(
     summary = "Get exam rankings",
-    description = "Lấy danh sách rankings của exam.\n\n" +
+    description = "Lấy danh sách rankings của groupExam.\n\n" +
       "**STUDENT:** Chỉ xem được ranking của chính mình.\n\n" +
       "**INSTRUCTOR/ADMIN:** Xem được tất cả rankings.",
     responses = {
