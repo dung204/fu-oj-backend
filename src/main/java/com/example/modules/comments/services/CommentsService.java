@@ -21,6 +21,9 @@ import com.example.modules.redis.event_type.comment.CommentEventType;
 import com.example.modules.system_config.entities.SystemConfigs;
 import com.example.modules.system_config.repositories.SystemConfigsRepository;
 import com.example.modules.users.entities.User;
+import java.math.BigDecimal;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +45,7 @@ public class CommentsService implements ICommentsService {
   SystemConfigsRepository systemConfigsRepository;
 
   @Override
+  @SuppressWarnings("unchecked")
   public Comment getCommentById(String commentId, User currentUser) {
     Optional<Comment> comment = Optional.ofNullable(null);
 
@@ -64,12 +68,14 @@ public class CommentsService implements ICommentsService {
         );
         break;
       case Role.STUDENT:
+        List<String> joinedGroupIds = currentUser.getJoinedGroups() == null
+          ? Collections.emptyList()
+          : currentUser.getJoinedGroups().stream().map(Group::getId).toList();
+
         comment = commentsRepository.findOne(
           CommentsSpecification.builder()
             .or(CommentsSpecification::withPublicExercises, spec ->
-              spec.withExercisesOfGroups(
-                currentUser.getJoinedGroups().stream().map(Group::getId).toList()
-              )
+              spec.withExercisesOfGroups(joinedGroupIds)
             )
             .withNonDeletedExercisesOnly()
             .withId(commentId)
@@ -96,7 +102,7 @@ public class CommentsService implements ICommentsService {
       parentComment = getCommentById(commentRequestDTO.getParentId(), currentUser);
     }
 
-    //process
+    // process
     Comment commentCreate = Comment.builder()
       .user(currentUser)
       .exercise(exercise)
@@ -106,7 +112,7 @@ public class CommentsService implements ICommentsService {
     commentsRepository.save(commentCreate);
     CommentResponseDTO dto = commentMapper.toCommentResponseDTO(commentCreate);
 
-    //publish event to redis
+    // publish event to redis
     commentPublisher.publishCommentEvent(
       CommentEvent.builder()
         .type(CommentEventType.CREATED)
@@ -130,7 +136,7 @@ public class CommentsService implements ICommentsService {
       currentUser
     );
 
-    //get comments send to redis
+    // get comments send to redis
     commentPublisher.publishCommentEvent(
       CommentEvent.builder()
         .type(CommentEventType.READ)
@@ -190,7 +196,7 @@ public class CommentsService implements ICommentsService {
 
     CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
 
-    //publish event to redis
+    // publish event to redis
     commentPublisher.publishCommentEvent(
       CommentEvent.builder()
         .type(CommentEventType.DELETED)
@@ -220,7 +226,7 @@ public class CommentsService implements ICommentsService {
     commentsRepository.save(comment);
     CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
 
-    //publish event to redis
+    // publish event to redis
     commentPublisher.publishCommentEvent(
       CommentEvent.builder()
         .type(CommentEventType.UPDATED)
@@ -239,13 +245,21 @@ public class CommentsService implements ICommentsService {
   public CommentResponseDTO reportCommentById(String commentId, int countReport, User currentUser) {
     Comment comment = getCommentById(commentId, currentUser);
     comment.setCountReport(countReport + 1);
-    SystemConfigs systemConfigs = systemConfigsRepository.findAll().getFirst();
+    SystemConfigs systemConfigs = systemConfigsRepository
+      .findAll()
+      .stream()
+      .findFirst()
+      .orElseThrow(() -> new RuntimeException("System configuration not found"));
 
-    if (comment.getCountReport() == Integer.parseInt("" + systemConfigs.getCountReport())) {
+    int requiredReports = systemConfigs.getCountReport() == null
+      ? 0
+      : BigDecimal.valueOf(systemConfigs.getCountReport()).intValue();
+
+    if (requiredReports > 0 && comment.getCountReport() >= requiredReports) {
       comment.softDelete();
       commentsRepository.save(comment);
       CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
-      //publish event to redis
+      // publish event to redis
       commentPublisher.publishCommentEvent(
         CommentEvent.builder()
           .type(CommentEventType.DELETED)
@@ -259,7 +273,7 @@ public class CommentsService implements ICommentsService {
     }
     commentsRepository.save(comment);
     CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
-    //publish event to redis
+    // publish event to redis
     commentPublisher.publishCommentEvent(
       CommentEvent.builder()
         .type(CommentEventType.UPDATED)

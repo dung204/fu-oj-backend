@@ -28,10 +28,13 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 class GroupServiceTest extends BaseServiceTest {
 
@@ -82,7 +85,9 @@ class GroupServiceTest extends BaseServiceTest {
     GroupsSearchDTO searchDTO = new GroupsSearchDTO();
 
     Page<Group> groupsPage = new PageImpl<>(List.of(sampleGroup));
-    when(groupsRepository.findAll(any(), any())).thenReturn(groupsPage);
+    when(
+      groupsRepository.findAll(ArgumentMatchers.<Specification<Group>>any(), any(Pageable.class))
+    ).thenReturn(groupsPage);
     when(groupMapper.toGroupResponseDTO(sampleGroup)).thenReturn(
       GroupResponseDTO.builder().id("group-1").build()
     );
@@ -91,7 +96,10 @@ class GroupServiceTest extends BaseServiceTest {
 
     assertEquals(1, result.getTotalElements());
     assertEquals("group-1", result.getContent().get(0).getId());
-    verify(groupsRepository).findAll(any(), any());
+    verify(groupsRepository).findAll(
+      ArgumentMatchers.<Specification<Group>>any(),
+      any(Pageable.class)
+    );
   }
 
   @Test
@@ -101,7 +109,9 @@ class GroupServiceTest extends BaseServiceTest {
     sampleGroup.getStudents().add(student);
     GroupResponseDTO responseDTO = GroupResponseDTO.builder().id("group-1").joined(null).build();
 
-    when(groupsRepository.findOne(any())).thenReturn(Optional.of(sampleGroup));
+    when(groupsRepository.findOne(ArgumentMatchers.<Specification<Group>>any())).thenReturn(
+      Optional.of(sampleGroup)
+    );
     when(groupMapper.toGroupResponseDTO(sampleGroup)).thenReturn(responseDTO);
 
     GroupResponseDTO result = groupService.getGroupById("group-1", student);
@@ -114,7 +124,9 @@ class GroupServiceTest extends BaseServiceTest {
     User student = getMockUser();
     student.getAccount().setRole(Role.STUDENT);
     sampleGroup.getStudents().add(student);
-    when(groupsRepository.findOne(any())).thenReturn(Optional.of(sampleGroup));
+    when(groupsRepository.findOne(ArgumentMatchers.<Specification<Group>>any())).thenReturn(
+      Optional.of(sampleGroup)
+    );
 
     JoinGroupRequestDTO joinRequest = JoinGroupRequestDTO.builder().code("ABC12345").build();
 
@@ -126,7 +138,9 @@ class GroupServiceTest extends BaseServiceTest {
   @Test
   void joinGroupByCode_WhenGroupMissing_ShouldThrowNotFound() {
     User student = getMockUser();
-    when(groupsRepository.findOne(any())).thenReturn(Optional.empty());
+    when(groupsRepository.findOne(ArgumentMatchers.<Specification<Group>>any())).thenReturn(
+      Optional.empty()
+    );
 
     JoinGroupRequestDTO joinRequest = JoinGroupRequestDTO.builder().code("NOT_FOUND").build();
 

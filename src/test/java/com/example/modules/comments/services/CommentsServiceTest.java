@@ -1,12 +1,8 @@
 package com.example.modules.comments.services;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import com.example.base.BaseServiceTest;
 import com.example.modules.auth.enums.Role;
@@ -28,8 +24,10 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.data.jpa.domain.Specification;
 
 class CommentsServiceTest extends BaseServiceTest {
 
@@ -69,7 +67,9 @@ class CommentsServiceTest extends BaseServiceTest {
     User admin = getMockUser();
     admin.getAccount().setRole(Role.ADMIN);
     Comment comment = buildComment(admin);
-    when(commentsRepository.findOne(any())).thenReturn(Optional.of(comment));
+    when(commentsRepository.findOne(ArgumentMatchers.<Specification<Comment>>any())).thenReturn(
+      Optional.of(comment)
+    );
 
     Comment result = commentsService.getCommentById("comment-1", admin);
 
@@ -105,7 +105,9 @@ class CommentsServiceTest extends BaseServiceTest {
     User otherUser = getMockUser();
     otherUser.setId("other");
     Comment comment = buildComment(otherUser);
-    when(commentsRepository.findOne(any())).thenReturn(Optional.of(comment));
+    when(commentsRepository.findOne(ArgumentMatchers.<Specification<Comment>>any())).thenReturn(
+      Optional.of(comment)
+    );
 
     assertThrows(CommentOperationNotAllowedException.class, () ->
       commentsService.deleteCommentById("comment-1", student)
@@ -117,7 +119,9 @@ class CommentsServiceTest extends BaseServiceTest {
     User admin = getMockUser();
     admin.getAccount().setRole(Role.ADMIN);
     Comment comment = buildComment(admin);
-    when(commentsRepository.findOne(any())).thenReturn(Optional.of(comment));
+    when(commentsRepository.findOne(ArgumentMatchers.<Specification<Comment>>any())).thenReturn(
+      Optional.of(comment)
+    );
     when(systemConfigsRepository.findAll()).thenReturn(
       List.of(SystemConfigs.builder().countReport(1d).build())
     );

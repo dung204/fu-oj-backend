@@ -19,11 +19,14 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
 class ExerciseGenerationServiceTest extends BaseServiceTest {
 
@@ -84,9 +87,12 @@ class ExerciseGenerationServiceTest extends BaseServiceTest {
     Topic topic = Topic.builder().id("topic-1").name("Array").build();
 
     when(topicsRepository.findById("topic-1")).thenReturn(Optional.of(topic));
-    when(exercisesRepository.findAll(any(), any(PageRequest.class))).thenReturn(
-      new PageImpl<>(List.of(Exercise.builder().id("ex-1").code("ARR-1").build()))
-    );
+    when(
+      exercisesRepository.findAll(
+        ArgumentMatchers.<Specification<Exercise>>any(),
+        any(Pageable.class)
+      )
+    ).thenReturn(new PageImpl<>(List.of(Exercise.builder().id("ex-1").code("ARR-1").build())));
     when(chatClient.prompt(any(Prompt.class)).call().content()).thenReturn(
       """
       [
