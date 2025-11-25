@@ -15,6 +15,7 @@ import com.example.modules.exams.repositories.ExamSubmissionRepository;
 import com.example.modules.exams.utils.ExamRankingMapper;
 import com.example.modules.exams.utils.ExamRankingSpecification;
 import com.example.modules.submission_results.entities.SubmissionResult;
+import com.example.modules.submission_results.repositories.SubmissionResultRepository;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.enums.Verdict;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
@@ -41,6 +42,7 @@ public class ExamRankingService {
   private final ExamExerciseRepository examExerciseRepository;
   private final UsersRepository usersRepository;
   private final ExamRankingMapper examRankingMapper;
+  private final SubmissionResultRepository submissionResultRepository;
 
   /**
    * Scheduled task chạy mỗi 1 phút để:

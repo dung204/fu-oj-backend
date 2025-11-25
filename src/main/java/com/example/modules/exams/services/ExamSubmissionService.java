@@ -52,7 +52,7 @@ public class ExamSubmissionService {
    * - Sinh viên phải có trong group của exam
    * - Exercise phải thuộc exam
    */
-  @Transactional
+  //  @Transactional
   public ExamSubmissionResponseDTO createExamSubmission(
     ExamSubmissionCreateDTO dto,
     User currentUser
