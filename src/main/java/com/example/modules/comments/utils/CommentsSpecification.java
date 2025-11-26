@@ -5,13 +5,11 @@ import com.example.modules.comments.entities.Comment;
 import com.example.modules.exercises.enums.Visibility;
 import jakarta.persistence.criteria.JoinType;
 import java.util.Collection;
-import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor
 public class CommentsSpecification extends SpecificationBuilder<Comment> {
 
-  //query sql
   public static CommentsSpecification builder() {
     return new CommentsSpecification();
   }
