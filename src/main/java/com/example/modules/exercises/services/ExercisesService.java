@@ -86,15 +86,6 @@ public class ExercisesService {
    */
   @Transactional
   public ExerciseResponseDTO createExercise(ExerciseRequestDTO request) {
-    // Kiểm tra code đã tồn tại chưa
-    Specification<Exercise> codeSpec = ExercisesSpecification.builder()
-      .withCode(request.getCode())
-      .build();
-
-    if (exercisesRepository.exists(codeSpec)) {
-      throw new IllegalArgumentException("Exercise code already exists: " + request.getCode());
-    }
-
     Exercise exercise = Exercise.builder()
       .code(request.getCode())
       .title(request.getTitle())
@@ -259,14 +250,6 @@ public class ExercisesService {
     Submission submission = submissionRepository.getSubmissionByExercise(oldExercise);
 
     if (oldExercise.getVisibility().equals(Visibility.DRAFT) || submission == null) {
-      // Kiểm tra trùng code nếu code thay đổi
-      if (!oldExercise.getCode().equals(request.getCode())) {
-        boolean exists = exercisesRepository.existsByCode((request.getCode()));
-        if (exists) {
-          throw new IllegalArgumentException("Exercise code already exists: " + request.getCode());
-        }
-      }
-
       // Gán các thay đổi mới từ request
       ObjectUtils.assign(oldExercise, request);
 
@@ -287,14 +270,6 @@ public class ExercisesService {
       log.info("Updated exercise in-place: {}", savedExercise.getId());
 
       return exerciseMapper.toExerciseResponseDTOWithAllTestCases(savedExercise);
-    }
-
-    // Kiểm tra trùng code nếu code thay đổi
-    if (!oldExercise.getCode().equals(request.getCode())) {
-      boolean exists = exercisesRepository.existsByCode((request.getCode()));
-      if (exists) {
-        throw new IllegalArgumentException("Exercise code already exists: " + request.getCode());
-      }
     }
 
     // Tạo bản version mới (clone)
