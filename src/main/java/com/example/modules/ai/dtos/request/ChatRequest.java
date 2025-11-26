@@ -13,4 +13,9 @@ import lombok.experimental.FieldDefaults;
 public class ChatRequest {
 
   String message;
+  String exerciseId;
+
+  public ChatRequest(String message) {
+    this.message = message;
+  }
 }
