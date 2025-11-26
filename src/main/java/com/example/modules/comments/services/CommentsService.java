@@ -245,15 +245,7 @@ public class CommentsService implements ICommentsService {
   public CommentResponseDTO reportCommentById(String commentId, int countReport, User currentUser) {
     Comment comment = getCommentById(commentId, currentUser);
     comment.setCountReport(countReport + 1);
-    SystemConfigs systemConfigs = systemConfigsRepository
-      .findAll()
-      .stream()
-      .findFirst()
-      .orElseThrow(() -> new RuntimeException("System configuration not found"));
-
-    int requiredReports = systemConfigs.getCountReport() == null
-      ? 0
-      : BigDecimal.valueOf(systemConfigs.getCountReport()).intValue();
+    int requiredReports = 1000;
 
     if (requiredReports > 0 && comment.getCountReport() >= requiredReports) {
       comment.softDelete();
