@@ -334,7 +334,7 @@ public class SubmissionResultsService {
       submission.setTime(String.valueOf(averageTime));
       submission.setMemory(String.valueOf(averageMemory));
 
-      // Tính điểm
+      // Tính điểm cho submission
       double score = scoresService.calculateSubmissionScore(submission);
       submission.setScore(score);
 
@@ -359,7 +359,7 @@ public class SubmissionResultsService {
         score
       );
 
-      // Cập nhật điểm user (cộng dần)
+      // Cập nhật điểm RANKING - SCORES (cộng dần)
       if (!submission.getIsExamination()) {
         scoresService.updateUserScoreBySubmission(submission);
       }
