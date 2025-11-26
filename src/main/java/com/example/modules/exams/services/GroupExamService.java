@@ -24,6 +24,7 @@ public class GroupExamService {
 
   /**
    * Get group exams với filters
+   * - groupExamId: filter theo ID của chính GroupExam
    * - groupId: filter theo group
    * - examId: filter theo exam
    * - ownerId: filter theo owner của group (instructor)
@@ -32,6 +33,7 @@ public class GroupExamService {
   @Transactional(readOnly = true)
   public List<GroupExamResponseDTO> getGroupExams(GroupExamRequestDTO dto, User currentUser) {
     var spec = GroupExamSpecification.builder()
+      .withGroupExamId(dto.getGroupExamId())
       .withGroupId(dto.getGroupId())
       .withExamId(dto.getExamId())
       .withOwnerId(dto.getOwnerId())
@@ -42,8 +44,9 @@ public class GroupExamService {
     List<GroupExam> groupExams = groupExamRepository.findAll(spec);
 
     log.info(
-      "Found {} group exams with filters: groupId={}, examId={}, ownerId={}, status={}",
+      "Found {} group exams with filters: groupExamId={}, groupId={}, examId={}, ownerId={}, status={}",
       groupExams.size(),
+      dto.getGroupExamId(),
       dto.getGroupId(),
       dto.getExamId(),
       dto.getOwnerId(),

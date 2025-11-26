@@ -32,6 +32,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +50,7 @@ public class ExamRankingService {
   private final UsersRepository usersRepository;
   private final ExamRankingMapper examRankingMapper;
   private final SubmissionResultRepository submissionResultRepository;
+  private final SimpMessagingTemplate messagingTemplate;
 
   /**
    * Scheduled task chạy mỗi 1 phút để:
@@ -308,7 +310,20 @@ public class ExamRankingService {
       dto.getUserId()
     );
 
-    return examRankingMapper.toExamRankingResponseDto(ranking);
+    // Map to DTO for response and WebSocket
+    ExamRankingResponseDTO responseDTO = examRankingMapper.toExamRankingResponseDto(ranking);
+
+    // Send WebSocket notification to topic
+    String topic = "/topic/exam/groupExam/" + dto.getGroupExamId();
+    messagingTemplate.convertAndSend(topic, responseDTO);
+    log.info(
+      "Sent WebSocket notification to {} for new ExamRanking: user={}, totalScore={}",
+      topic,
+      responseDTO.getUser().getEmail(),
+      responseDTO.getTotalScore()
+    );
+
+    return responseDTO;
   }
 
   /**
