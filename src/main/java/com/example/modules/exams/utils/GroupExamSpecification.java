@@ -13,6 +13,15 @@ public class GroupExamSpecification extends SpecificationBuilder<GroupExam> {
     return new GroupExamSpecification();
   }
 
+  public GroupExamSpecification withGroupExamId(String groupExamId) {
+    if (groupExamId != null && !groupExamId.isBlank()) {
+      specifications.add((root, query, criteriaBuilder) ->
+        criteriaBuilder.equal(root.get("id"), groupExamId)
+      );
+    }
+    return this;
+  }
+
   public GroupExamSpecification withExamId(String examId) {
     if (examId != null && !examId.isBlank()) {
       specifications.add((root, query, criteriaBuilder) ->
