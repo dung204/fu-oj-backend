@@ -135,9 +135,10 @@ public class SubmissionResultUpdatesEventListener
           .memory(result.getMemory() != null ? result.getMemory().toString() : null)
           .build()
       );
-
-      submissionResultsService.updateSubmissionScore(submission);
     }
+
+    // Chỉ tính điểm MỘT LẦN sau khi hoàn thành TẤT CẢ test cases
+    submissionResultsService.updateSubmissionScore(submission);
 
     messagingTemplate.convertAndSend(
       "/topic/submission-result-updates/%s".formatted(submission.getId()),
