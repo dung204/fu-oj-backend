@@ -42,7 +42,6 @@ public class CommentsService implements ICommentsService {
   ExercisesService exercisesService;
   CommentMapper commentMapper;
   CommentEventPublisher commentPublisher;
-  SystemConfigsRepository systemConfigsRepository;
 
   @Override
   @SuppressWarnings("unchecked")
