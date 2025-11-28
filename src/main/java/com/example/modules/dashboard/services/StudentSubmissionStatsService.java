@@ -73,10 +73,34 @@ public class StudentSubmissionStatsService {
 
     // 6. Tính tổng số bài đã giải trong toàn bộ khoảng thời gian
     Long totalSolved = calculateTotalSolved(startInstant, endInstant, targetStudentId);
+    Long easyTotal = calculateTotalByDifficulty(
+      startInstant,
+      endInstant,
+      targetStudentId,
+      "EASY",
+      100
+    );
+    Long mediumTotal = calculateTotalByDifficulty(
+      startInstant,
+      endInstant,
+      targetStudentId,
+      "MEDIUM",
+      200
+    );
+    Long hardTotal = calculateTotalByDifficulty(
+      startInstant,
+      endInstant,
+      targetStudentId,
+      "HARD",
+      300
+    );
 
     // 7. Return wrapper DTO
     return StudentSubmissionDashboardResponse.builder()
       .totalSolved(totalSolved)
+      .easyTotal(easyTotal)
+      .mediumTotal(mediumTotal)
+      .hardTotal(hardTotal)
       .stats(filledStats)
       .build();
   }
@@ -282,5 +306,42 @@ public class StudentSubmissionStatsService {
       .getSingleResult();
 
     return result != null ? ((Number) result).longValue() : 0L;
+  }
+
+  private Long calculateTotalByDifficulty(
+    Instant startInstant,
+    Instant endInstant,
+    String studentId,
+    String difficulty,
+    int scoreThreshold
+  ) {
+    // Query để tính tổng số bài tập đã giải được theo difficulty
+    // Logic: mỗi bài chỉ tính 1 lần với score cao nhất đạt threshold
+    String query =
+      "SELECT COUNT(DISTINCT s.exercise_id) " +
+      "FROM submissions s " +
+      "JOIN exercises e ON s.exercise_id = e.id " +
+      "WHERE s.is_accepted = true " +
+      "  AND s.is_examination = false " +
+      "  AND s.deleted_timestamp IS NULL " +
+      "  AND e.deleted_timestamp IS NULL " +
+      "  AND e.difficulty = :difficulty " +
+      "  AND s.created_timestamp >= :startInstant " +
+      "  AND s.created_timestamp <= :endInstant " +
+      "  AND (:studentId IS NULL OR s.user_id = :studentId) " +
+      "GROUP BY s.exercise_id " +
+      "HAVING MAX(COALESCE(s.score, 0)) >= :scoreThreshold";
+
+    @SuppressWarnings("unchecked")
+    List<Object[]> results = entityManager
+      .createNativeQuery(query)
+      .setParameter("startInstant", startInstant)
+      .setParameter("endInstant", endInstant)
+      .setParameter("studentId", studentId)
+      .setParameter("difficulty", difficulty)
+      .setParameter("scoreThreshold", scoreThreshold)
+      .getResultList();
+
+    return (long) results.size();
   }
 }
