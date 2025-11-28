@@ -21,8 +21,11 @@ import com.example.modules.topics.repositories.TopicsRepository;
 import com.example.modules.users.entities.User;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +33,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -203,11 +205,17 @@ public class ExercisesService {
     log.info("Found {} exercises", exercisesPage.getTotalElements());
 
     // Map to DTO
-    return exercisesPage.map(
+    Page<ExerciseResponseDTO> responsePage = exercisesPage.map(
       currentUser.getAccount().getRole() == Role.STUDENT
         ? exerciseMapper::toExerciseResponseDTOWithPrivateTestCasesHidden
         : exerciseMapper::toExerciseResponseDTOWithAllTestCases
     );
+
+    if (currentUser.getAccount().getRole() == Role.STUDENT) {
+      markSolvedExercises(responsePage, currentUser);
+    }
+
+    return responsePage;
   }
 
   public Page<ExerciseResponseDTO> getExercisesByCourseId(
@@ -392,5 +400,35 @@ public class ExercisesService {
     }
 
     log.info("Updated visibility for {} out of {} exercises", updatedCount, exerciseIds.size());
+  }
+
+  private void markSolvedExercises(Page<ExerciseResponseDTO> exercisesPage, User currentUser) {
+    List<ExerciseResponseDTO> exercises = exercisesPage.getContent();
+
+    if (exercises.isEmpty()) {
+      return;
+    }
+
+    List<String> exerciseIds = exercises
+      .stream()
+      .map(ExerciseResponseDTO::getId)
+      .filter(Objects::nonNull)
+      .toList();
+
+    if (exerciseIds.isEmpty()) {
+      return;
+    }
+
+    List<String> solvedIds = submissionRepository.findSolvedExerciseIdsByUserIdAndExerciseIds(
+      currentUser.getId(),
+      exerciseIds
+    );
+
+    if (solvedIds == null || solvedIds.isEmpty()) {
+      return;
+    }
+
+    Set<String> solvedIdSet = new HashSet<>(solvedIds);
+    exercises.forEach(dto -> dto.setSolved(solvedIdSet.contains(dto.getId())));
   }
 }
