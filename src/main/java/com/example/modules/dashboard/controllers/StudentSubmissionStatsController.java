@@ -32,7 +32,7 @@ public class StudentSubmissionStatsController {
   private final StudentSubmissionStatsService studentSubmissionStatsService;
 
   @GetMapping
-  @AllowRoles({ Role.STUDENT, Role.ADMIN })
+  @AllowRoles({ Role.STUDENT, Role.INSTRUCTOR, Role.ADMIN })
   @Operation(
     summary = "Thống kê bài nộp của sinh viên",
     description = """
