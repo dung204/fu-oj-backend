@@ -43,6 +43,9 @@ public class StudentSubmissionStatsController {
 
     Response bao gồm:
     - totalSolved: Tổng số bài tập đã giải được trong toàn bộ khoảng thời gian (distinct exercises)
+    - easyTotal: Tổng số bài tập EASY đã giải được trong toàn bộ khoảng thời gian (distinct exercises, score >= 100)
+    - mediumTotal: Tổng số bài tập MEDIUM đã giải được trong toàn bộ khoảng thời gian (distinct exercises, score >= 200)
+    - hardTotal: Tổng số bài tập HARD đã giải được trong toàn bộ khoảng thời gian (distinct exercises, score >= 300)
     - stats: Danh sách thống kê theo từng ngày, mỗi ngày có:
       - date: Ngày thống kê (YYYY-MM-DD)
       - totalSolved: Tổng số bài tập đã giải được trong ngày (distinct exercises)
