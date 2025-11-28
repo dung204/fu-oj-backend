@@ -1,6 +1,13 @@
 package com.example.modules.ai.service;
 
 import com.example.modules.ai.dtos.request.ChatRequest;
+import com.example.modules.exercises.entities.Exercise;
+import com.example.modules.exercises.exceptions.ExerciseNotFoundException;
+import com.example.modules.exercises.repositories.ExercisesRepository;
+import com.example.modules.test_cases.entities.TestCase;
+import com.example.modules.test_cases.repositories.TestCasesRepository;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -8,28 +15,45 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.retry.NonTransientAiException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 @Service
 @Slf4j
 public class ChatService {
 
-  private final ChatClient chatClient;
+  private static final int MAX_TEST_CASES = 3;
+  private static final int MAX_SOLUTION_LENGTH = 1200;
+  private static final String BASE_TUTOR_PROMPT =
+    "You are FU-OJ Tutor AI, a patient teaching assistant who helps learners solve algorithm exercises. " +
+    "Always start by clarifying the exercise requirements and asking the learner what they already understand. " +
+    "Explicitly highlight the prerequisite concepts or skills the learner should have before tackling the exercise so they can review if needed. " +
+    "Guide them to break the exercise into smaller steps, offer hints, and explain the reasoning behind each step with simple language and concrete examples. " +
+    "Encourage the learner to attempt partial solutions, review their code or idea, and provide constructive feedback rather than full answers. " +
+    "Only share complete solutions after confirming the learner truly needs them, and always explain time and space complexity plus potential edge cases. " +
+    "Keep the tone supportive, structured, and focused on helping the learner build confidence. " +
+    "Use the provided exercise context as a knowledge base. Never fabricate details that are not included there.";
 
-  public ChatService(ChatClient.Builder builder) {
-    chatClient = builder.build();
+  private final ChatClient chatClient;
+  private final ExercisesRepository exercisesRepository;
+  private final TestCasesRepository testCasesRepository;
+
+  public ChatService(
+    ChatClient.Builder builder,
+    ExercisesRepository exercisesRepository,
+    TestCasesRepository testCasesRepository
+  ) {
+    this.chatClient = builder.build();
+    this.exercisesRepository = exercisesRepository;
+    this.testCasesRepository = testCasesRepository;
   }
 
+  @Transactional(readOnly = true)
   public String chat(ChatRequest chatRequest) {
+    String exerciseContext = buildExerciseContext(chatRequest.getExerciseId());
     try {
-      SystemMessage systemMessage = new SystemMessage(
-        "You are FU-OJ AI, an AI designed to help users solve algorithm problems. " +
-          "When a user asks a question, you should guide them step by step through the problem-solving process. " +
-          "First, ask them to explain their understanding of the problem. Then, help them break down the problem into smaller parts. " +
-          "Provide hints for solving each part and explain relevant concepts as needed. " +
-          "Ensure that the user learns from the process by giving them opportunities to try solving parts of the problem on their own. " +
-          "If they get stuck, offer clear explanations, code samples, and further hints, but avoid giving the direct answer. " +
-          "Additionally, explain the time and space complexity of the solution once it's found."
-      );
+      SystemMessage systemMessage = new SystemMessage(buildSystemPrompt(exerciseContext));
       UserMessage userMessage = new UserMessage(chatRequest.getMessage());
 
       Prompt prompt = new Prompt(systemMessage, userMessage);
@@ -37,11 +61,107 @@ public class ChatService {
     } catch (NonTransientAiException e) {
       log.error("AI service error: {}", e.getMessage(), e);
 
-      // Generic error message for other AI service errors
       return "Sorry, an error occurred while processing your request. Please try again later.";
     } catch (Exception e) {
       log.error("Unexpected error in chat service: {}", e.getMessage(), e);
       return "Sorry, an unexpected error occurred. Please try again later.";
     }
+  }
+
+  private String buildSystemPrompt(String exerciseContext) {
+    if (!StringUtils.hasText(exerciseContext)) {
+      return (
+        BASE_TUTOR_PROMPT +
+        "\n\nExercise context: Not provided. Ask focused questions to understand the learner's exercise."
+      );
+    }
+    return (
+      BASE_TUTOR_PROMPT +
+      "\n\nExercise context retrieved from FU-OJ knowledge base:\n" +
+      exerciseContext
+    );
+  }
+
+  private String buildExerciseContext(String exerciseId) {
+    if (!StringUtils.hasText(exerciseId)) {
+      return null;
+    }
+
+    Exercise exercise = exercisesRepository
+      .findById(exerciseId)
+      .orElseThrow(() ->
+        new ExerciseNotFoundException("Exercise with id %s not found".formatted(exerciseId))
+      );
+
+    String topics = CollectionUtils.isEmpty(exercise.getTopics())
+      ? "Unspecified"
+      : exercise
+        .getTopics()
+        .stream()
+        .map(topic -> topic.getName())
+        .collect(Collectors.joining(", "));
+
+    List<TestCase> publicTestCases = testCasesRepository.findAllByExerciseIdAndIsPublicTrue(
+      exerciseId
+    );
+
+    StringBuilder contextBuilder = new StringBuilder()
+      .append("Title: ")
+      .append(exercise.getTitle())
+      .append("\nDifficulty: ")
+      .append(exercise.getDifficulty())
+      .append("\nTopics: ")
+      .append(topics)
+      .append("\nVisibility: ")
+      .append(exercise.getVisibility())
+      .append("\nConstraints: time limit ")
+      .append(exercise.getTimeLimit())
+      .append("s, memory ")
+      .append(exercise.getMemory())
+      .append("KB, max submissions ")
+      .append(exercise.getMaxSubmissions())
+      .append("\nProblem statement:\n")
+      .append(exercise.getDescription())
+      .append("\n");
+
+    if (StringUtils.hasText(exercise.getSolution())) {
+      contextBuilder
+        .append("Reference solution outline (truncated):\n")
+        .append(truncate(exercise.getSolution(), MAX_SOLUTION_LENGTH))
+        .append("\n");
+    }
+
+    if (CollectionUtils.isEmpty(publicTestCases)) {
+      contextBuilder.append("No public sample test cases were provided.\n");
+    } else {
+      contextBuilder.append("Public sample test cases:\n");
+      publicTestCases
+        .stream()
+        .limit(MAX_TEST_CASES)
+        .forEach(testCase -> {
+          contextBuilder
+            .append("- Input: ")
+            .append(safeText(testCase.getInput()))
+            .append("\n  Expected output: ")
+            .append(safeText(testCase.getOutput()))
+            .append("\n");
+          if (StringUtils.hasText(testCase.getNote())) {
+            contextBuilder.append("  Note: ").append(testCase.getNote()).append("\n");
+          }
+        });
+    }
+
+    return contextBuilder.toString();
+  }
+
+  private String truncate(String content, int limit) {
+    if (!StringUtils.hasText(content) || content.length() <= limit) {
+      return content;
+    }
+    return content.substring(0, limit) + "...";
+  }
+
+  private String safeText(String value) {
+    return StringUtils.hasText(value) ? value : "N/A";
   }
 }
