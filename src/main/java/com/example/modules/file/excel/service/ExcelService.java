@@ -174,7 +174,7 @@ public class ExcelService implements IExcelService {
             "password",
             password,
             "activationLink",
-            "http://localhost:5173/auth/active-account?email=" + account.getEmail()
+            "https://fu-oj.vercel.app/auth/active-account?email=" + account.getEmail()
           )
         );
       } catch (Exception emailException) {

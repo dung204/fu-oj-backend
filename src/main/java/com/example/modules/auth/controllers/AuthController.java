@@ -172,6 +172,37 @@ public class AuthController {
 
   @Public
   @Operation(
+    summary = "Change password for the first login using email",
+    description = """
+    This endpoint allows a user to set a new password for the first time using only their email.
+    It is intended to be used right after activating an account from the activation email link.
+    """,
+    parameters = {
+      @Parameter(
+        name = "email",
+        description = "Email of the account that needs to set password for the first time",
+        required = true,
+        example = "user@example.com"
+      ),
+    },
+    responses = {
+      @ApiResponse(responseCode = "204", description = "Password changed successfully"),
+      @ApiResponse(responseCode = "400", description = "Invalid request data", content = @Content),
+      @ApiResponse(responseCode = "404", description = "Account not found", content = @Content),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @PatchMapping("/password/first-time")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void changePasswordFirstTime(
+    @RequestParam String email,
+    @RequestBody @Valid ChangePasswordRequestDTO request
+  ) {
+    authService.changePasswordFirstTime(email, request);
+  }
+
+  @Public
+  @Operation(
     summary = "Send a password reset email",
     description = """
     Sends an email containing a randomly generated password or reset code

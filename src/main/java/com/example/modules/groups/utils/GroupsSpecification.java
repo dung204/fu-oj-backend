@@ -2,6 +2,7 @@ package com.example.modules.groups.utils;
 
 import com.example.base.utils.SpecificationBuilder;
 import com.example.modules.groups.entities.Group;
+import jakarta.persistence.criteria.JoinType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
@@ -72,7 +73,7 @@ public class GroupsSpecification extends SpecificationBuilder<Group> {
 
       Specification<Group> joinedBySpec = (root, query, criteriaBuilder) -> {
         query.distinct(true);
-        return criteriaBuilder.equal(root.join("students").get("id"), studentId);
+        return criteriaBuilder.equal(root.join("students", JoinType.LEFT).get("id"), studentId);
       };
 
       specifications.add(isPublicSpec.or(joinedBySpec));
