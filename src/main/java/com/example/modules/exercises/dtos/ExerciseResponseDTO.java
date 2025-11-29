@@ -85,4 +85,11 @@ public class ExerciseResponseDTO extends EntityDTO {
   private List<TestCaseResponseDTO> testCases = List.of();
 
   private Integer testCasesCount;
+
+  @Schema(
+    description = "Indicates whether the current user has completed this exercise based on their best score and the exercise difficulty.",
+    example = "false"
+  )
+  @Builder.Default
+  private Boolean solved = Boolean.FALSE;
 }

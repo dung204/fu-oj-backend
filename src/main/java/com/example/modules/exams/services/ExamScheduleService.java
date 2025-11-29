@@ -7,7 +7,9 @@ import com.example.modules.exams.entities.ExamSubmission;
 import com.example.modules.exams.entities.GroupExam;
 import com.example.modules.exams.repositories.ExamExerciseRepository;
 import com.example.modules.exams.repositories.ExamRankingRepository;
+import com.example.modules.exams.repositories.ExamRepository;
 import com.example.modules.exams.repositories.ExamSubmissionRepository;
+import com.example.modules.exams.repositories.GroupExamRepository;
 import com.example.modules.exercises.entities.Exercise;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -28,6 +30,8 @@ public class ExamScheduleService {
   private final ExamRankingRepository examRankingRepository;
   private final ExamSubmissionRepository examSubmissionRepository;
   private final ExamExerciseRepository examExerciseRepository;
+  private final GroupExamRepository groupExamRepository;
+  private final ExamRepository examRepository;
 
   /**
    * Scheduled task chạy mỗi 1 phút để kiểm tra các bài exam của các bạn học sinh
@@ -70,13 +74,24 @@ public class ExamScheduleService {
   private void processExamRanking(ExamRanking examRanking, Instant now) {
     log.info("Processing exam ranking with id: {}", examRanking.getId());
 
-    GroupExam groupExam = examRanking.getGroupExam();
-    if (groupExam == null || groupExam.getExam() == null) {
+    // Lấy GroupExam từ DB bằng repository
+    GroupExam groupExam = groupExamRepository
+      .findById(examRanking.getGroupExam().getId())
+      .orElse(null);
+
+    if (groupExam == null) {
       log.warn("ExamRanking {} has no valid groupExam, skipping", examRanking.getId());
       return;
     }
 
-    Exam exam = groupExam.getExam();
+    // Lấy Exam từ DB bằng repository
+    Exam exam = examRepository.findById(groupExam.getExam().getId()).orElse(null);
+
+    if (exam == null) {
+      log.warn("GroupExam {} has no valid exam, skipping", groupExam.getId());
+      return;
+    }
+
     Double timeLimit = exam.getTimeLimit(); // timeLimit in minutes
 
     if (timeLimit == null || timeLimit <= 0) {
@@ -119,6 +134,10 @@ public class ExamScheduleService {
       );
 
       examRanking.setCompleted(true);
+
+      // Tính toán tổng điểm cho ExamRanking
+      calculateAndUpdateExamRankingScore(examRanking, groupExam, exam);
+
       examRankingRepository.save(examRanking);
       return; // No need to auto-submit
     }
@@ -162,6 +181,10 @@ public class ExamScheduleService {
 
     // mark exam ranking as completed
     examRanking.setCompleted(true);
+
+    // Tính toán tổng điểm cho ExamRanking
+    calculateAndUpdateExamRankingScore(examRanking, groupExam, exam);
+
     examRankingRepository.save(examRanking);
 
     log.info(
@@ -169,5 +192,61 @@ public class ExamScheduleService {
       examRanking.getId(),
       autoSubmittedCount
     );
+  }
+
+  /**
+   * Tính toán và cập nhật điểm cho ExamRanking
+   * totalScore = (số bài đạt 100đ / tổng số bài) * 100
+   */
+  private void calculateAndUpdateExamRankingScore(
+    ExamRanking examRanking,
+    GroupExam groupExam,
+    Exam exam
+  ) {
+    try {
+      String groupExamId = groupExam.getId();
+      String examId = exam.getId();
+      String userId = examRanking.getUser().getId();
+
+      // Lấy tất cả ExamSubmission của user cho groupExam này
+      List<ExamSubmission> userExamSubmissions =
+        examSubmissionRepository.findByGroupExamIdAndUserId(groupExamId, userId);
+
+      // Lấy tổng số bài trong exam
+      List<ExamExercise> examExercises = examExerciseRepository.findByExamId(examId);
+      double totalExercisesInExam = (double) examExercises.size();
+
+      // Đếm số bài đạt 100đ (hoàn thành)
+      double numberOfCompletedExercises = (double) userExamSubmissions
+        .stream()
+        .map(ExamSubmission::getScore)
+        .filter(s -> s != null && s >= 100.0)
+        .count();
+
+      // Tính tổng điểm: (số bài hoàn thành / tổng số bài) * 100
+      double totalScore = totalExercisesInExam > 0
+        ? (numberOfCompletedExercises / totalExercisesInExam) * 100.0
+        : 0.0;
+
+      // Cập nhật vào ExamRanking
+      examRanking.setTotalScore(totalScore);
+      examRanking.setNumberOfCompletedExercises(numberOfCompletedExercises);
+      examRanking.setNumberOfExercises(totalExercisesInExam);
+
+      log.info(
+        "Updated exam ranking {} - totalScore: {}, completed: {}/{}",
+        examRanking.getId(),
+        totalScore,
+        numberOfCompletedExercises,
+        totalExercisesInExam
+      );
+    } catch (Exception e) {
+      log.error(
+        "Error calculating exam ranking score for {}: {}",
+        examRanking.getId(),
+        e.getMessage(),
+        e
+      );
+    }
   }
 }

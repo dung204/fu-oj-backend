@@ -5,6 +5,7 @@ import com.example.modules.auth.enums.Role;
 import com.example.modules.exercises.dtos.ExerciseQueryDTO;
 import com.example.modules.exercises.dtos.ExerciseRequestDTO;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
+import com.example.modules.exercises.dtos.TopExerciseBySubmissionsDTO;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.enums.Difficulty;
 import com.example.modules.exercises.enums.Visibility;
@@ -19,10 +20,15 @@ import com.example.modules.test_cases.repositories.TestCasesRepository;
 import com.example.modules.topics.entities.Topic;
 import com.example.modules.topics.repositories.TopicsRepository;
 import com.example.modules.users.entities.User;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.PersistenceContext;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +36,6 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +50,9 @@ public class ExercisesService {
   TestCasesRepository testCasesRepository;
   ExerciseMapper exerciseMapper;
   SubmissionRepository submissionRepository;
+
+  @PersistenceContext
+  EntityManager entityManager;
 
   /**
    * Lấy exercise theo ID (chỉ lấy public test cases - dành cho student)
@@ -86,15 +94,6 @@ public class ExercisesService {
    */
   @Transactional
   public ExerciseResponseDTO createExercise(ExerciseRequestDTO request) {
-    // Kiểm tra code đã tồn tại chưa
-    Specification<Exercise> codeSpec = ExercisesSpecification.builder()
-      .withCode(request.getCode())
-      .build();
-
-    if (exercisesRepository.exists(codeSpec)) {
-      throw new IllegalArgumentException("Exercise code already exists: " + request.getCode());
-    }
-
     Exercise exercise = Exercise.builder()
       .code(request.getCode())
       .title(request.getTitle())
@@ -212,11 +211,17 @@ public class ExercisesService {
     log.info("Found {} exercises", exercisesPage.getTotalElements());
 
     // Map to DTO
-    return exercisesPage.map(
+    Page<ExerciseResponseDTO> responsePage = exercisesPage.map(
       currentUser.getAccount().getRole() == Role.STUDENT
         ? exerciseMapper::toExerciseResponseDTOWithPrivateTestCasesHidden
         : exerciseMapper::toExerciseResponseDTOWithAllTestCases
     );
+
+    if (currentUser.getAccount().getRole() == Role.STUDENT) {
+      markSolvedExercises(responsePage, currentUser);
+    }
+
+    return responsePage;
   }
 
   public Page<ExerciseResponseDTO> getExercisesByCourseId(
@@ -259,14 +264,6 @@ public class ExercisesService {
     Submission submission = submissionRepository.getSubmissionByExercise(oldExercise);
 
     if (oldExercise.getVisibility().equals(Visibility.DRAFT) || submission == null) {
-      // Kiểm tra trùng code nếu code thay đổi
-      if (!oldExercise.getCode().equals(request.getCode())) {
-        boolean exists = exercisesRepository.existsByCode((request.getCode()));
-        if (exists) {
-          throw new IllegalArgumentException("Exercise code already exists: " + request.getCode());
-        }
-      }
-
       // Gán các thay đổi mới từ request
       ObjectUtils.assign(oldExercise, request);
 
@@ -287,14 +284,6 @@ public class ExercisesService {
       log.info("Updated exercise in-place: {}", savedExercise.getId());
 
       return exerciseMapper.toExerciseResponseDTOWithAllTestCases(savedExercise);
-    }
-
-    // Kiểm tra trùng code nếu code thay đổi
-    if (!oldExercise.getCode().equals(request.getCode())) {
-      boolean exists = exercisesRepository.existsByCode((request.getCode()));
-      if (exists) {
-        throw new IllegalArgumentException("Exercise code already exists: " + request.getCode());
-      }
     }
 
     // Tạo bản version mới (clone)
@@ -417,5 +406,101 @@ public class ExercisesService {
     }
 
     log.info("Updated visibility for {} out of {} exercises", updatedCount, exerciseIds.size());
+  }
+
+  private void markSolvedExercises(Page<ExerciseResponseDTO> exercisesPage, User currentUser) {
+    List<ExerciseResponseDTO> exercises = exercisesPage.getContent();
+
+    if (exercises.isEmpty()) {
+      return;
+    }
+
+    List<String> exerciseIds = exercises
+      .stream()
+      .map(ExerciseResponseDTO::getId)
+      .filter(Objects::nonNull)
+      .toList();
+
+    if (exerciseIds.isEmpty()) {
+      return;
+    }
+
+    List<String> solvedIds = submissionRepository.findSolvedExerciseIdsByUserIdAndExerciseIds(
+      currentUser.getId(),
+      exerciseIds
+    );
+
+    if (solvedIds == null || solvedIds.isEmpty()) {
+      return;
+    }
+
+    Set<String> solvedIdSet = new HashSet<>(solvedIds);
+    exercises.forEach(dto -> dto.setSolved(solvedIdSet.contains(dto.getId())));
+  }
+
+  /**
+   * Lấy top 5 bài tập có lượt nộp nhiều nhất
+   * @param ownerId ID của giảng viên (createdBy). Nếu null, lấy top 5 của tất cả bài tập
+   */
+  @Transactional(readOnly = true)
+  public List<TopExerciseBySubmissionsDTO> getTop5ExercisesBySubmissions(String ownerId) {
+    String query;
+    jakarta.persistence.Query nativeQuery;
+
+    if (ownerId == null || ownerId.isEmpty()) {
+      // Query không có filter owner
+      query =
+        "SELECT " +
+        "  e.id, " +
+        "  e.code, " +
+        "  e.title, " +
+        "  e.difficulty, " +
+        "  COUNT(s.id) as submissionCount " +
+        "FROM exercises e " +
+        "LEFT JOIN submissions s ON e.id = s.exercise_id " +
+        "WHERE e.deleted_timestamp IS NULL " +
+        "GROUP BY e.id, e.code, e.title, e.difficulty " +
+        "ORDER BY submissionCount DESC " +
+        "LIMIT 5";
+
+      nativeQuery = entityManager.createNativeQuery(query);
+    } else {
+      // Query có filter owner
+      query =
+        "SELECT " +
+        "  e.id, " +
+        "  e.code, " +
+        "  e.title, " +
+        "  e.difficulty, " +
+        "  COUNT(s.id) as submissionCount " +
+        "FROM exercises e " +
+        "LEFT JOIN submissions s ON e.id = s.exercise_id " +
+        "WHERE e.deleted_timestamp IS NULL " +
+        "  AND e.created_by = :ownerId " +
+        "GROUP BY e.id, e.code, e.title, e.difficulty " +
+        "ORDER BY submissionCount DESC " +
+        "LIMIT 5";
+
+      nativeQuery = entityManager.createNativeQuery(query).setParameter("ownerId", ownerId);
+    }
+
+    @SuppressWarnings("unchecked")
+    List<Object[]> results = nativeQuery.getResultList();
+
+    List<TopExerciseBySubmissionsDTO> topExercises = new ArrayList<>();
+    for (Object[] row : results) {
+      topExercises.add(
+        TopExerciseBySubmissionsDTO.builder()
+          .id((String) row[0])
+          .code((String) row[1])
+          .title((String) row[2])
+          .difficulty(row[3] != null ? row[3].toString() : null)
+          .submissionCount(((Number) row[4]).longValue())
+          .build()
+      );
+    }
+
+    log.info("Found {} top exercises by submissions for ownerId: {}", topExercises.size(), ownerId);
+    return topExercises;
   }
 }

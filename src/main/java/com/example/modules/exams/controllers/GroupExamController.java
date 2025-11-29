@@ -36,6 +36,7 @@ public class GroupExamController {
     summary = "Get group exams with filters",
     description = """
     Lấy danh sách GroupExam với các filters:
+    - **groupExamId**: Filter theo ID của chính GroupExam
     - **groupId**: Filter theo group ID
     - **examId**: Filter theo exam ID
     - **ownerId**: Filter theo instructor owner của group
@@ -68,7 +69,8 @@ public class GroupExamController {
     @CurrentUser User currentUser
   ) {
     log.info(
-      "Getting group exams with filters: groupId={}, examId={}, ownerId={}, status={}",
+      "Getting group exams with filters: groupExamId={}, groupId={}, examId={}, ownerId={}, status={}",
+      dto.getGroupExamId(),
       dto.getGroupId(),
       dto.getExamId(),
       dto.getOwnerId(),

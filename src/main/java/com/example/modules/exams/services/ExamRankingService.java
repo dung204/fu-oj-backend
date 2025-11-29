@@ -14,6 +14,7 @@ import com.example.modules.exams.repositories.ExamSubmissionRepository;
 import com.example.modules.exams.repositories.GroupExamRepository;
 import com.example.modules.exams.utils.ExamRankingMapper;
 import com.example.modules.exams.utils.ExamRankingSpecification;
+import com.example.modules.file.excel.utils.ExcelExporter;
 import com.example.modules.submission_results.entities.SubmissionResult;
 import com.example.modules.submission_results.repositories.SubmissionResultRepository;
 import com.example.modules.submissions.entities.Submission;
@@ -22,10 +23,16 @@ import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.exceptions.UserNotFoundException;
 import com.example.modules.users.repositories.UsersRepository;
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +50,7 @@ public class ExamRankingService {
   private final UsersRepository usersRepository;
   private final ExamRankingMapper examRankingMapper;
   private final SubmissionResultRepository submissionResultRepository;
+  private final SimpMessagingTemplate messagingTemplate;
 
   /**
    * Scheduled task chạy mỗi 1 phút để:
@@ -302,6 +310,98 @@ public class ExamRankingService {
       dto.getUserId()
     );
 
-    return examRankingMapper.toExamRankingResponseDto(ranking);
+    // Map to DTO for response and WebSocket
+    ExamRankingResponseDTO responseDTO = examRankingMapper.toExamRankingResponseDto(ranking);
+
+    // Send WebSocket notification to topic
+    String topic = "/topic/exam/groupExam/" + dto.getGroupExamId();
+    messagingTemplate.convertAndSend(topic, responseDTO);
+    log.info(
+      "Sent WebSocket notification to {} for new ExamRanking: user={}, totalScore={}",
+      topic,
+      responseDTO.getUser().getEmail(),
+      responseDTO.getTotalScore()
+    );
+
+    return responseDTO;
+  }
+
+  /**
+   * Export exam rankings to Excel by groupExamId
+   */
+  public byte[] exportExamRankingsToExcel(String groupExamId) throws IOException {
+    // Tìm tất cả exam rankings theo groupExamId
+    var spec = ExamRankingSpecification.builder().withGroupExamId(groupExamId).notDeleted().build();
+
+    List<ExamRanking> rankings = examRankingRepository.findAll(spec);
+
+    // Chuyển đổi sang DTO flatten để export
+    List<ExamRankingExportDTO> exportData = rankings
+      .stream()
+      .map(ranking -> {
+        User user = ranking.getUser();
+        return ExamRankingExportDTO.builder()
+          .rollNumber(user.getRollNumber() != null ? user.getRollNumber() : "")
+          .email(user.getAccount() != null ? user.getAccount().getEmail() : "")
+          .firstName(user.getFirstName() != null ? user.getFirstName() : "")
+          .lastName(user.getLastName() != null ? user.getLastName() : "")
+          .totalScore(ranking.getTotalScore() != null ? ranking.getTotalScore() : 0.0)
+          .numberOfCompletedExercises(
+            ranking.getNumberOfCompletedExercises() != null
+              ? ranking.getNumberOfCompletedExercises()
+              : 0.0
+          )
+          .numberOfExercises(
+            ranking.getNumberOfExercises() != null ? ranking.getNumberOfExercises() : 0.0
+          )
+          .completed(ranking.getCompleted() ? "Yes" : "No")
+          .build();
+      })
+      .collect(Collectors.toList());
+
+    // Định nghĩa headers và fields để export
+    String[] headers = {
+      "Roll Number",
+      "Email",
+      "First Name",
+      "Last Name",
+      "Total Score",
+      "Completed Exercises",
+      "Total Exercises",
+      "Completed",
+    };
+    String[] fieldNames = {
+      "rollNumber",
+      "email",
+      "firstName",
+      "lastName",
+      "totalScore",
+      "numberOfCompletedExercises",
+      "numberOfExercises",
+      "completed",
+    };
+
+    // Export to Excel
+    ExcelExporter<ExamRankingExportDTO> exporter = new ExcelExporter<>();
+    return exporter.export(exportData, "Exam Rankings", headers, fieldNames);
+  }
+
+  /**
+   * DTO để export exam ranking ra Excel
+   */
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class ExamRankingExportDTO {
+
+    private String rollNumber;
+    private String email;
+    private String firstName;
+    private String lastName;
+    private Double totalScore;
+    private Double numberOfCompletedExercises;
+    private Double numberOfExercises;
+    private String completed;
   }
 }

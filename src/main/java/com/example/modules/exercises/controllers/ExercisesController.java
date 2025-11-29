@@ -14,6 +14,7 @@ import com.example.modules.comments.services.CommentsService;
 import com.example.modules.exercises.dtos.ExerciseQueryDTO;
 import com.example.modules.exercises.dtos.ExerciseRequestDTO;
 import com.example.modules.exercises.dtos.ExerciseResponseDTO;
+import com.example.modules.exercises.dtos.TopExerciseBySubmissionsDTO;
 import com.example.modules.exercises.dtos.UpdateExercisesVisibilityRequestDTO;
 import com.example.modules.exercises.entities.Exercise;
 import com.example.modules.exercises.services.ExercisesService;
@@ -28,6 +29,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -493,6 +495,30 @@ public class ExercisesController {
     exercisesService.updateExercisesVisibility(request.getExerciseIds(), request.getVisibility());
     return SuccessResponseDTO.<Void>builder()
       .message("Exercises visibility updated successfully")
+      .build();
+  }
+
+  @Operation(
+    summary = "Lấy top 5 bài tập có lượt nộp nhiều nhất",
+    description = "Retrieves the top 5 exercises with the most submissions. " +
+      "The result is ordered by submission count in descending order.\n\n" +
+      "**Filter:**\n" +
+      "- `ownerId` (optional): Filter theo giảng viên (createdBy). Nếu không có, lấy top 5 của tất cả bài tập.",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Top exercises retrieved successfully"),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @GetMapping("/top-by-submissions")
+  public SuccessResponseDTO<List<TopExerciseBySubmissionsDTO>> getTop5ExercisesBySubmissions(
+    @RequestParam(required = false) String ownerId
+  ) {
+    List<TopExerciseBySubmissionsDTO> topExercises = exercisesService.getTop5ExercisesBySubmissions(
+      ownerId
+    );
+    return SuccessResponseDTO.<List<TopExerciseBySubmissionsDTO>>builder()
+      .message("Top 5 exercises by submissions retrieved successfully")
+      .data(topExercises)
       .build();
   }
 }

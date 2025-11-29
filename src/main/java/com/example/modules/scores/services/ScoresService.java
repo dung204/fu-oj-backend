@@ -131,7 +131,7 @@ public class ScoresService {
   }
 
   /**
-   * Cập nhật điểm cho User dựa trên submission mới (cộng dần)
+   * Cập nhật điểm RANKING CHO User dựa trên submission mới (cộng dần)
    * Tổng điểm User = Tổng điểm cao nhất mỗi bài
    *
    * @param newSubmission Submission vừa hoàn thành
