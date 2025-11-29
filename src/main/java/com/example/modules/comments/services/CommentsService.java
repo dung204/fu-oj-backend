@@ -42,6 +42,7 @@ public class CommentsService implements ICommentsService {
   ExercisesService exercisesService;
   CommentMapper commentMapper;
   CommentEventPublisher commentPublisher;
+  SystemConfigsRepository systemConfigsRepository;
 
   @Override
   @SuppressWarnings("unchecked")
@@ -244,13 +245,25 @@ public class CommentsService implements ICommentsService {
   public CommentResponseDTO reportCommentById(String commentId, int countReport, User currentUser) {
     Comment comment = getCommentById(commentId, currentUser);
     comment.setCountReport(countReport + 1);
-    int requiredReports = 1000;
 
-    if (requiredReports > 0 && comment.getCountReport() >= requiredReports) {
+    double requiredReports = systemConfigsRepository
+      .findAll()
+      .stream()
+      .map(SystemConfigs::getCountReport)
+      .filter(value -> value != null && value > 0)
+      .findFirst()
+      .orElse(1000d);
+
+    boolean reachedThreshold = requiredReports > 0 && comment.getCountReport() >= requiredReports;
+
+    if (reachedThreshold) {
       comment.softDelete();
-      commentsRepository.save(comment);
-      CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
-      // publish event to redis
+    }
+
+    commentsRepository.save(comment);
+    CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
+
+    if (reachedThreshold) {
       commentPublisher.publishCommentEvent(
         CommentEvent.builder()
           .type(CommentEventType.DELETED)
@@ -262,9 +275,7 @@ public class CommentsService implements ICommentsService {
           .build()
       );
     }
-    commentsRepository.save(comment);
-    CommentResponseDTO dto = commentMapper.toCommentResponseDTO(comment);
-    // publish event to redis
+
     commentPublisher.publishCommentEvent(
       CommentEvent.builder()
         .type(CommentEventType.UPDATED)
@@ -275,6 +286,7 @@ public class CommentsService implements ICommentsService {
         .timestamp(System.currentTimeMillis())
         .build()
     );
+
     return dto;
   }
 }
