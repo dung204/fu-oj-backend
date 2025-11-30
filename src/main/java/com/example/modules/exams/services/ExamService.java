@@ -186,6 +186,7 @@ public class ExamService {
       .startTime(dto.getStartTime())
       .endTime(dto.getEndTime())
       .timeLimit(dto.getTimeLimit())
+      .isExamined(false)
       .build();
 
     exam = examRepository.save(exam);
@@ -626,5 +627,23 @@ public class ExamService {
           .build();
       })
       .collect(Collectors.toList());
+  }
+
+  @Transactional
+  public ExamResponseDTO toggleExamExaminedStatus(String id, User currentUser) {
+    Exam exam = getExamById(id, currentUser);
+
+    // Toggle the isExamined status
+    exam.setIsExamined(!exam.getIsExamined());
+    Exam updatedExam = examRepository.save(exam);
+
+    log.info(
+      "Exam {} examined status toggled to {} by user {}",
+      exam.getId(),
+      updatedExam.getIsExamined(),
+      currentUser.getId()
+    );
+
+    return examMapper.toExamResponseDTO(updatedExam);
   }
 }

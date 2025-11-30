@@ -40,6 +40,10 @@ public class Exam extends BaseEntity {
   @Column(name = "time_limit")
   private Double timeLimit;
 
+  @Column(name = "is_examined", columnDefinition = "boolean default false")
+  @Builder.Default
+  private Boolean isExamined = false; // kiểm tra hay chưa
+
   @OneToMany(
     mappedBy = "exam", // exam: liên kết với tên thuộc tính trong ExamExercise
     cascade = CascadeType.ALL,

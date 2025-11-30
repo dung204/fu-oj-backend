@@ -9,7 +9,7 @@ import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 
 interface SubmissionRepository extends Repository<Submission, String> {
-  Submission getSubmissionByExercise(Exercise exercise);
+  List<Submission> getSubmissionByExercise(Exercise exercise);
 
   @Query(
     """
