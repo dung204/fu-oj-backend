@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -22,6 +23,7 @@ public class EmailService {
   private final JavaMailSender mailSender;
   private final TemplateEngine templateEngine;
   private final AccountsRepository accountsRepository;
+  private final PasswordEncoder passwordEncoder;
 
   @Async
   public void sendEmailWithTemplate(
@@ -36,8 +38,8 @@ public class EmailService {
       // call account service process new password take in variables
       if (account.isPresent()) {
         String password = variables.get("code").toString();
-        account.get().setPassword(password);
-        account.get().setDeletedTimestamp(Instant.now());
+        account.get().setPassword(passwordEncoder.encode(password));
+        account.get().setDeletedTimestamp(null);
         accountsRepository.save(account.get());
       }
     }
