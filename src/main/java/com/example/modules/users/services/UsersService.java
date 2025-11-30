@@ -40,6 +40,10 @@ public class UsersService {
 
   public UserProfileDTO updateAvatar(User user, MultipartFile file)
     throws InvalidKeyException, NoSuchAlgorithmException, MinioException, IOException {
+    if (user.getAvatar() != null) {
+      minioService.deleteFile(user.getAvatar());
+    }
+
     MinioFileResponse payload = minioService.uploadFile(file, "avatars/%s".formatted(user.getId()));
 
     user.setAvatar(payload.getFileName());
