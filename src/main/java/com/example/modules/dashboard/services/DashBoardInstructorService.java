@@ -118,15 +118,12 @@ public class DashBoardInstructorService {
   }
 
   private Long countExercisesByInstructor(String instructorId) {
-    // Đếm số lượng exercises từ bảng group_exercises của các groups thuộc instructor
+    // Đếm số lượng exercises mà giáo viên đã tạo (dựa vào createdBy)
     String query =
-      "SELECT COUNT(ge.exercise_id) " +
-      "FROM group_exercises ge " +
-      "WHERE ge.group_id IN (" +
-      "  SELECT g.id FROM groups g " +
-      "  WHERE g.owner_id = ?1 " +
-      "  AND g.deleted_timestamp IS NULL" +
-      ")";
+      "SELECT COUNT(e.id) " +
+      "FROM exercises e " +
+      "WHERE e.created_by = ?1 " +
+      "AND e.deleted_timestamp IS NULL";
 
     return (
       (Number) entityManager
