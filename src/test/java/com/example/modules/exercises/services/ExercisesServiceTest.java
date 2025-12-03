@@ -606,7 +606,7 @@ public class ExercisesServiceTest extends BaseServiceTest {
     when(exercisesRepository.findOne(any(Specification.class))).thenReturn(
       Optional.of(existingExercise)
     );
-    when(submissionRepository.getSubmissionByExercise(existingExercise)).thenReturn(null);
+    when(submissionRepository.getSubmissionByExercise(existingExercise)).thenReturn(List.of());
     when(exercisesRepository.save(existingExercise)).thenReturn(existingExercise);
     when(exerciseMapper.toExerciseResponseDTOWithAllTestCases(existingExercise)).thenReturn(
       responseDTO
@@ -653,7 +653,9 @@ public class ExercisesServiceTest extends BaseServiceTest {
     when(exercisesRepository.findOne(any(Specification.class))).thenReturn(
       Optional.of(existingExercise)
     );
-    when(submissionRepository.getSubmissionByExercise(existingExercise)).thenReturn(submission);
+    when(submissionRepository.getSubmissionByExercise(existingExercise)).thenReturn(
+      List.of(submission)
+    );
     when(exercisesRepository.save(any(Exercise.class))).thenReturn(newVersion);
     when(testCasesRepository.findAllByExerciseId(existingExercise.getId())).thenReturn(
       new ArrayList<>()
@@ -685,7 +687,7 @@ public class ExercisesServiceTest extends BaseServiceTest {
     when(exercisesRepository.findOne(any(Specification.class))).thenReturn(
       Optional.of(existingExercise)
     );
-    when(submissionRepository.getSubmissionByExercise(existingExercise)).thenReturn(null);
+    when(submissionRepository.getSubmissionByExercise(existingExercise)).thenReturn(List.of());
     when(exercisesRepository.existsByCode("EX002")).thenReturn(true);
 
     assertThrows(IllegalArgumentException.class, () ->
@@ -717,7 +719,7 @@ public class ExercisesServiceTest extends BaseServiceTest {
     when(exercisesRepository.findOne(any(Specification.class))).thenReturn(
       Optional.of(existingExercise)
     );
-    when(submissionRepository.getSubmissionByExercise(existingExercise)).thenReturn(null);
+    when(submissionRepository.getSubmissionByExercise(existingExercise)).thenReturn(List.of());
     when(topicsRepository.findAllById(request.getTopicIds())).thenReturn(List.of(topic1, topic2));
     when(exercisesRepository.save(existingExercise)).thenReturn(existingExercise);
     when(exerciseMapper.toExerciseResponseDTOWithAllTestCases(existingExercise)).thenReturn(
@@ -756,7 +758,7 @@ public class ExercisesServiceTest extends BaseServiceTest {
     when(exercisesRepository.findOne(any(Specification.class))).thenReturn(
       Optional.of(existingExercise)
     );
-    when(submissionRepository.getSubmissionByExercise(existingExercise)).thenReturn(null);
+    when(submissionRepository.getSubmissionByExercise(existingExercise)).thenReturn(List.of());
     when(exercisesRepository.save(existingExercise)).thenReturn(existingExercise);
     when(exerciseMapper.toExerciseResponseDTOWithAllTestCases(existingExercise)).thenReturn(
       responseDTO

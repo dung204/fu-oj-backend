@@ -54,6 +54,9 @@ public class ExamResponseDTO extends EntityDTO {
   @Builder.Default
   private List<ExerciseResponseDTO> exercises = List.of();
 
+  @Builder.Default
+  private Boolean isExamined = false;
+
   @Data
   @Builder
   @NoArgsConstructor

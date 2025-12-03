@@ -261,9 +261,9 @@ public class ExercisesService {
     Exercise oldExercise = getExerciseById(id, currentUser);
 
     // if the exercise is draft or no submissions, allow in-place update
-    Submission submission = submissionRepository.getSubmissionByExercise(oldExercise);
+    List<Submission> submissions = submissionRepository.getSubmissionByExercise(oldExercise);
 
-    if (oldExercise.getVisibility().equals(Visibility.DRAFT) || submission == null) {
+    if (oldExercise.getVisibility().equals(Visibility.DRAFT) || submissions.isEmpty()) {
       // Gán các thay đổi mới từ request
       ObjectUtils.assign(oldExercise, request);
 
@@ -297,7 +297,8 @@ public class ExercisesService {
       "testCases",
       "topics",
       "groups",
-      "examExercises"
+      "examExercises",
+      "courses"
     );
 
     newVersion.setId(null);
@@ -328,6 +329,18 @@ public class ExercisesService {
           : new ArrayList<>()
       );
     }
+
+    // Clone courses collection để tránh shared reference error
+    newVersion.setCourses(
+      oldExercise.getCourses() != null
+        ? new ArrayList<>(oldExercise.getCourses())
+        : new ArrayList<>()
+    );
+
+    // Clone groups collection để tránh shared reference error
+    newVersion.setGroups(
+      oldExercise.getGroups() != null ? new ArrayList<>(oldExercise.getGroups()) : new ArrayList<>()
+    );
 
     Exercise savedExercise = exercisesRepository.save(newVersion);
     log.info(

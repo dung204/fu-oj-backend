@@ -272,4 +272,35 @@ public class ExamController {
       .data(progress)
       .build();
   }
+
+  @AllowRoles({ Role.INSTRUCTOR, Role.ADMIN })
+  @Operation(
+    summary = "Toggle exam examined status (for INSTRUCTOR or ADMIN)",
+    description = "Toggles the `isExamined` status of an exam between `true` and `false`.\n\n" +
+      "This field indicates whether the exam has been reviewed/graded by the instructor.\n\n" +
+      "**Access Control:**\n" +
+      "- `INSTRUCTOR`: Can only toggle status for exams they created\n" +
+      "- `ADMIN`: Can toggle status for any exam",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Exam examined status toggled successfully"),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Exam not found or user is not authorized",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @PatchMapping("/{id}/toggle-examined")
+  @ResponseStatus(HttpStatus.OK)
+  public SuccessResponseDTO<ExamResponseDTO> toggleExamExaminedStatus(
+    @PathVariable String id,
+    @CurrentUser User currentUser
+  ) {
+    return SuccessResponseDTO.<ExamResponseDTO>builder()
+      .status(200)
+      .message("Exam examined status toggled successfully")
+      .data(examService.toggleExamExaminedStatus(id, currentUser))
+      .build();
+  }
 }
