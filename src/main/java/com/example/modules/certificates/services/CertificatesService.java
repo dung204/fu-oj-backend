@@ -111,6 +111,8 @@ public class CertificatesService {
         Certificate.builder()
           .user(user)
           .course(course)
+          .name(certificateIssueDTO.getName())
+          .condition(certificateIssueDTO.getCondition())
           .reason(certificateIssueDTO.getReason())
           .build()
       )

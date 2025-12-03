@@ -18,5 +18,7 @@ public class CertificateResponseDTO extends EntityDTO {
 
   private UserProfileDTO user;
   private CourseResponseDTO course;
+  private String name;
+  private String condition;
   private String reason;
 }

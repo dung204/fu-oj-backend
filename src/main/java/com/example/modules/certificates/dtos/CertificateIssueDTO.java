@@ -27,6 +27,20 @@ public class CertificateIssueDTO {
   private String courseId;
 
   @Schema(
+    description = "The name of the certificate.",
+    example = "Certificate of Completion - Java Programming"
+  )
+  @NotBlank
+  private String name;
+
+  @Schema(
+    description = "The condition that was met to receive this certificate.",
+    example = "Completed all exercises in the course"
+  )
+  @NotBlank
+  private String condition;
+
+  @Schema(
     description = "An optional reason or note for issuing the certificate, useful for manual issuance or special cases."
   )
   private String reason;

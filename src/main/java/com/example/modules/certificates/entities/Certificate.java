@@ -31,6 +31,15 @@ public class Certificate extends BaseEntity {
   @JoinColumn(name = "course_id", nullable = false)
   private Course course;
 
+  @Column(nullable = false)
+  private String name; // Tên chứng chỉ
+
+  @Column(
+    nullable = false,
+    columnDefinition = "TEXT DEFAULT 'Completed all exercises in the course'"
+  )
+  private String condition; // Điều kiện để được cấp chứng chỉ
+
   @Column(columnDefinition = "TEXT")
   private String reason; // Lý do cấp chứng chỉ (hữu dụng khi ADMIN cấp chứng chỉ bằng tay)
 }

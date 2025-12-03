@@ -63,6 +63,7 @@ public class SubmissionAcceptedEventListener
   protected void process(String messageId, SubmissionAcceptedEventDTO dto) {
     List<Course> courses = coursesRepository.findAll(
       CoursesSpecification.builder()
+        .fetchExercises()
         .withExerciseId(dto.getExerciseId())
         .withEnrolledStudentId(dto.getStudentId())
         .notDeleted()
@@ -91,7 +92,12 @@ public class SubmissionAcceptedEventListener
         .get();
       Progress progress = coursesService.getCourseProgress(course, user);
       if (progress.getIsCompleted()) {
-        Certificate certificate = Certificate.builder().course(course).user(user).build();
+        Certificate certificate = Certificate.builder()
+          .course(course)
+          .user(user)
+          .name("Certificate of Completion - " + course.getTitle())
+          .condition("Completed all exercises in the course")
+          .build();
         certificatesRepository.save(certificate);
         log.info(
           "Successfully issued new certificate for student '{}' in course '{}'.",
