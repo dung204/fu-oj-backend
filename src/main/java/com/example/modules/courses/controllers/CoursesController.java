@@ -56,23 +56,33 @@ public class CoursesController {
   @AllowRoles({ Role.ADMIN, Role.INSTRUCTOR })
   @Operation(
     summary = "Create a new course (for ADMIN only)",
+    description = "Create a new course with optional image upload. Image must be max 1MB.",
     responses = {
       @ApiResponse(responseCode = "201", description = "Course created successfully"),
-      @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid request body or file (size > 1MB or not an image)",
+        content = @Content
+      ),
       @ApiResponse(responseCode = "401", description = "User is not logged in", content = @Content),
       @ApiResponse(responseCode = "403", description = "User is not an ADMIN", content = @Content),
       @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
     }
   )
-  @PostMapping
+  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<CourseResponseDTO> createCourse(
-    @RequestBody @Valid CourseCreateDTO courseCreateDTO
-  ) {
+    @RequestPart("course") @Valid CourseCreateDTO courseCreateDTO,
+    @RequestPart(value = "file", required = false) @Valid @File(
+      maxSize = 1,
+      sizeUnit = DataUnit.MEGABYTES,
+      allowedTypes = "image/*"
+    ) MultipartFile file
+  ) throws Exception {
     return SuccessResponseDTO.<CourseResponseDTO>builder()
       .status(201)
       .message("Course created successfully.")
-      .data(coursesService.createCourse(courseCreateDTO))
+      .data(coursesService.createCourse(courseCreateDTO, file))
       .build();
   }
 

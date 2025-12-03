@@ -57,6 +57,7 @@ public class CourseUpdatedEventListener extends RedisStreamListener<CourseUpdate
     Course course = coursesRepository
       .findOne(
         CoursesSpecification.builder()
+          .fetchExercises()
           .fetchEnrolledStudents()
           .withId(dto.getCourseId())
           .notDeleted()
@@ -76,7 +77,12 @@ public class CourseUpdatedEventListener extends RedisStreamListener<CourseUpdate
 
       Progress progress = coursesService.getCourseProgress(course, student);
       if (progress.getIsCompleted()) {
-        Certificate certificate = Certificate.builder().course(course).user(student).build();
+        Certificate certificate = Certificate.builder()
+          .course(course)
+          .user(student)
+          .name("Certificate of Completion - " + course.getTitle())
+          .condition("Completed all exercises in the course")
+          .build();
         certificatesRepository.save(certificate);
         log.info(
           "Successfully issued new certificate for student '{}' in course '{}'.",

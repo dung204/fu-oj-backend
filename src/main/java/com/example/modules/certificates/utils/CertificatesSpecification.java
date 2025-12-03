@@ -16,7 +16,7 @@ public class CertificatesSpecification extends SpecificationBuilder<Certificate>
   public CertificatesSpecification withStudentId(String studentId) {
     if (studentId != null && !studentId.isEmpty()) {
       specifications.add((root, query, criteriaBuilder) -> {
-        return criteriaBuilder.equal(root.get("student").get("id"), studentId);
+        return criteriaBuilder.equal(root.get("user").get("id"), studentId);
       });
     }
     return this;
@@ -26,7 +26,7 @@ public class CertificatesSpecification extends SpecificationBuilder<Certificate>
     if (studentIds != null && !studentIds.isEmpty()) {
       specifications.add((root, query, criteriaBuilder) -> {
         query.distinct(true);
-        return root.get("student").get("id").in(studentIds);
+        return root.get("user").get("id").in(studentIds);
       });
     }
     return this;

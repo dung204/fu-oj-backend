@@ -16,5 +16,7 @@ import lombok.experimental.SuperBuilder;
 public class UserCertificateResponseDTO extends EntityDTO {
 
   private CourseResponseDTO course;
+  private String name;
+  private String condition;
   private String reason;
 }

@@ -3,6 +3,9 @@ package com.example.modules.courses.services;
 import com.example.base.utils.ObjectUtils;
 import com.example.modules.auth.enums.Role;
 import com.example.modules.certificates.dtos.CourseUpdatedEventDTO;
+import com.example.modules.certificates.entities.Certificate;
+import com.example.modules.certificates.repositories.CertificatesRepository;
+import com.example.modules.certificates.utils.CertificatesSpecification;
 import com.example.modules.courses.dtos.CourseCreateDTO;
 import com.example.modules.courses.dtos.CourseExerciseRequestDTO;
 import com.example.modules.courses.dtos.CourseResponseDTO;
@@ -50,6 +53,7 @@ public class CoursesService {
   ExercisesRepository exercisesRepository;
   RedisStreamPublisher redisStreamPublisher;
   MinioService minioService;
+  CertificatesRepository certificatesRepository;
 
   @Transactional
   public CourseResponseDTO createCourse(CourseCreateDTO courseCreateDTO) {
@@ -57,6 +61,23 @@ public class CoursesService {
       .title(courseCreateDTO.getTitle())
       .description(courseCreateDTO.getDescription())
       .build();
+
+    return courseMapper.toCourseResponseDTO(coursesRepository.save(course));
+  }
+
+  @Transactional
+  public CourseResponseDTO createCourse(CourseCreateDTO courseCreateDTO, MultipartFile file)
+    throws Exception {
+    Course course = Course.builder()
+      .title(courseCreateDTO.getTitle())
+      .description(courseCreateDTO.getDescription())
+      .build();
+
+    // Upload image if provided
+    if (file != null && !file.isEmpty()) {
+      MinioFileResponse payload = minioService.uploadFile(file, "courses");
+      course.setImage(payload.getFileName());
+    }
 
     return courseMapper.toCourseResponseDTO(coursesRepository.save(course));
   }
@@ -98,18 +119,51 @@ public class CoursesService {
       .map(courseMapper::toCourseResponseDTO);
   }
 
+  @Transactional
   public CourseWithProgressDTO getCourseDetailsAndProgressByCourseId(String id, User currentUser) {
     Role role = currentUser.getAccount().getRole();
     Specification<Course> spec = role == Role.ADMIN
       ? CoursesSpecification.builder().fetchExercises().withId(id).build()
-      : CoursesSpecification.builder().fetchExercises().withId(id).notDeleted().build();
+      : CoursesSpecification.builder()
+        .fetchExercises()
+        .fetchEnrolledStudents()
+        .withId(id)
+        .notDeleted()
+        .build();
 
     Course course = coursesRepository.findOne(spec).orElseThrow(CourseNotFoundException::new);
 
     CourseWithProgressDTO response = courseMapper.toCourseWithProgressDTO(course);
 
-    if (role == Role.STUDENT) {
-      response.setProgress(getCourseProgress(course, currentUser));
+    if (role == Role.STUDENT && course.getEnrolledStudents().contains(currentUser)) {
+      Progress progress = getCourseProgress(course, currentUser);
+      response.setProgress(progress);
+
+      // Tự động tạo certificate nếu đã hoàn thành và chưa có certificate
+      if (progress.getIsCompleted()) {
+        boolean hasCertExisted = certificatesRepository.exists(
+          CertificatesSpecification.builder()
+            .withCourseId(course.getId())
+            .withStudentId(currentUser.getId())
+            .notDeleted()
+            .build()
+        );
+
+        if (!hasCertExisted) {
+          Certificate certificate = Certificate.builder()
+            .course(course)
+            .user(currentUser)
+            .name("Certificate of Completion - " + course.getTitle())
+            .condition("Completed all exercises in the course")
+            .build();
+          certificatesRepository.save(certificate);
+          log.info(
+            "Auto-issued certificate for student '{}' in course '{}' when getting course details.",
+            currentUser.getId(),
+            course.getTitle()
+          );
+        }
+      }
     }
 
     return response;
