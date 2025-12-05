@@ -32,6 +32,7 @@ public class GroupExamResponseDTO extends EntityDTO {
     private String startTime;
     private String endTime;
     private Double timeLimit;
+    private Boolean isExamined;
   }
 
   @Data
