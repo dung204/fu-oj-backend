@@ -33,6 +33,7 @@ public abstract class GroupExamMapper {
       .startTime(exam.getStartTime() != null ? exam.getStartTime().toString() : null)
       .endTime(exam.getEndTime() != null ? exam.getEndTime().toString() : null)
       .timeLimit(exam.getTimeLimit())
+      .isExamined(exam.getIsExamined())
       .build();
   }
 
