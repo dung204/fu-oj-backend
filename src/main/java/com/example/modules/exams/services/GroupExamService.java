@@ -1,8 +1,10 @@
 package com.example.modules.exams.services;
 
+import com.example.modules.auth.enums.Role;
 import com.example.modules.exams.dtos.GroupExamRequestDTO;
 import com.example.modules.exams.dtos.GroupExamResponseDTO;
 import com.example.modules.exams.entities.GroupExam;
+import com.example.modules.exams.exceptions.ExamNotFoundException;
 import com.example.modules.exams.repositories.GroupExamRepository;
 import com.example.modules.exams.utils.GroupExamMapper;
 import com.example.modules.exams.utils.GroupExamSpecification;
@@ -57,5 +59,38 @@ public class GroupExamService {
       .stream()
       .map(groupExamMapper::toGroupExamResponseDTO)
       .collect(Collectors.toList());
+  }
+
+  /**
+   * Toggle group exam examined status (isExamined field)
+   * INSTRUCTOR can only toggle group exams where they own the group
+   * ADMIN can toggle any group exam
+   */
+  @Transactional
+  public GroupExamResponseDTO toggleGroupExamExaminedStatus(String id, User currentUser) {
+    GroupExam groupExam = groupExamRepository
+      .findById(id)
+      .orElseThrow(() -> new ExamNotFoundException("Group exam not found"));
+
+    // Check permission: INSTRUCTOR must own the group
+    if (currentUser.getAccount().getRole() == Role.INSTRUCTOR) {
+      String groupOwnerId = groupExam.getGroup().getInstructor().getId();
+      if (!groupOwnerId.equals(currentUser.getId())) {
+        throw new ExamNotFoundException("Group exam not found or access denied");
+      }
+    }
+
+    // Toggle the isExamined status
+    groupExam.setIsExamined(!groupExam.getIsExamined());
+    GroupExam updatedGroupExam = groupExamRepository.save(groupExam);
+
+    log.info(
+      "GroupExam {} examined status toggled to {} by user {}",
+      groupExam.getId(),
+      updatedGroupExam.getIsExamined(),
+      currentUser.getId()
+    );
+
+    return groupExamMapper.toGroupExamResponseDTO(updatedGroupExam);
   }
 }

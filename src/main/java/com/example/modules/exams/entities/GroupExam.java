@@ -32,4 +32,8 @@ public class GroupExam extends BaseEntity {
   )
   @Builder.Default
   private ExamStatus status = ExamStatus.DRAFT;
+
+  @Column(name = "is_examined", columnDefinition = "boolean default false")
+  @Builder.Default
+  private Boolean isExamined = false; // kiểm tra hay chưa
 }

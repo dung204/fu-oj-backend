@@ -19,6 +19,7 @@ public abstract class GroupExamMapper {
     target = "status",
     expression = "java(groupExam.getStatus() != null ? groupExam.getStatus().name() : null)"
   )
+  @Mapping(target = "isExamined", source = "isExamined")
   public abstract GroupExamResponseDTO toGroupExamResponseDTO(GroupExam groupExam);
 
   @Named("mapExam")
