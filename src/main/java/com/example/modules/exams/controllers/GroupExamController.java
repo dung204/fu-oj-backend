@@ -3,7 +3,9 @@ package com.example.modules.exams.controllers;
 import static com.example.base.utils.AppRoutes.GROUP_EXAMS_PREFIX;
 
 import com.example.base.dtos.SuccessResponseDTO;
+import com.example.modules.auth.annotations.AllowRoles;
 import com.example.modules.auth.annotations.CurrentUser;
+import com.example.modules.auth.enums.Role;
 import com.example.modules.exams.dtos.GroupExamRequestDTO;
 import com.example.modules.exams.dtos.GroupExamResponseDTO;
 import com.example.modules.exams.services.GroupExamService;
@@ -83,6 +85,40 @@ public class GroupExamController {
       .status(200)
       .message("Group exams retrieved successfully")
       .data(groupExams)
+      .build();
+  }
+
+  @AllowRoles({ Role.INSTRUCTOR, Role.ADMIN })
+  @Operation(
+    summary = "Toggle group exam examined status (for INSTRUCTOR or ADMIN)",
+    description = "Toggles the `isExamined` status of a group exam between `true` and `false`.\n\n" +
+      "This field indicates whether the exam for this specific group has been reviewed/graded.\n\n" +
+      "**Access Control:**\n" +
+      "- `INSTRUCTOR`: Can only toggle status for group exams where they own the group\n" +
+      "- `ADMIN`: Can toggle status for any group exam",
+    responses = {
+      @ApiResponse(
+        responseCode = "200",
+        description = "Group exam examined status toggled successfully"
+      ),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Group exam not found or user is not authorized",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @PatchMapping("/{id}/toggle-examined")
+  @ResponseStatus(HttpStatus.OK)
+  public SuccessResponseDTO<GroupExamResponseDTO> toggleGroupExamExaminedStatus(
+    @PathVariable String id,
+    @CurrentUser User currentUser
+  ) {
+    return SuccessResponseDTO.<GroupExamResponseDTO>builder()
+      .status(200)
+      .message("Group exam examined status toggled successfully")
+      .data(groupExamService.toggleGroupExamExaminedStatus(id, currentUser))
       .build();
   }
 }

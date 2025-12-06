@@ -18,6 +18,7 @@ public class GroupExamResponseDTO extends EntityDTO {
   private ExamBasicInfoDTO exam;
   private GroupBasicInfoDTO group;
   private String status;
+  private Boolean isExamined;
 
   @Data
   @SuperBuilder
