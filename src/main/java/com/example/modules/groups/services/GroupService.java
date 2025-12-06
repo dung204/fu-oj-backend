@@ -301,4 +301,11 @@ public class GroupService {
     List<User> userList = group.getStudents().stream().limit(3).toList();
     return userList.stream().map(userMapper::toUserProfileDTO).toList();
   }
+
+  public GroupResponseDTO outGroupById(User currentUser, String id) {
+    Group group = groupsRepository.findGroupById(id).orElseThrow(GroupNotFoundException::new);
+    group.getStudents().remove(currentUser);
+    groupsRepository.save(group);
+    return groupMapper.toGroupResponseDTO(group);
+  }
 }

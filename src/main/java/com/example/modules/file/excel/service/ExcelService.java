@@ -147,7 +147,7 @@ public class ExcelService implements IExcelService {
       Account savedAccount = Account.builder()
         .email(account.getEmail())
         .password(passwordEncoder.encode(account.getPassword()))
-        .createdBy(user.getAccount().getUsername())
+        .createdBy(user.getAccount().getEmail())
         .deletedTimestamp(Instant.now())
         .build();
       accounts.add(savedAccount);

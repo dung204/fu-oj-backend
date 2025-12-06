@@ -449,4 +449,48 @@ public class GroupsController {
       .data(groupsService.joinGroupByCode(currentUser, joinGroupRequestDTO))
       .build();
   }
+
+  @Operation(
+    summary = "Leave a group by id (leave a group the current user belongs to)",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Out group successfully"),
+      @ApiResponse(
+        responseCode = "400",
+        description = "Invalid group id supplied or bad request",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "401",
+        description = "Unauthorized — user not authenticated",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "403",
+        description = "Forbidden — user does not have permission to leave this group",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "404",
+        description = "Group with provided id not found",
+        content = @Content
+      ),
+      @ApiResponse(
+        responseCode = "409",
+        description = "Conflict — user is not a member of this group or cannot leave due to business rules",
+        content = @Content
+      ),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @PutMapping("/out-group/{id}")
+  public SuccessResponseDTO<GroupResponseDTO> outGroupById(
+    @PathVariable String id,
+    @CurrentUser User currentUser
+  ) {
+    return SuccessResponseDTO.<GroupResponseDTO>builder()
+      .status(200)
+      .message("Out group successfully!")
+      .data(groupsService.outGroupById(currentUser, id))
+      .build();
+  }
 }
