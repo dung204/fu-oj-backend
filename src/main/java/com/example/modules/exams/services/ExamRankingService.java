@@ -3,11 +3,10 @@ package com.example.modules.exams.services;
 import com.example.modules.exams.dtos.ExamRankingCreateDTO;
 import com.example.modules.exams.dtos.ExamRankingRequestDTO;
 import com.example.modules.exams.dtos.ExamRankingResponseDTO;
-import com.example.modules.exams.entities.ExamExercise;
-import com.example.modules.exams.entities.ExamRanking;
-import com.example.modules.exams.entities.ExamSubmission;
-import com.example.modules.exams.entities.GroupExam;
+import com.example.modules.exams.entities.*;
+import com.example.modules.exams.exceptions.ExamEndedException;
 import com.example.modules.exams.exceptions.ExamNotFoundException;
+import com.example.modules.exams.exceptions.ExamNotStartedException;
 import com.example.modules.exams.repositories.ExamExerciseRepository;
 import com.example.modules.exams.repositories.ExamRankingRepository;
 import com.example.modules.exams.repositories.ExamSubmissionRepository;
@@ -16,7 +15,6 @@ import com.example.modules.exams.utils.ExamRankingMapper;
 import com.example.modules.exams.utils.ExamRankingSpecification;
 import com.example.modules.file.excel.utils.ExcelExporter;
 import com.example.modules.submission_results.entities.SubmissionResult;
-import com.example.modules.submission_results.repositories.SubmissionResultRepository;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.enums.Verdict;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
@@ -24,6 +22,7 @@ import com.example.modules.users.entities.User;
 import com.example.modules.users.exceptions.UserNotFoundException;
 import com.example.modules.users.repositories.UsersRepository;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -49,7 +48,6 @@ public class ExamRankingService {
   private final ExamExerciseRepository examExerciseRepository;
   private final UsersRepository usersRepository;
   private final ExamRankingMapper examRankingMapper;
-  private final SubmissionResultRepository submissionResultRepository;
   private final SimpMessagingTemplate messagingTemplate;
 
   /**
@@ -273,6 +271,20 @@ public class ExamRankingService {
       .orElseThrow(() ->
         new UserNotFoundException("User with id " + dto.getUserId() + " not found")
       );
+
+    // 2.1 validate time
+    Exam exam = groupExam.getExam();
+    Instant now = Instant.now();
+    if (now.isBefore(exam.getStartTime())) {
+      throw new ExamNotStartedException(
+        "Thời gian làm bài tại: " + exam.getStartTime() + ", thời gian hiện tại: " + now
+      );
+    }
+    if (now.isAfter(exam.getEndTime())) {
+      throw new ExamEndedException(
+        "Thời gian kết thúc tại: " + exam.getEndTime() + ", thời gian hiện tại: " + now
+      );
+    }
 
     // 3. Kiểm tra xem ExamRanking đã tồn tại chưa
     List<ExamRanking> existing = examRankingRepository.findAll((root, query, cb) ->

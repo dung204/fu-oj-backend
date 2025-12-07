@@ -144,6 +144,8 @@ public class SubmissionResultUpdatesEventListener
       "/topic/submission-result-updates/%s".formatted(submission.getId()),
       processedResults
     );
+
+    // sau khi bắn socket xong thì redis mới acknowledge message ( bỏ message ra queue )
     log.info(
       "Sent WebSocket to /topic/submission-result-updates/{} -> {}",
       submission.getId(),

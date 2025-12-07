@@ -50,8 +50,10 @@ public abstract class RedisStreamListener<T>
 
       T dto = objectMapper.readValue(jsonPayload, getTargetType());
 
+      // hàm xử lí logic bussiness
       process(recordId.getValue(), dto);
 
+      // Acknowledge the message after successful processing
       ack(streamKey, consumerGroup, recordId);
     } catch (Exception e) {
       log.error(

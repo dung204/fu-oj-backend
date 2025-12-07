@@ -39,7 +39,7 @@ public class ExamRankingController {
   ExamRankingService examRankingService;
 
   @Operation(
-    summary = "Create exam ranking (for INSTRUCTOR and ADMIN)",
+    summary = "Create exam ranking",
     description = "Tạo ExamRanking với chỉ groupExam và user. Các field điểm (totalScore, numberOfExercises, numberOfCompletedExercises) sẽ là null.\n\n" +
       "Scheduler sẽ tự động tính toán và cập nhật điểm khi student submit bài.\n\n" +
       "Nếu ExamRanking đã tồn tại cho cặp (groupExam, user), API sẽ trả về ExamRanking hiện tại.",
