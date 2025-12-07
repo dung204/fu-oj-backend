@@ -103,7 +103,6 @@ public class SubmissionsService {
         .build()
     );
 
-    // bàn lại format lưu test case với ae sau
     List<String> testInputs = testCases.stream().map(TestCase::getInput).toList();
 
     List<String> expectedOutputs = testCases.stream().map(TestCase::getOutput).toList();

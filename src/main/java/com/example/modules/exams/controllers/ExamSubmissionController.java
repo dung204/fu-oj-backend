@@ -79,6 +79,7 @@ public class ExamSubmissionController {
     }
   )
   @PostMapping
+  //  @VerifyTurnstile
   @ResponseStatus(HttpStatus.CREATED)
   public SuccessResponseDTO<ExamSubmissionResponseDTO> createExamSubmission(
     @RequestBody @Valid ExamSubmissionCreateDTO dto,

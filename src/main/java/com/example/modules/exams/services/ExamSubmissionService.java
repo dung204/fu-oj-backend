@@ -266,7 +266,7 @@ public class ExamSubmissionService {
             .exerciseTitle(examSubmission.getExercise().getTitle())
             .exerciseCode(examSubmission.getExercise().getCode())
             .submissionId(submission.getId())
-            .score(submission.getScore())
+            .score(submission.getScore() != null ? submission.getScore() : 0.0)
             .isAccepted(submission.getIsAccepted())
             .passedTestCases(submission.getPassedTestCases())
             .totalTestCases(submission.getTotalTestCases())
@@ -300,6 +300,7 @@ public class ExamSubmissionService {
       .totalScore(totalScore)
       .totalExercises(totalExercises)
       .completedExercises(completedExercises)
+      .timeLimit(exam.getTimeLimit())
       .build();
   }
 }
