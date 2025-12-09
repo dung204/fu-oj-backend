@@ -19,7 +19,7 @@ import com.example.modules.submissions.dtos.SubmissionsSearchDTO;
 import com.example.modules.submissions.dtos.TestCaseResultDTO;
 import com.example.modules.submissions.entities.Submission;
 import com.example.modules.submissions.enums.Verdict;
-import com.example.modules.submissions.exceptions.SubmissionNotFound;
+import com.example.modules.submissions.exceptions.SubmissionNotFoundException;
 import com.example.modules.submissions.repositories.SubmissionsRepository;
 import com.example.modules.submissions.utils.SubmissionMapper;
 import com.example.modules.submissions.utils.SubmissionsSpecification;
@@ -234,7 +234,9 @@ public class SubmissionsService {
   public SubmissionResponseDTO getAllSubmissionResultBySubmissionId(String submissionId) {
     Submission submission = submissionsRepository
       .findById(submissionId)
-      .orElseThrow(() -> new SubmissionNotFound("Không tìm thấy bài nộp với ID: " + submissionId));
+      .orElseThrow(() ->
+        new SubmissionNotFoundException("Không tìm thấy bài nộp với ID: " + submissionId)
+      );
 
     // get submission results
     List<SubmissionResult> submissionResults = submissionResultRepository.findAllBySubmissionId(
