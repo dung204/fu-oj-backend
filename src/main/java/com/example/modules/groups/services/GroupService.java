@@ -96,11 +96,7 @@ public class GroupService {
           GroupsSpecification.builder()
             .containsName(groupsSearchDTO.getName())
             .orderByCreatedTimestampDesc()
-            .joinedBy(currentUser.getId())
-            .<GroupsSpecification>conditionally(
-              "joined".equals(groupsSearchDTO.getFilter()),
-              spec -> spec.joinedBy(currentUser.getId())
-            )
+            .joinedByOrPublicOnly(currentUser.getId())
             .notDeleted()
             .build(),
           groupsSearchDTO.toPageRequest()
@@ -304,5 +300,12 @@ public class GroupService {
     Group group = groupsRepository.findGroupById(id).orElseThrow(GroupNotFoundException::new);
     List<User> userList = group.getStudents().stream().limit(3).toList();
     return userList.stream().map(userMapper::toUserProfileDTO).toList();
+  }
+
+  public GroupResponseDTO outGroupById(User currentUser, String id) {
+    Group group = groupsRepository.findGroupById(id).orElseThrow(GroupNotFoundException::new);
+    group.getStudents().remove(currentUser);
+    groupsRepository.save(group);
+    return groupMapper.toGroupResponseDTO(group);
   }
 }

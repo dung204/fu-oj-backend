@@ -147,7 +147,7 @@ public class ExcelService implements IExcelService {
       Account savedAccount = Account.builder()
         .email(account.getEmail())
         .password(passwordEncoder.encode(account.getPassword()))
-        .createdBy(user.getAccount().getUsername())
+        .createdBy(user.getAccount().getEmail())
         .deletedTimestamp(Instant.now())
         .build();
       accounts.add(savedAccount);
@@ -174,7 +174,7 @@ public class ExcelService implements IExcelService {
             "password",
             password,
             "activationLink",
-            "http://localhost:5173/auth/active-account?email=" + account.getEmail()
+            "https://fu-oj.vercel.app/auth/active-account?email=" + account.getEmail()
           )
         );
       } catch (Exception emailException) {

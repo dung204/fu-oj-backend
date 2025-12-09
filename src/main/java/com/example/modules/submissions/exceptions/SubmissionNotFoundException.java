@@ -3,9 +3,9 @@ package com.example.modules.submissions.exceptions;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-public class SubmissionNotFound extends ResponseStatusException {
+public class SubmissionNotFoundException extends ResponseStatusException {
 
-  public SubmissionNotFound(String message) {
+  public SubmissionNotFoundException(String message) {
     super(HttpStatus.NOT_FOUND, message);
   }
 }

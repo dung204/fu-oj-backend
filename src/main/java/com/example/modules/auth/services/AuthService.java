@@ -139,6 +139,16 @@ public class AuthService {
     invalidateTokens(user.getId());
   }
 
+  public void changePasswordFirstTime(String email, ChangePasswordRequestDTO request) {
+    Account account = accountsRepository.findAccountByEmail(email);
+    if (account == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found");
+    }
+
+    account.setPassword(passwordEncoder.encode(request.getNewPassword()));
+    accountsRepository.save(account);
+  }
+
   private AuthTokenDTO getTokenResponse(User user) {
     final String accessToken = jwtService.generateAccessToken(user);
     final String refreshToken = jwtService.generateRefreshToken(user);
