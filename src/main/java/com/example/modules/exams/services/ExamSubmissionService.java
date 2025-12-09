@@ -61,23 +61,27 @@ public class ExamSubmissionService {
     GroupExam groupExam = groupExamRepository
       .findById(dto.getGroupExamId())
       .orElseThrow(() ->
-        new ExamNotFoundException("GroupExam with id " + dto.getGroupExamId() + " not found")
+        new ExamNotFoundException("Không tìm thấy GroupExam với id " + dto.getGroupExamId())
       );
 
     Exam exam = groupExam.getExam();
     if (exam == null) {
-      throw new ExamNotFoundException("Exam not found for GroupExam " + dto.getGroupExamId());
+      throw new ExamNotFoundException(
+        "Không tìm thấy kỳ thi cho GroupExam " + dto.getGroupExamId()
+      );
     }
 
     // 2. Check time constraints
     Instant now = Instant.now();
     if (now.isBefore(exam.getStartTime())) {
       throw new ExamNotStartedException(
-        "Exam starts at " + exam.getStartTime() + ", current time: " + now
+        "Kỳ thi bắt đầu lúc " + exam.getStartTime() + ", thời gian hiện tại: " + now
       );
     }
     if (now.isAfter(exam.getEndTime())) {
-      throw new ExamEndedException("Exam ended at " + exam.getEndTime() + ", current time: " + now);
+      throw new ExamEndedException(
+        "Kỳ thi kết thúc lúc " + exam.getEndTime() + ", thời gian hiện tại: " + now
+      );
     }
 
     // 3. Check if student is in the group
@@ -89,14 +93,17 @@ public class ExamSubmissionService {
 
     if (!isInGroup) {
       throw new StudentNotInGroupException(
-        "Student " + currentUser.getId() + " is not in group for groupExam " + dto.getGroupExamId()
+        "Sinh viên " +
+          currentUser.getId() +
+          " không thuộc nhóm của groupExam " +
+          dto.getGroupExamId()
       );
     }
 
     // 4. Validate exercise exists and belongs to exam
     Exercise exercise = exercisesRepository
       .findById(dto.getExerciseId())
-      .orElseThrow(() -> new ExerciseNotFoundException("Exercise not found"));
+      .orElseThrow(() -> new ExerciseNotFoundException("Không tìm thấy bài tập"));
 
     boolean exerciseInExam = exam
       .getExamExercises()
@@ -105,7 +112,7 @@ public class ExamSubmissionService {
 
     if (!exerciseInExam) {
       throw new ExerciseNotInExamException(
-        "Exercise " + dto.getExerciseId() + " is not part of exam " + exam.getId()
+        "Bài tập " + dto.getExerciseId() + " không thuộc kỳ thi " + exam.getId()
       );
     }
 
@@ -124,7 +131,7 @@ public class ExamSubmissionService {
         dto.getExerciseId(),
         dto.getGroupExamId()
       );
-      throw new DuplicateExamSubmissionException("User has already submitted for exercise");
+      throw new DuplicateExamSubmissionException("Người dùng đã nộp bài cho bài tập này");
     }
 
     // 5. Create submission through existing SubmissionsService
@@ -173,7 +180,7 @@ public class ExamSubmissionService {
   public ExamResultResponseDTO getExamResult(ExamResultRequestDTO dto, User currentUser) {
     // 1. Validate: phải có examId hoặc groupExamId
     if (dto.getExamId() == null && dto.getGroupExamId() == null) {
-      throw new IllegalArgumentException("Either examId or groupExamId must be provided");
+      throw new IllegalArgumentException("Phải cung cấp examId hoặc groupExamId");
     }
 
     // 2. Validate user exists và check quyền truy cập
@@ -184,7 +191,7 @@ public class ExamSubmissionService {
       if (!currentUser.getId().equals(dto.getUserId())) {
         throw new org.springframework.web.server.ResponseStatusException(
           org.springframework.http.HttpStatus.FORBIDDEN,
-          "Students can only view their own exam results"
+          "Sinh viên chỉ có thể xem kết quả của chính mình"
         );
       }
     } else {
@@ -194,7 +201,7 @@ public class ExamSubmissionService {
     User user = usersRepository
       .findById(effectiveUserId)
       .orElseThrow(() ->
-        new UserNotFoundException("User with id " + effectiveUserId + " not found")
+        new UserNotFoundException("Không tìm thấy người dùng với id " + effectiveUserId)
       );
 
     // 3. Query submissions based on examId or groupExamId
@@ -206,7 +213,7 @@ public class ExamSubmissionService {
       GroupExam groupExam = groupExamRepository
         .findById(dto.getGroupExamId())
         .orElseThrow(() ->
-          new ExamNotFoundException("GroupExam with id " + dto.getGroupExamId() + " not found")
+          new ExamNotFoundException("Không tìm thấy GroupExam với id " + dto.getGroupExamId())
         );
       exam = groupExam.getExam();
 
@@ -221,7 +228,7 @@ public class ExamSubmissionService {
       exam = examRepository
         .findById(dto.getExamId())
         .orElseThrow(() ->
-          new ExamNotFoundException("Exam with id " + dto.getExamId() + " not found")
+          new ExamNotFoundException("Không tìm thấy kỳ thi với id " + dto.getExamId())
         );
 
       examSubmissions = examSubmissionRepository.findByGroupExam_Exam_IdAndUserId(

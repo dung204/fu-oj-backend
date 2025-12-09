@@ -6,6 +6,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class TopicNotFoundException extends ResponseStatusException {
 
   public TopicNotFoundException() {
-    super(HttpStatus.NOT_FOUND, "Topic not found.");
+    super(HttpStatus.NOT_FOUND, "Không tìm thấy chủ đề.");
   }
 }

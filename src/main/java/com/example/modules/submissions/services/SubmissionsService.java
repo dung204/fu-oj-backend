@@ -71,7 +71,9 @@ public class SubmissionsService {
   public SubmissionResponseDTO createSubmissionBase64(SubmissionRequest request, User currentUser) {
     Exercise exercise = exerciseRepository
       .findById(String.valueOf(request.getExerciseId()))
-      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
+      .orElseThrow(() ->
+        new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài tập")
+      );
 
     if (exercise.getMaxSubmissions() != 0) {
       log.info(
@@ -129,7 +131,9 @@ public class SubmissionsService {
     // 1. Lấy exercise từ DB
     Exercise exercise = exerciseRepository
       .findById(request.getExerciseId())
-      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
+      .orElseThrow(() ->
+        new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài tập")
+      );
 
     // 2. Lấy tất cả test cases public
     List<TestCase> publicTestCases = testCaseRepository.findAllByExerciseIdAndIsPublicTrue(
@@ -139,7 +143,7 @@ public class SubmissionsService {
     if (publicTestCases.isEmpty()) {
       throw new ResponseStatusException(
         HttpStatus.NOT_FOUND,
-        "No public test cases found for this exercise"
+        "Không tìm thấy test case công khai cho bài tập này"
       );
     }
 
@@ -231,7 +235,7 @@ public class SubmissionsService {
     Submission submission = submissionsRepository
       .findById(submissionId)
       .orElseThrow(() ->
-        new SubmissionNotFoundException("Submission not found with ID: " + submissionId)
+        new SubmissionNotFoundException("Không tìm thấy bài nộp với ID: " + submissionId)
       );
 
     // get submission results

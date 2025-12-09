@@ -6,7 +6,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class InvalidCredentialsException extends ResponseStatusException {
 
   public InvalidCredentialsException() {
-    super(HttpStatus.UNAUTHORIZED, "Email or password is incorrect");
+    super(HttpStatus.UNAUTHORIZED, "Email hoặc mật khẩu không chính xác");
   }
 
   public InvalidCredentialsException(String message) {

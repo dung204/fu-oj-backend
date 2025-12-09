@@ -122,7 +122,7 @@ public class AuthService {
     if (currentPassword != null && request.getPassword() == null) {
       throw new ResponseStatusException(
         HttpStatus.BAD_REQUEST,
-        "Field `password` is required for this account."
+        "Trường `password` là bắt buộc cho tài khoản này."
       );
     }
 
@@ -142,7 +142,7 @@ public class AuthService {
   public void changePasswordFirstTime(String email, ChangePasswordRequestDTO request) {
     Account account = accountsRepository.findAccountByEmail(email);
     if (account == null) {
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found");
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản");
     }
 
     account.setPassword(passwordEncoder.encode(request.getNewPassword()));

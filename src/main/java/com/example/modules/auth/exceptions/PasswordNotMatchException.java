@@ -6,6 +6,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class PasswordNotMatchException extends ResponseStatusException {
 
   public PasswordNotMatchException() {
-    super(HttpStatus.BAD_REQUEST, "Password not match.");
+    super(HttpStatus.BAD_REQUEST, "Mật khẩu không khớp.");
   }
 }

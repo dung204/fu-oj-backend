@@ -114,7 +114,7 @@ public class ExercisesService {
       // get topics from DB
       List<Topic> topics = topicsRepository.findAllById(uniqueTopicIds);
       if (topics.size() != request.getTopicIds().size()) {
-        throw new EntityNotFoundException("Some topic IDs not found");
+        throw new EntityNotFoundException("Một số ID chủ đề không tìm thấy");
       }
       exercise.setTopics(topics);
     }
@@ -274,7 +274,7 @@ public class ExercisesService {
         } else {
           List<Topic> topics = topicsRepository.findAllById(request.getTopicIds());
           if (topics.size() != request.getTopicIds().size()) {
-            throw new EntityNotFoundException("Some topic IDs not found");
+            throw new EntityNotFoundException("Một số ID chủ đề không tìm thấy");
           }
           oldExercise.setTopics(topics);
         }
@@ -317,7 +317,7 @@ public class ExercisesService {
       } else {
         List<Topic> topics = topicsRepository.findAllById(request.getTopicIds());
         if (topics.size() != request.getTopicIds().size()) {
-          throw new EntityNotFoundException("Some topic IDs not found");
+          throw new EntityNotFoundException("Một số ID chủ đề không tìm thấy");
         }
         newVersion.setTopics(topics);
       }

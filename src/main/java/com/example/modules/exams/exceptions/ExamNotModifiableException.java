@@ -6,7 +6,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class ExamNotModifiableException extends ResponseStatusException {
 
   public ExamNotModifiableException() {
-    super(HttpStatus.CONFLICT, "Can not update this exam.");
+    super(HttpStatus.CONFLICT, "Không thể cập nhật kỳ thi này.");
   }
 
   public ExamNotModifiableException(String message) {

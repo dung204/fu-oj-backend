@@ -6,6 +6,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class TokenInvalidatedException extends ResponseStatusException {
 
   public TokenInvalidatedException() {
-    super(HttpStatus.UNAUTHORIZED, "Token is invalidated");
+    super(HttpStatus.UNAUTHORIZED, "Token đã bị vô hiệu hóa");
   }
 }

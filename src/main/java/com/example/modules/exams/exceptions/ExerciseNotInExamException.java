@@ -6,7 +6,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class ExerciseNotInExamException extends ResponseStatusException {
 
   public ExerciseNotInExamException() {
-    super(HttpStatus.BAD_REQUEST, "Exercise is not part of this exam");
+    super(HttpStatus.BAD_REQUEST, "Bài tập không thuộc kỳ thi này");
   }
 
   public ExerciseNotInExamException(String message) {

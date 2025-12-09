@@ -6,7 +6,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class StudentNotInGroupException extends ResponseStatusException {
 
   public StudentNotInGroupException() {
-    super(HttpStatus.FORBIDDEN, "Student is not in the exam's group");
+    super(HttpStatus.FORBIDDEN, "Sinh viên không thuộc nhóm của kỳ thi");
   }
 
   public StudentNotInGroupException(String message) {

@@ -165,7 +165,7 @@ public class ExamService {
       dto.getStartTime().isBefore(safeStartTime)
     ) {
       throw new StartTimeTooSoonException(
-        "Start time must be after the current time at least " + BUFFER_MINUTES + " minutes."
+        "Thời gian bắt đầu phải sau thời gian hiện tại ít nhất " + BUFFER_MINUTES + " phút."
       );
     }
 
@@ -256,7 +256,7 @@ public class ExamService {
     }
 
     return exam.orElseThrow(() ->
-      new ExamNotFoundException("Exam with id %s not found".formatted(id))
+      new ExamNotFoundException("Không tìm thấy kỳ thi với id %s".formatted(id))
     );
   }
 
@@ -316,7 +316,7 @@ public class ExamService {
     // 1. Check if exam has already started or passed start time
     if (exam.getStartTime() != null && !now.isBefore(exam.getStartTime())) {
       throw new ExamNotModifiableException(
-        "Cannot update exam that has already started or passed its start time."
+        "Không thể cập nhật kỳ thi đã bắt đầu hoặc đã qua thời gian bắt đầu."
       );
     }
 
@@ -325,7 +325,7 @@ public class ExamService {
       exam.getId()
     );
     if (submissions != null && !submissions.isEmpty()) {
-      throw new ExamNotModifiableException("Cannot update exam that already has submissions.");
+      throw new ExamNotModifiableException("Không thể cập nhật kỳ thi đã có bài nộp.");
     }
 
     // 3. Check if any GroupExam has status that prevents modification
@@ -357,7 +357,7 @@ public class ExamService {
 
     if (hasUpcomingStatus && exam.getStartTime().isBefore(safeStartTime)) {
       throw new StartTimeTooSoonException(
-        "Start time must be after the current time at least " + BUFFER_MINUTES + " minutes."
+        "Thời gian bắt đầu phải sau thời gian hiện tại ít nhất " + BUFFER_MINUTES + " phút."
       );
     }
 
@@ -443,7 +443,7 @@ public class ExamService {
 
     if (hasNonDraftStatus) {
       throw new ExamNotModifiableException(
-        "Exam can not be published when any group exam status is not 'DRAFT'."
+        "Không thể xuất bản kỳ thi khi có nhóm thi không ở trạng thái 'DRAFT'."
       );
     }
 
@@ -456,7 +456,7 @@ public class ExamService {
 
     if (exam.getStartTime().isBefore(safeStartTime)) {
       throw new StartTimeTooSoonException(
-        "Start time must be after the current time at least " + BUFFER_MINUTES + " minutes."
+        "Thời gian bắt đầu phải sau thời gian hiện tại ít nhất " + BUFFER_MINUTES + " phút."
       );
     }
 
@@ -511,7 +511,7 @@ public class ExamService {
     List<GroupExam> groupExams = groupExamRepository.findByExamIdAndGroupId(examId, groupId);
     if (groupExams.isEmpty()) {
       throw new ExamNotFoundException(
-        "Exam with id %s not found in group with id %s".formatted(examId, groupId)
+        "Không tìm thấy kỳ thi với id %s trong nhóm với id %s".formatted(examId, groupId)
       );
     }
 
@@ -523,7 +523,7 @@ public class ExamService {
       .findById(groupId)
       .orElseThrow(() ->
         new jakarta.persistence.EntityNotFoundException(
-          "Group with id %s not found".formatted(groupId)
+          "Không tìm thấy nhóm với id %s".formatted(groupId)
         )
       );
 
@@ -533,7 +533,7 @@ public class ExamService {
       !group.getInstructor().getId().equals(currentUser.getId())
     ) {
       throw new org.springframework.security.access.AccessDeniedException(
-        "You don't have permission to access this group"
+        "Bạn không có quyền truy cập nhóm này"
       );
     }
 

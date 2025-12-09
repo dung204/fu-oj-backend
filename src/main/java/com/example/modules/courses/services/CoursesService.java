@@ -187,9 +187,7 @@ public class CoursesService {
     inputIds.removeAll(exercises.stream().map(Exercise::getId).collect(Collectors.toSet()));
 
     if (!inputIds.isEmpty()) {
-      throw new ExerciseNotFoundException(
-        "The following exercises are not found: " + inputIds.toString()
-      );
+      throw new ExerciseNotFoundException("Các bài tập sau không tìm thấy: " + inputIds.toString());
     }
 
     course.getExercises().addAll(exercises);
@@ -212,9 +210,7 @@ public class CoursesService {
     inputIds.removeAll(exercises.stream().map(Exercise::getId).collect(Collectors.toSet()));
 
     if (!inputIds.isEmpty()) {
-      throw new ExerciseNotFoundException(
-        "The following exercises are not found: " + inputIds.toString()
-      );
+      throw new ExerciseNotFoundException("Các bài tập sau không tìm thấy: " + inputIds.toString());
     }
 
     course.getExercises().removeAll(exercises);

@@ -6,6 +6,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class RoleNotAllowedException extends ResponseStatusException {
 
   public RoleNotAllowedException() {
-    super(HttpStatus.FORBIDDEN, "This operation is not allowed for the current role");
+    super(HttpStatus.FORBIDDEN, "Vai trò hiện tại không được phép thực hiện thao tác này");
   }
 }

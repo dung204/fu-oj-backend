@@ -30,10 +30,15 @@ public class SubmissionLimitService {
 
     Exercise exercise = exerciseRepository
       .findById(String.valueOf(exerciseId))
-      .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Exercise not found"));
+      .orElseThrow(() ->
+        new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy bài tập")
+      );
 
     if (count >= exercise.getMaxSubmissions() && exercise.getMaxSubmissions() != 0) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "You get max submission limit");
+      throw new ResponseStatusException(
+        HttpStatus.BAD_REQUEST,
+        "Bạn đã đạt giới hạn số lần nộp bài"
+      );
     }
 
     // .opsForValue() -> get the value operations for simple key-value access ( like Number, String, Object)

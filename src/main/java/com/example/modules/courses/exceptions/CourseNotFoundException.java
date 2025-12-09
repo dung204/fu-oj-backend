@@ -6,6 +6,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class CourseNotFoundException extends ResponseStatusException {
 
   public CourseNotFoundException() {
-    super(HttpStatus.NOT_FOUND, "Course not found");
+    super(HttpStatus.NOT_FOUND, "Không tìm thấy khóa học");
   }
 }

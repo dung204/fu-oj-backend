@@ -6,7 +6,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class StartTimeTooSoonException extends ResponseStatusException {
 
   public StartTimeTooSoonException() {
-    super(HttpStatus.BAD_REQUEST, "Start time is too soon");
+    super(HttpStatus.BAD_REQUEST, "Thời gian bắt đầu quá sớm");
   }
 
   public StartTimeTooSoonException(String message) {

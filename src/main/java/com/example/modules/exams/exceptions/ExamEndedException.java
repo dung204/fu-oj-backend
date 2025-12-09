@@ -6,7 +6,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class ExamEndedException extends ResponseStatusException {
 
   public ExamEndedException() {
-    super(HttpStatus.BAD_REQUEST, "Exam has already ended");
+    super(HttpStatus.BAD_REQUEST, "Kỳ thi đã kết thúc");
   }
 
   public ExamEndedException(String message) {

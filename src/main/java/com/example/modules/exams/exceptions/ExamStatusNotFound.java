@@ -6,6 +6,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class ExamStatusNotFound extends ResponseStatusException {
 
   public ExamStatusNotFound() {
-    super(HttpStatus.NOT_FOUND, "Exam status not found");
+    super(HttpStatus.NOT_FOUND, "Không tìm thấy trạng thái kỳ thi");
   }
 }
