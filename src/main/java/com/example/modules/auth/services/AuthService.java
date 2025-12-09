@@ -122,7 +122,7 @@ public class AuthService {
     if (currentPassword != null && request.getPassword() == null) {
       throw new ResponseStatusException(
         HttpStatus.BAD_REQUEST,
-        "Field `password` is required for this account."
+        "Trường `password` là bắt buộc cho tài khoản này."
       );
     }
 

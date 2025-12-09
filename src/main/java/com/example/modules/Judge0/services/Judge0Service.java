@@ -173,19 +173,22 @@ public class Judge0Service {
         Thread.sleep(delayMs);
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
-        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Polling interrupted");
+        throw new ResponseStatusException(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          "Quá trình kiểm tra bị gián đoạn"
+        );
       } catch (Exception e) {
         log.error("Error polling batch results", e);
         throw new ResponseStatusException(
           HttpStatus.BAD_GATEWAY,
-          "Failed to poll batch results from Judge0"
+          "Không thể lấy kết quả từ Judge0"
         );
       }
     }
 
     throw new ResponseStatusException(
       HttpStatus.GATEWAY_TIMEOUT,
-      "Batch submissions timed out after " + maxRetries + " retries"
+      "Hết thời gian chờ sau " + maxRetries + " lần thử"
     );
   }
 
@@ -223,10 +226,7 @@ public class Judge0Service {
       return response;
     } catch (Exception e) {
       log.error("Error fetching submission {} from Judge0", token, e);
-      throw new ResponseStatusException(
-        HttpStatus.BAD_GATEWAY,
-        "Error fetching submission from Judge0"
-      );
+      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Lỗi khi lấy kết quả từ Judge0");
     }
   }
 
@@ -256,7 +256,10 @@ public class Judge0Service {
         .collect(Collectors.toList());
     } catch (Exception e) {
       log.error("Failed to parse Judge0 response", e);
-      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to parse Judge0 response");
+      throw new ResponseStatusException(
+        HttpStatus.BAD_GATEWAY,
+        "Không thể phân tích phản hồi từ Judge0"
+      );
     }
   }
 }

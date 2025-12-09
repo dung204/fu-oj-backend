@@ -6,6 +6,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class DifficultyNotFoundException extends ResponseStatusException {
 
   public DifficultyNotFoundException() {
-    super(HttpStatus.NOT_FOUND, "Difficulty enums not found");
+    super(HttpStatus.NOT_FOUND, "Không tìm thấy độ khó");
   }
 }

@@ -6,7 +6,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class ExerciseNotFoundException extends ResponseStatusException {
 
   public ExerciseNotFoundException() {
-    super(HttpStatus.NOT_FOUND, "Exercise not found");
+    super(HttpStatus.NOT_FOUND, "Không tìm thấy bài tập");
   }
 
   public ExerciseNotFoundException(String message) {

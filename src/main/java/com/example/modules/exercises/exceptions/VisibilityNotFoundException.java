@@ -6,6 +6,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class VisibilityNotFoundException extends ResponseStatusException {
 
   public VisibilityNotFoundException() {
-    super(HttpStatus.NOT_FOUND, "Visibility enums not found");
+    super(HttpStatus.NOT_FOUND, "Không tìm thấy trạng thái hiển thị");
   }
 }

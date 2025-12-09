@@ -61,10 +61,10 @@ public class ChatService {
     } catch (NonTransientAiException e) {
       log.error("AI service error: {}", e.getMessage(), e);
 
-      return "Sorry, an error occurred while processing your request. Please try again later.";
+      return "Xin lỗi, đã xảy ra lỗi khi xử lý yêu cầu của bạn. Vui lòng thử lại sau.";
     } catch (Exception e) {
       log.error("Unexpected error in chat service: {}", e.getMessage(), e);
-      return "Sorry, an unexpected error occurred. Please try again later.";
+      return "Xin lỗi, đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.";
     }
   }
 
@@ -90,7 +90,7 @@ public class ChatService {
     Exercise exercise = exercisesRepository
       .findById(exerciseId)
       .orElseThrow(() ->
-        new ExerciseNotFoundException("Exercise with id %s not found".formatted(exerciseId))
+        new ExerciseNotFoundException("Không tìm thấy bài tập với id %s".formatted(exerciseId))
       );
 
     String topics = CollectionUtils.isEmpty(exercise.getTopics())
