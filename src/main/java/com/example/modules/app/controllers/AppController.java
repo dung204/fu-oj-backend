@@ -32,6 +32,6 @@ public class AppController {
   @Public
   @GetMapping("/health")
   public SuccessResponseDTO<?> checkHealth() {
-    return SuccessResponseDTO.builder().message("OK").build();
+    return SuccessResponseDTO.builder().message("Thành công").build();
   }
 }

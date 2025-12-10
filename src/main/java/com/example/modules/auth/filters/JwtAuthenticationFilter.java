@@ -183,7 +183,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       response.getOutputStream(),
       ErrorResponseDTO.builder()
         .status(HttpStatus.UNAUTHORIZED.value())
-        .message("Unauthorized")
+        .message("Chưa xác thực")
         .build()
     );
   }

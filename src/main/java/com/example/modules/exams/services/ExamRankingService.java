@@ -339,6 +339,16 @@ public class ExamRankingService {
   }
 
   /**
+   * Xóa cứng ExamRanking theo groupExamId và userId
+   */
+  @Transactional
+  public void deleteExamRanking(String groupExamId, String userId) {
+    log.info("Deleting ExamRanking for groupExamId={} and userId={}", groupExamId, userId);
+    examRankingRepository.deleteByGroupExamIdAndUserId(groupExamId, userId);
+    log.info("Deleted ExamRanking for groupExamId={} and userId={}", groupExamId, userId);
+  }
+
+  /**
    * Export exam rankings to Excel by groupExamId
    */
   public byte[] exportExamRankingsToExcel(String groupExamId) throws IOException {

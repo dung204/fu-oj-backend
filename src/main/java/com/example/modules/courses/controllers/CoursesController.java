@@ -81,7 +81,7 @@ public class CoursesController {
   ) throws Exception {
     return SuccessResponseDTO.<CourseResponseDTO>builder()
       .status(201)
-      .message("Course created successfully.")
+      .message("Tạo khóa học thành công")
       .data(coursesService.createCourse(courseCreateDTO, file))
       .build();
   }
@@ -105,7 +105,7 @@ public class CoursesController {
   ) {
     return SuccessResponseDTO.<CourseResponseDTO>builder()
       .status(201)
-      .message("Course created successfully.")
+      .message("Tạo khóa học thành công")
       .data(coursesService.updateCourse(id, courseUpdateDTO))
       .build();
   }
@@ -145,7 +145,7 @@ public class CoursesController {
     @CurrentUser User currentUser
   ) {
     return PaginatedSuccessResponseDTO.<CourseResponseDTO>builder()
-      .message("Courses retrieved successfully.")
+      .message("Lấy danh sách khóa học thành công")
       .page(coursesService.findAllCourses(coursesSearchDTO, currentUser))
       .filters(coursesSearchDTO.getFilters())
       .build();
@@ -168,7 +168,7 @@ public class CoursesController {
     @CurrentUser User currentUser
   ) {
     return SuccessResponseDTO.<CourseWithProgressDTO>builder()
-      .message("Course retrieved successfully.")
+      .message("Lấy thông tin khóa học thành công")
       .data(coursesService.getCourseDetailsAndProgressByCourseId(id, currentUser))
       .build();
   }
@@ -189,7 +189,7 @@ public class CoursesController {
     @CurrentUser User currentUser
   ) {
     return PaginatedSuccessResponseDTO.<ExerciseResponseDTO>builder()
-      .message("Exercise retrieved successfully.")
+      .message("Lấy thông tin bài tập thành công")
       .page(exercisesService.getExercisesByCourseId(id, exerciseQueryDTO, currentUser))
       .filters(exerciseQueryDTO.getFilters())
       .build();
@@ -276,7 +276,7 @@ public class CoursesController {
     @CurrentUser User currentUser
   ) {
     return SuccessResponseDTO.<CourseResponseDTO>builder()
-      .message("Enrolled in course successfully.")
+      .message("Đăng ký khóa học thành công")
       .data(coursesService.enrollInCourse(id, currentUser))
       .build();
   }
@@ -311,7 +311,7 @@ public class CoursesController {
     ) MultipartFile file
   ) throws Exception {
     return SuccessResponseDTO.<CourseResponseDTO>builder()
-      .message("Course image updated successfully")
+      .message("Cập nhật ảnh khóa học thành công")
       .data(coursesService.updateCourseImage(id, file))
       .build();
   }

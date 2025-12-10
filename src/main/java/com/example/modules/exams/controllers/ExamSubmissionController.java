@@ -99,7 +99,7 @@ public class ExamSubmissionController {
 
     return SuccessResponseDTO.<ExamSubmissionResponseDTO>builder()
       .status(201)
-      .message("Exam submission created successfully")
+      .message("Nộp bài thi thành công")
       .data(response)
       .build();
   }
@@ -165,7 +165,7 @@ public class ExamSubmissionController {
 
     return SuccessResponseDTO.<ExamResultResponseDTO>builder()
       .status(200)
-      .message("Exam result retrieved successfully")
+      .message("Lấy kết quả bài thi thành công")
       .data(response)
       .build();
   }

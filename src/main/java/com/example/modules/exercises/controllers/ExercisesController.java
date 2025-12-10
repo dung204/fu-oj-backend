@@ -67,7 +67,7 @@ public class ExercisesController {
     @CurrentUser User currentUser
   ) {
     return PaginatedSuccessResponseDTO.<ExerciseResponseDTO>builder()
-      .message("Exercises retrieved successfully")
+      .message("Lấy danh sách bài tập thành công")
       .page(exercisesService.getExercises(query, currentUser))
       .filters(query.getFilters())
       .build();
@@ -102,7 +102,7 @@ public class ExercisesController {
       : exerciseMapper.toExerciseResponseDTOWithAllTestCases(exercise);
 
     return SuccessResponseDTO.<ExerciseResponseDTO>builder()
-      .message("Exercise retrieved successfully")
+      .message("Lấy thông tin bài tập thành công")
       .data(exerciseResponseDTO)
       .build();
   }
@@ -135,7 +135,7 @@ public class ExercisesController {
   ) {
     ExerciseResponseDTO exercise = exercisesService.createExercise(request);
     return SuccessResponseDTO.<ExerciseResponseDTO>builder()
-      .message("Exercise created successfully")
+      .message("Tạo bài tập thành công")
       .data(exercise)
       .build();
   }
@@ -175,7 +175,7 @@ public class ExercisesController {
       currentUser
     );
     return SuccessResponseDTO.<ExerciseResponseDTO>builder()
-      .message("Exercise updated successfully")
+      .message("Cập nhật bài tập thành công")
       .data(exercise)
       .build();
   }
@@ -242,7 +242,7 @@ public class ExercisesController {
     @CurrentUser User currentUser
   ) {
     return PaginatedSuccessResponseDTO.<TestCaseResponseDTO>builder()
-      .message("Test cases retrieved successfully")
+      .message("Lấy danh sách test case thành công")
       .page(testCasesService.getTestCasesOfExercise(exerciseId, query, currentUser))
       .filters(query.getFilters())
       .build();
@@ -278,7 +278,7 @@ public class ExercisesController {
     @CurrentUser User currentUser
   ) {
     return SuccessResponseDTO.<TestCaseResponseDTO>builder()
-      .message("Test case retrieved successfully")
+      .message("Lấy thông tin test case thành công")
       .data(testCasesService.getTestCaseByIdAndExerciseId(testCaseId, exerciseId, currentUser))
       .build();
   }
@@ -314,7 +314,7 @@ public class ExercisesController {
     @CurrentUser User currentUser
   ) {
     return SuccessResponseDTO.<TestCaseResponseDTO>builder()
-      .message("Test case created successfully")
+      .message("Tạo test case thành công")
       .data(testCasesService.createTestCase(exerciseId, request, currentUser))
       .build();
   }
@@ -349,7 +349,7 @@ public class ExercisesController {
     @RequestBody @Valid TestCaseRequestDTO request
   ) {
     return SuccessResponseDTO.<TestCaseResponseDTO>builder()
-      .message("Test case updated successfully")
+      .message("Cập nhật test case thành công")
       .data(testCasesService.updateTestCase(exerciseId, testCaseId, request))
       .build();
   }
@@ -418,7 +418,7 @@ public class ExercisesController {
   ) {
     return PaginatedSuccessResponseDTO.<CommentResponseDTO>builder()
       .status(200)
-      .message("Retrieved comments successfully")
+      .message("Lấy danh sách bình luận thành công")
       .page(
         commentsService.getCommentsByParentIdAndExerciseId(
           exerciseId,
@@ -466,7 +466,7 @@ public class ExercisesController {
   ) {
     return SuccessResponseDTO.<CommentResponseDTO>builder()
       .status(201)
-      .message("Comment created successfully")
+      .message("Tạo bình luận thành công")
       .data(commentsService.createComment(exerciseId, commentRequestDTO, currentUser))
       .build();
   }
@@ -494,7 +494,7 @@ public class ExercisesController {
   ) {
     exercisesService.updateExercisesVisibility(request.getExerciseIds(), request.getVisibility());
     return SuccessResponseDTO.<Void>builder()
-      .message("Exercises visibility updated successfully")
+      .message("Cập nhật trạng thái hiển thị bài tập thành công")
       .build();
   }
 
@@ -517,7 +517,7 @@ public class ExercisesController {
       ownerId
     );
     return SuccessResponseDTO.<List<TopExerciseBySubmissionsDTO>>builder()
-      .message("Top 5 exercises by submissions retrieved successfully")
+      .message("Lấy top 5 bài tập được nộp nhiều nhất thành công")
       .data(topExercises)
       .build();
   }

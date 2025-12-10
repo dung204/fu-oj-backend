@@ -68,7 +68,7 @@ public class ExamRankingController {
     ExamRankingResponseDTO ranking = examRankingService.createExamRanking(dto, currentUser);
     return SuccessResponseDTO.<ExamRankingResponseDTO>builder()
       .status(201)
-      .message("ExamRanking created successfully")
+      .message("Tạo bảng xếp hạng kỳ thi thành công")
       .data(ranking)
       .build();
   }
@@ -92,8 +92,32 @@ public class ExamRankingController {
     List<ExamRankingResponseDTO> rankings = examRankingService.getExamRankings(dto, currentUser);
     return SuccessResponseDTO.<List<ExamRankingResponseDTO>>builder()
       .status(200)
-      .message("Rankings retrieved successfully")
+      .message("Lấy bảng xếp hạng thành công")
       .data(rankings)
+      .build();
+  }
+
+  @Operation(
+    summary = "Delete exam ranking",
+    description = "Xóa cứng ExamRanking theo groupExamId và userId",
+    responses = {
+      @ApiResponse(responseCode = "200", description = "Xóa thành công"),
+      @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+      @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content),
+      @ApiResponse(responseCode = "500", description = "Internal Server Error", content = @Content),
+    }
+  )
+  @DeleteMapping
+  @ResponseStatus(HttpStatus.OK)
+  public SuccessResponseDTO<Void> deleteExamRanking(
+    @RequestParam(name = "groupExamId", required = true) String groupExamId,
+    @RequestParam(name = "userId", required = true) String userId,
+    @CurrentUser User currentUser
+  ) {
+    examRankingService.deleteExamRanking(groupExamId, userId);
+    return SuccessResponseDTO.<Void>builder()
+      .status(200)
+      .message("Xóa bảng xếp hạng kỳ thi thành công")
       .build();
   }
 
