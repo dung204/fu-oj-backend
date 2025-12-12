@@ -66,7 +66,7 @@ public class AuthController {
   public SuccessResponseDTO<AuthTokenDTO> login(@RequestBody @Valid LoginRequestDTO loginRequest) {
     return SuccessResponseDTO.<AuthTokenDTO>builder()
       .status(201)
-      .message("Login successfully")
+      .message("Đăng nhập thành công")
       .data(authService.login(loginRequest))
       .build();
   }
@@ -95,7 +95,7 @@ public class AuthController {
   ) {
     return SuccessResponseDTO.<AuthTokenDTO>builder()
       .status(201)
-      .message("Registration successful")
+      .message("Đăng ký thành công")
       .data(authService.register(registerRequest))
       .build();
   }
@@ -126,7 +126,7 @@ public class AuthController {
   ) {
     return SuccessResponseDTO.<AuthTokenDTO>builder()
       .status(201)
-      .message("Refresh token successfully")
+      .message("Làm mới token thành công")
       .data(authService.refresh(refreshTokenRequestDTO.getRefreshToken()))
       .build();
   }

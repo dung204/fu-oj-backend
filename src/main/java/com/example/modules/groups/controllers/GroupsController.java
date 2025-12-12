@@ -56,7 +56,7 @@ public class GroupsController {
   ) {
     return PaginatedSuccessResponseDTO.<GroupResponseDTO>builder()
       .status(200)
-      .message("Groups retrieved successfully")
+      .message("Lấy danh sách nhóm thành công")
       .page(groupsService.getGroups(user, groupsSearchDTO))
       .filters(groupsSearchDTO.getFilters())
       .build();
@@ -86,7 +86,7 @@ public class GroupsController {
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(200)
-      .message("Group retrieved successfully")
+      .message("Lấy thông tin nhóm thành công")
       .data(groupsService.getGroupById(id, user))
       .build();
   }
@@ -113,7 +113,7 @@ public class GroupsController {
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(201)
-      .message("Group created successfully")
+      .message("Tạo nhóm thành công")
       .data(groupsService.addGroup(user, groupRequestDTO))
       .build();
   }
@@ -139,7 +139,7 @@ public class GroupsController {
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(201)
-      .message("Update group successfully")
+      .message("Cập nhật nhóm thành công")
       .data(groupsService.updateGroup(id, groupUpdateRequestDTO))
       .build();
   }
@@ -163,7 +163,7 @@ public class GroupsController {
   public SuccessResponseDTO<GroupResponseDTO> deleteGroupById(@PathVariable String id) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(200)
-      .message("Group delete successfully")
+      .message("Xóa nhóm thành công")
       .data(groupsService.deleteGroup(id))
       .build();
   }
@@ -196,7 +196,7 @@ public class GroupsController {
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(201)
-      .message("Add exercise to group successfully")
+      .message("Thêm bài tập vào nhóm thành công")
       .data(groupsService.addExerciseToGroup(id, addExerciseToGroupRequestDTO.getExerciseIds()))
       .build();
   }
@@ -233,7 +233,7 @@ public class GroupsController {
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(200)
-      .message("remove exercise to group successfully")
+      .message("Xóa bài tập khỏi nhóm thành công")
       .data(
         groupsService.removeExercisesFromGroup(id, removeExerciseToGroupRequestDTO.getExerciseIds())
       )
@@ -276,7 +276,7 @@ public class GroupsController {
   ) {
     return PaginatedSuccessResponseDTO.<ExerciseResponseDTO>builder()
       .status(200)
-      .message("Get exercises by group ID successfully")
+      .message("Lấy danh sách bài tập của nhóm thành công")
       .page(groupsService.getExercisesByGroupId(id, exerciseQueryDTO, currentUser))
       .filters(exerciseQueryDTO.getFilters())
       .build();
@@ -310,7 +310,7 @@ public class GroupsController {
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(201)
-      .message("Add students to group successfully")
+      .message("Thêm sinh viên vào nhóm thành công")
       //id => email, add student group equal email
       .data(groupsService.addStudentsToGroup(id, addStudentToGroupRequestDTO.getStudentIds()))
       .build();
@@ -366,7 +366,7 @@ public class GroupsController {
   ) {
     return SuccessResponseDTO.<List<UserProfileDTO>>builder()
       .status(200)
-      .message("Get little students successfully")
+      .message("Lấy danh sách sinh viên thành công")
       .data(groupsService.getLittleStudentsByGroupId(id, currentUser))
       .build();
   }
@@ -403,7 +403,7 @@ public class GroupsController {
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(200)
-      .message("Remove students from group successfully")
+      .message("Xóa sinh viên khỏi nhóm thành công")
       .data(
         groupsService.removeStudentsFromGroup(id, removeStudentToGroupRequestDTO.getStudentIds())
       )
@@ -445,7 +445,7 @@ public class GroupsController {
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(200)
-      .message("Joined group successfully!")
+      .message("Tham gia nhóm thành công!")
       .data(groupsService.joinGroupByCode(currentUser, joinGroupRequestDTO))
       .build();
   }
@@ -489,7 +489,7 @@ public class GroupsController {
   ) {
     return SuccessResponseDTO.<GroupResponseDTO>builder()
       .status(200)
-      .message("Out group successfully!")
+      .message("Rời nhóm thành công!")
       .data(groupsService.outGroupById(currentUser, id))
       .build();
   }

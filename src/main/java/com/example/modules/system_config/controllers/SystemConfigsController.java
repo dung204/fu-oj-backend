@@ -48,7 +48,7 @@ public class SystemConfigsController {
     SystemConfigsResponseDTO systemConfigs = systemConfigsService.getSystemConfigs();
     return SuccessResponseDTO.<SystemConfigsResponseDTO>builder()
       .status(200)
-      .message("System configurations retrieved successfully")
+      .message("Lấy cấu hình hệ thống thành công")
       .data(systemConfigs)
       .build();
   }
@@ -98,7 +98,7 @@ public class SystemConfigsController {
     );
     return SuccessResponseDTO.<SystemConfigsResponseDTO>builder()
       .status(200)
-      .message("System configurations updated successfully")
+      .message("Cập nhật cấu hình hệ thống thành công")
       .data(updatedSystemConfigs)
       .build();
   }

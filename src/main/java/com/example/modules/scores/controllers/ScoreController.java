@@ -39,7 +39,7 @@ public class ScoreController {
     @ParameterObject @Valid ScoresSearchDTO scoresSearchDTO
   ) {
     return PaginatedSuccessResponseDTO.<ScoreResponseDTO>builder()
-      .message("Scores retrieved successfully.")
+      .message("Lấy danh sách điểm thành công")
       .page(scoresService.getAllScores(scoresSearchDTO))
       .filters(scoresSearchDTO.getFilters())
       .build();

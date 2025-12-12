@@ -53,7 +53,7 @@ public class SubmissionsController {
     @ParameterObject @Valid SubmissionsSearchDTO submissionsSearchDTO
   ) {
     return PaginatedSuccessResponseDTO.<SubmissionResponseDTO>builder()
-      .message("Submissions retrieved successfully.")
+      .message("Lấy danh sách bài nộp thành công")
       .page(submissionsService.getAllSubmissions(submissionsSearchDTO))
       .filters(submissionsSearchDTO.getFilters())
       .build();
@@ -94,7 +94,7 @@ public class SubmissionsController {
     @CurrentUser User currentUser
   ) {
     return SuccessResponseDTO.<SubmissionResponseDTO>builder()
-      .message("Submission created successfully")
+      .message("Nộp bài thành công")
       .data(submissionsService.createSubmissionBase64(request, currentUser))
       .build();
   }
@@ -117,7 +117,7 @@ public class SubmissionsController {
   ) {
     Judge0SubmissionResponseDTO result = judge0Service.getSubmission(token);
     return SuccessResponseDTO.<Judge0SubmissionResponseDTO>builder()
-      .message("Get submission result successfully")
+      .message("Lấy kết quả bài nộp thành công")
       .data(result)
       .build();
   }
@@ -154,7 +154,7 @@ public class SubmissionsController {
   ) {
     RunCodeResponseDTO result = submissionsService.runCode(request);
     return SuccessResponseDTO.<RunCodeResponseDTO>builder()
-      .message("Run code successfully")
+      .message("Chạy code thành công")
       .data(result)
       .build();
   }
@@ -182,7 +182,7 @@ public class SubmissionsController {
       submissionId
     );
     return SuccessResponseDTO.<SubmissionResponseDTO>builder()
-      .message("Get submission results successfully")
+      .message("Lấy kết quả các bài nộp thành công")
       .data(result)
       .build();
   }
@@ -192,7 +192,7 @@ public class SubmissionsController {
     @ParameterObject @Valid SubmissionStatisticsRequestDTO requestDTO
   ) {
     return SuccessResponseDTO.<SubmissionStatisticsResponseDTO>builder()
-      .message("Get submission statistics successfully")
+      .message("Lấy thống kê bài nộp thành công")
       .data(submissionsService.getSubmissionStatistics(requestDTO))
       .build();
   }

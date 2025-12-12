@@ -61,7 +61,7 @@ public class CommentsController {
   ) {
     return PaginatedSuccessResponseDTO.<CommentResponseDTO>builder()
       .status(200)
-      .message("Get comment successfully")
+      .message("Lấy thông tin bình luận thành công")
       .page(commentsService.getCommentsByParentIdAndExerciseId(commentQueryDTO, currentUser))
       .filters(commentQueryDTO.getFilters())
       .build();
@@ -91,7 +91,7 @@ public class CommentsController {
   ) {
     return SuccessResponseDTO.<CommentResponseDTO>builder()
       .status(200)
-      .message("Get comment successfully")
+      .message("Lấy thông tin bình luận thành công")
       .data(commentMapper.toCommentResponseDTO(commentsService.getCommentById(id, currentUser)))
       .build();
   }
@@ -129,7 +129,7 @@ public class CommentsController {
   ) {
     return SuccessResponseDTO.<CommentResponseDTO>builder()
       .status(200)
-      .message("Comment update successfully")
+      .message("Cập nhật bình luận thành công")
       .data(commentsService.updateCommentById(id, commentUpdateDTO, currentUser))
       .build();
   }
@@ -165,7 +165,7 @@ public class CommentsController {
   ) {
     return SuccessResponseDTO.<CommentResponseDTO>builder()
       .status(200)
-      .message("Comment deleted successfully")
+      .message("Xóa bình luận thành công")
       .data(commentsService.deleteCommentById(id, currentUser))
       .build();
   }
@@ -195,7 +195,7 @@ public class CommentsController {
   ) {
     return SuccessResponseDTO.<CommentResponseDTO>builder()
       .status(201)
-      .message("Comment report successfully")
+      .message("Báo cáo bình luận thành công")
       .data(commentsService.reportCommentById(id, 1, currentUser))
       .build();
   }

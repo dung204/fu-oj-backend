@@ -59,7 +59,7 @@ public class MeController {
   @GetMapping("/profile")
   public SuccessResponseDTO<UserProfileDTO> getProfileOfCurrentUser(@CurrentUser User currentUser) {
     return SuccessResponseDTO.<UserProfileDTO>builder()
-      .message("User profile retrieved successfully")
+      .message("Lấy thông tin cá nhân thành công")
       .data(userMapper.toUserProfileDTO(currentUser))
       .build();
   }
@@ -79,7 +79,7 @@ public class MeController {
     @RequestBody @Valid UpdateProfileDTO updateProfileDTO
   ) {
     return SuccessResponseDTO.<UserProfileDTO>builder()
-      .message("User profile updated successfully")
+      .message("Cập nhật thông tin cá nhân thành công")
       .data(usersService.updateProfile(currentUser, updateProfileDTO))
       .build();
   }
@@ -102,7 +102,7 @@ public class MeController {
     ) MultipartFile file
   ) throws InvalidKeyException, NoSuchAlgorithmException, MinioException, IOException {
     return SuccessResponseDTO.<UserProfileDTO>builder()
-      .message("User avatar updated successfully")
+      .message("Cập nhật ảnh đại diện thành công")
       .data(usersService.updateAvatar(currentUser, file))
       .build();
   }
@@ -121,7 +121,7 @@ public class MeController {
     @CurrentUser User currentUser
   ) {
     return PaginatedSuccessResponseDTO.<UserCertificateResponseDTO>builder()
-      .message("Certificates retrieved successfully.")
+      .message("Lấy danh sách chứng chỉ thành công")
       .page(
         certificatesService.findAllCertificatesOfCurrentUser(userCertificatesSearchDTO, currentUser)
       )

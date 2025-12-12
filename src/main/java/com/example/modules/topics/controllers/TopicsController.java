@@ -49,7 +49,7 @@ public class TopicsController {
     @ParameterObject @Valid TopicsSearchDTO topicsSearchDTO
   ) {
     return PaginatedSuccessResponseDTO.<TopicResponseDTO>builder()
-      .message("Topics retrieved successfully.")
+      .message("Lấy danh sách chủ đề thành công")
       .page(topicsService.findAllTopics(topicsSearchDTO))
       .filters(topicsSearchDTO.getFilters())
       .build();
@@ -67,7 +67,7 @@ public class TopicsController {
   @GetMapping("/{id}")
   public SuccessResponseDTO<TopicResponseDTO> getTopicById(@PathVariable String id) {
     return SuccessResponseDTO.<TopicResponseDTO>builder()
-      .message("Topic created successfully.")
+      .message("Tạo chủ đề thành công")
       .data(topicsService.findTopicById(id))
       .build();
   }
@@ -94,7 +94,7 @@ public class TopicsController {
   ) {
     return SuccessResponseDTO.<TopicResponseDTO>builder()
       .status(201)
-      .message("Topic created successfully.")
+      .message("Tạo chủ đề thành công")
       .data(topicsService.createTopic(createTopicDTO))
       .build();
   }
@@ -120,7 +120,7 @@ public class TopicsController {
     @RequestBody @Valid UpdateTopicDTO updateTopicDTO
   ) {
     return SuccessResponseDTO.<TopicResponseDTO>builder()
-      .message("Topic updated successfully.")
+      .message("Cập nhật chủ đề thành công")
       .data(topicsService.updateTopic(id, updateTopicDTO))
       .build();
   }
@@ -162,7 +162,7 @@ public class TopicsController {
   @PatchMapping("/restore/{id}")
   public SuccessResponseDTO<TopicResponseDTO> restoreTopic(@PathVariable String id) {
     return SuccessResponseDTO.<TopicResponseDTO>builder()
-      .message("Topic restored successfully.")
+      .message("Khôi phục chủ đề thành công")
       .data(topicsService.restoreTopic(id))
       .build();
   }

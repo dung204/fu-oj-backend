@@ -66,7 +66,7 @@ public class ExamController {
     ExamResponseDTO createdExam = examService.createExamForMultipleGroups(examCreateDTO);
     return SuccessResponseDTO.<ExamResponseDTO>builder()
       .status(201)
-      .message("Exam created successfully for " + examCreateDTO.getGroupIds().size() + " group(s)")
+      .message("Tạo kỳ thi thành công cho " + examCreateDTO.getGroupIds().size() + " nhóm")
       .data(createdExam)
       .build();
   }
@@ -91,7 +91,7 @@ public class ExamController {
   ) {
     return SuccessResponseDTO.<ExamResponseDTO>builder()
       .status(200)
-      .message("Exam retrieved successfully")
+      .message("Lấy thông tin kỳ thi thành công")
       .data(examMapper.toExamResponseDTO(examService.getExamById(id, currentUser)))
       .build();
   }
@@ -115,7 +115,7 @@ public class ExamController {
   ) {
     return PaginatedSuccessResponseDTO.<ExamResponseDTO>builder()
       .status(200)
-      .message("Exams retrieved successfully")
+      .message("Lấy danh sách kỳ thi thành công")
       .page(examService.getAllExams(examsSearchDTO, currentUser))
       .filters(examsSearchDTO.getFilters())
       .build();
@@ -155,7 +155,7 @@ public class ExamController {
   ) {
     return SuccessResponseDTO.<ExamResponseDTO>builder()
       .status(200)
-      .message("Exam updated successfully.")
+      .message("Cập nhật kỳ thi thành công")
       .data(examService.updateExam(id, examUpdateDTO, currentUser))
       .build();
   }
@@ -195,7 +195,7 @@ public class ExamController {
   ) {
     return SuccessResponseDTO.<ExamResponseDTO>builder()
       .status(200)
-      .message("Exam published successfully.")
+      .message("Xuất bản kỳ thi thành công")
       .data(examService.publishExam(id, currentUser))
       .build();
   }
@@ -218,7 +218,7 @@ public class ExamController {
   ) {
     return SuccessResponseDTO.<ExamResponseDTO>builder()
       .status(200)
-      .message("Exam deleted successfully")
+      .message("Xóa kỳ thi thành công")
       .data(examService.deleteExam(id, currentUser))
       .build();
   }
@@ -268,7 +268,7 @@ public class ExamController {
     );
     return SuccessResponseDTO.<List<StudentExamProgressDTO>>builder()
       .status(200)
-      .message("Student exam progress retrieved successfully")
+      .message("Lấy tiến độ làm bài của sinh viên thành công")
       .data(progress)
       .build();
   }
@@ -299,7 +299,7 @@ public class ExamController {
   ) {
     return SuccessResponseDTO.<ExamResponseDTO>builder()
       .status(200)
-      .message("Exam examined status toggled successfully")
+      .message("Thay đổi trạng thái chấm điểm kỳ thi thành công")
       .data(examService.toggleExamExaminedStatus(id, currentUser))
       .build();
   }

@@ -23,7 +23,7 @@ public class AccountController {
   public SuccessResponseDTO<List<AccountResponseDTO>> getAccount() {
     return SuccessResponseDTO.<List<AccountResponseDTO>>builder()
       .status(200)
-      .message("get list account successfully")
+      .message("Lấy danh sách tài khoản thành công")
       .data(accountService.getAccounts())
       .build();
   }
@@ -36,7 +36,7 @@ public class AccountController {
     accountService.actionAccount(action, id);
     return SuccessResponseDTO.<String>builder()
       .status(204)
-      .message("in active account successful")
+      .message("Cập nhật trạng thái tài khoản thành công")
       .data(null)
       .build();
   }
@@ -49,7 +49,7 @@ public class AccountController {
     accountService.changeRoleAccount(role, id);
     return SuccessResponseDTO.<String>builder()
       .status(204)
-      .message("change role account successful")
+      .message("Thay đổi vai trò tài khoản thành công")
       .data(null)
       .build();
   }

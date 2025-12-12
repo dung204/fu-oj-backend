@@ -64,7 +64,7 @@ public class ExcelController {
 
     return SuccessResponseDTO.<List<RegisterRequestDTO>>builder()
       .status(201)
-      .message("import successful")
+      .message("Import thành công")
       .data(registerRequestDTOS)
       .build();
   }

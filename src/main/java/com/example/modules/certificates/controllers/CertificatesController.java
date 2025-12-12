@@ -54,7 +54,7 @@ public class CertificatesController {
     @ParameterObject @Valid CertificatesSearchDTO certificatesSearchDTO
   ) {
     return PaginatedSuccessResponseDTO.<CertificateResponseDTO>builder()
-      .message("Certificates retrieved successfully.")
+      .message("Lấy danh sách chứng chỉ thành công")
       .page(certificatesService.findAllCertificates(certificatesSearchDTO))
       .filters(certificatesSearchDTO.getFilters())
       .build();
@@ -88,7 +88,7 @@ public class CertificatesController {
     @RequestBody @Valid CertificateIssueDTO certificateIssueDTO
   ) {
     return SuccessResponseDTO.<CertificateResponseDTO>builder()
-      .message("Certificate issued successfully.")
+      .message("Cấp chứng chỉ thành công")
       .data(certificatesService.issueCertificate(certificateIssueDTO))
       .build();
   }

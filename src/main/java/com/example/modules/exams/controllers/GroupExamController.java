@@ -83,7 +83,7 @@ public class GroupExamController {
 
     return SuccessResponseDTO.<List<GroupExamResponseDTO>>builder()
       .status(200)
-      .message("Group exams retrieved successfully")
+      .message("Lấy danh sách kỳ thi nhóm thành công")
       .data(groupExams)
       .build();
   }
@@ -117,7 +117,7 @@ public class GroupExamController {
   ) {
     return SuccessResponseDTO.<GroupExamResponseDTO>builder()
       .status(200)
-      .message("Group exam examined status toggled successfully")
+      .message("Thay đổi trạng thái chấm điểm kỳ thi nhóm thành công")
       .data(groupExamService.toggleGroupExamExaminedStatus(id, currentUser))
       .build();
   }
