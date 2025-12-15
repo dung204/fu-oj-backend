@@ -4,7 +4,6 @@ import com.example.modules.auth.dtos.RegisterRequestDTO;
 import com.example.modules.auth.entities.Account;
 import com.example.modules.auth.enums.Role;
 import com.example.modules.auth.repositories.AccountsRepository;
-import com.example.modules.auth.services.AuthService;
 import com.example.modules.email.service.EmailService;
 import com.example.modules.file.excel.exceptions.AccountImportLimitExceeded;
 import com.example.modules.file.excel.exceptions.FileNotValidException;
@@ -12,15 +11,18 @@ import com.example.modules.file.excel.utils.ExcelExporter;
 import com.example.modules.file.excel.utils.ExcelHelper;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.repositories.UsersRepository;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -77,12 +79,21 @@ public class ExcelService implements IExcelService {
           accountRegisterSuccessfully.addAll(dtoList);
         }
       });
+    } catch (FileNotFoundException ex) {
+      log.info("Excel file format is not correct: {}", ex.getMessage());
+
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Định dạng file Excel không đúng");
     } catch (IOException e) {
       log.info("Unable to read Excel file: {}", e.getMessage());
-    } catch (IllegalArgumentException e) {
-      log.info(e.getMessage());
+
+      throw new ResponseStatusException(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        "Không đọc được file Excel"
+      );
     } catch (AccountImportLimitExceeded e) {
-      log.info("account limit exceeded: {}", e.getMessage());
+      log.info("vượt quá giới hạn tài khoản: {}", e.getMessage());
+
+      throw e;
     }
     return accountRegisterSuccessfully;
   }
@@ -93,8 +104,8 @@ public class ExcelService implements IExcelService {
       .stream()
       .filter(a -> a.getRole() != Role.ADMIN)
       .toList();
-    String[] header = { "Create At", "Email", "Role", "Create By" };
-    String[] field = { "createdTimestamp", "email", "role", "createdBy" };
+    String[] header = { "Create At", "Email", "Role" };
+    String[] field = { "createdTimestamp", "email", "role" };
     return exportToExcel(accounts, "account", header, field);
   }
 

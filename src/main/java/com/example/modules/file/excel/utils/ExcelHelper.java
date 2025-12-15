@@ -2,6 +2,7 @@ package com.example.modules.file.excel.utils;
 
 import com.example.modules.auth.dtos.RegisterRequestDTO;
 import com.example.modules.file.excel.exceptions.AccountImportLimitExceeded;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,17 +23,17 @@ public class ExcelHelper {
 
       if (
         header == null ||
-        !"studentId".equalsIgnoreCase(getString(header.getCell(0))) ||
-        !"name".equalsIgnoreCase(getString(header.getCell(1))) ||
-        !"mail".equalsIgnoreCase(getString(header.getCell(2)))
+        !"RollNumber".equalsIgnoreCase(getString(header.getCell(0))) ||
+        !"Email".equalsIgnoreCase(getString(header.getCell(1))) ||
+        !"FullName".equalsIgnoreCase(getString(header.getCell(2)))
       ) {
-        throw new IllegalArgumentException("File Excel not correct format");
+        throw new FileNotFoundException("File Excel not correct format");
       }
       for (int i = 1; i <= sheet.getLastRowNum(); i++) {
         Row row = sheet.getRow(i);
         if (row == null) continue;
 
-        String email = getString(row.getCell(2));
+        String email = getString(row.getCell(1));
         if (email.isEmpty()) continue;
 
         String password = PasswordUtils.generateRandomPassword(8);
