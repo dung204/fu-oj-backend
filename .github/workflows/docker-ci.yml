@@ -123,7 +123,7 @@ jobs:
             echo "Deployment successful!"
 
       - name: Deploy to Server via SSH
-        uses: appleboy/ssh-action@v2.1.0
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SERVER_HOST_2 }}
           username: ${{ secrets.SERVER_USER_2 }}
