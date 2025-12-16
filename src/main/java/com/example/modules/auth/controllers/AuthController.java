@@ -5,11 +5,7 @@ import static com.example.base.utils.AppRoutes.AUTH_PREFIX;
 import com.example.base.dtos.SuccessResponseDTO;
 import com.example.modules.auth.annotations.CurrentUser;
 import com.example.modules.auth.annotations.Public;
-import com.example.modules.auth.dtos.AuthTokenDTO;
-import com.example.modules.auth.dtos.ChangePasswordRequestDTO;
-import com.example.modules.auth.dtos.LoginRequestDTO;
-import com.example.modules.auth.dtos.RefreshTokenRequestDTO;
-import com.example.modules.auth.dtos.RegisterRequestDTO;
+import com.example.modules.auth.dtos.*;
 import com.example.modules.auth.entities.Account;
 import com.example.modules.auth.repositories.AccountsRepository;
 import com.example.modules.auth.services.AuthService;
@@ -202,50 +198,18 @@ public class AuthController {
   }
 
   @Public
-  @Operation(
-    summary = "Send a password reset email",
-    description = """
-    Sends an email containing a randomly generated password or reset code
-    to the user's email address.
-    The email content is rendered using a predefined HTML template (`takepassword-email`).
-    """,
-    parameters = {
-      @Parameter(
-        name = "to",
-        description = "Email address of the recipient",
-        required = true,
-        example = "user@example.com"
-      ),
-    },
-    responses = {
-      @ApiResponse(
-        responseCode = "204",
-        description = "Email sent successfully. No content is returned."
-      ),
-      @ApiResponse(
-        responseCode = "400",
-        description = """
-        - Missing or invalid email address
-        - Email template not found
-        """,
-        content = @Content
-      ),
-      @ApiResponse(
-        responseCode = "500",
-        description = "Internal Server Error while sending email",
-        content = @Content
-      ),
-    }
-  )
-  @GetMapping("/forget-password")
+  @PostMapping("/password/otp")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void forgetPassword(@RequestParam String to) throws MessagingException {
-    emailService.sendEmailWithTemplate(
-      to,
-      "SEND PASSWORD ",
-      "takepassword-email",
-      Map.of("name", to, "code", PasswordUtils.generateRandomPassword(8))
-    );
+  public void sendPasswordResetOtp(@RequestParam String email) throws MessagingException {
+    authService.sendPasswordResetOtp(email);
+  }
+
+  @Public
+  @PostMapping("/password/otp/verify")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void verifyOtpAndSendNewPassword(@RequestBody @Valid VerifyOTPRequestDTO request)
+    throws MessagingException {
+    authService.verifyOtpAndSendNewPassword(request.getEmail(), request.getOtp());
   }
 
   @Public

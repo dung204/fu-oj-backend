@@ -32,17 +32,6 @@ public class EmailService {
     String templateName,
     Map<String, Object> variables
   ) throws MessagingException {
-    if ("takepassword-email".equals(templateName)) {
-      //find to => accountByEmail
-      Optional<Account> account = accountsRepository.findByEmail(to);
-      // call account service process new password take in variables
-      if (account.isPresent()) {
-        String password = variables.get("code").toString();
-        account.get().setPassword(passwordEncoder.encode(password));
-        account.get().setDeletedTimestamp(null);
-        accountsRepository.save(account.get());
-      }
-    }
     Context context = new Context();
     context.setVariables(variables);
 
