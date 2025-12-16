@@ -11,6 +11,8 @@ import com.example.modules.auth.exceptions.PasswordNotMatchException;
 import com.example.modules.auth.exceptions.TokenInvalidatedException;
 import com.example.modules.auth.repositories.AccountsRepository;
 import com.example.modules.auth.utils.AccountsSpecification;
+import com.example.modules.email.service.EmailService;
+import com.example.modules.file.excel.utils.PasswordUtils;
 import com.example.modules.redis.services.RedisService;
 import com.example.modules.users.entities.User;
 import com.example.modules.users.exceptions.UserNotFoundException;
@@ -18,10 +20,14 @@ import com.example.modules.users.repositories.UsersRepository;
 import com.example.modules.users.utils.UserMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
+import jakarta.mail.MessagingException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +44,7 @@ public class AuthService {
   private final RedisService redisService;
   private final UserMapper userMapper;
   private final PasswordEncoder passwordEncoder;
+  private final EmailService emailService;
 
   public AuthTokenDTO login(LoginRequestDTO loginRequest) {
     String email = loginRequest.getEmail();
@@ -86,8 +93,6 @@ public class AuthService {
       savedUser = usersRepository.save(user);
     }
 
-    // Ensure account is loaded before generating token to avoid lazy loading issues
-    // in production
     if (savedUser.getAccount() != null) {
       savedUser.getAccount().getRole();
     }
@@ -164,6 +169,47 @@ public class AuthService {
     redisService.set(
       "user:%s:tokens:invalidated_before".formatted(userId),
       Instant.now().truncatedTo(ChronoUnit.SECONDS)
+    );
+  }
+
+  public void sendPasswordResetOtp(String email) throws MessagingException {
+    Account account = accountsRepository.findAccountByEmail(email);
+    if (account == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản");
+    }
+    String otp = String.format("%06d", ThreadLocalRandom.current().nextInt(0, 1_000_000));
+    String key = "password_reset:otp:%s".formatted(email);
+    redisService.set(key, otp, Duration.ofMinutes(5));
+    emailService.sendEmailWithTemplate(
+      email,
+      "Mã OTP đổi mật khẩu",
+      "otp-email",
+      Map.of("name", email, "otp", otp)
+    );
+  }
+
+  public void verifyOtpAndSendNewPassword(String email, String otp) throws MessagingException {
+    String key = "password_reset:otp:%s".formatted(email);
+    String otpInRedis = redisService.get(key, String.class);
+
+    if (otpInRedis == null || !otpInRedis.equals(otp)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "OTP không hợp lệ hoặc đã hết hạn");
+    }
+
+    redisService.delete(key);
+
+    Account account = accountsRepository.findAccountByEmail(email);
+    if (account == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy tài khoản");
+    }
+    String newPassword = PasswordUtils.generateRandomPassword(8);
+    account.setPassword(passwordEncoder.encode(newPassword));
+    accountsRepository.save(account);
+    emailService.sendEmailWithTemplate(
+      email,
+      "Mật khẩu mới của bạn",
+      "takepassword-email",
+      Map.of("name", email, "code", newPassword)
     );
   }
 }
