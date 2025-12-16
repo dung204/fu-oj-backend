@@ -121,3 +121,30 @@ jobs:
             }
 
             echo "Deployment successful!"
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v2.1.0
+        with:
+          host: ${{ secrets.SERVER_HOST_2 }}
+          username: ${{ secrets.SERVER_USER_2 }}
+          password: ${{ secrets.SERVER_SSH_PASSWORD_2 }}
+          # key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e  # Stop if any command fails
+            export IMAGE_TAG=${{ env.IMAGE_TAG }}
+
+            echo "Pulling latest image version: giatrong/fu-oj-backend:$IMAGE_TAG"
+
+            # update image on server
+            cd ~/fu-oj-backend
+            docker compose -f docker-compose.yml pull
+
+            echo "Server_host 2"
+            echo "Starting deployment with image tag: $IMAGE_TAG"
+            docker compose -f docker-compose.yml --env-file .env up -d --remove-orphans || {
+              echo "Deployment failed. Rolling back..."
+              docker compose -f docker-compose.yml down
+              exit 1
+            }
+
+            echo "Deployment successful!"
