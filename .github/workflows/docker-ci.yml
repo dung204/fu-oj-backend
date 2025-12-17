@@ -51,6 +51,9 @@ jobs:
           echo "# Judge0 configuration" >> .env
           echo "JUDGE0_API_URL=${{ secrets.JUDGE0_API_URL }}" >> .env
           echo "CALL_BACK_URL=${{ secrets.CALL_BACK_URL }}" >> .env
+          echo "CALL_BACK_URL=${{ secrets.JUDGE0_CPU_TIME_LIMIT || '3.0' }}" >> .env
+          echo "CALL_BACK_URL=${{ secrets.JUDGE0_WALL_TIME_LIMIT || '5.0' }}" >> .env
+          echo "CALL_BACK_URL=${{ secrets.JUDGE0_MEMORY_LIMIT || '128000'}}" >> .env
           echo "" >> .env
 
           echo "# Turnstile configuration" >> .env

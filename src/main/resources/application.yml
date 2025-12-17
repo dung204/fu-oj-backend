@@ -88,6 +88,9 @@ jwt:
 judge0:
   judge0-api-url: ${JUDGE0_API_URL}
   callback-url: ${CALL_BACK_URL}
+  cpu-time-limit: ${JUDGE0_CPU_TIME_LIMIT:5.0} # Giới hạn thời gian CPU (giây) - mặc định 5s
+  wall-time-limit: ${JUDGE0_WALL_TIME_LIMIT:10.0} # Giới hạn thời gian thực tế (giây) - mặc định 10s
+  memory-limit: ${JUDGE0_MEMORY_LIMIT:256000} # Giới hạn bộ nhớ (KB) - mặc định 256MB
 
 cloudflare:
   turnstile:
