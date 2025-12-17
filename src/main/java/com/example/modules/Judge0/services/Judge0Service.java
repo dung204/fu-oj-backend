@@ -30,6 +30,15 @@ public class Judge0Service {
   @Value("${judge0.callback-url}")
   private String CALLBACK_URL;
 
+  @Value("${judge0.cpu-time-limit}")
+  private Double cpuTimeLimit;
+
+  @Value("${judge0.wall-time-limit}")
+  private Double wallTimeLimit;
+
+  @Value("${judge0.memory-limit}")
+  private Integer memoryLimit;
+
   /**
    * stdin: input from system ( test case )
    * sourceCode: code from user
@@ -86,6 +95,9 @@ public class Judge0Service {
       submission.put("language_id", Integer.parseInt(languageId));
       submission.put("stdin", encodedInput);
       submission.put("expected_output", encodedOutput);
+      submission.put("cpu_time_limit", cpuTimeLimit); // Giới hạn thời gian CPU (giây)
+      submission.put("wall_time_limit", wallTimeLimit); // Giới hạn thời gian thực tế (giây)
+      submission.put("memory_limit", memoryLimit); // Giới hạn bộ nhớ (KB)
       submissions.add(submission);
     }
 

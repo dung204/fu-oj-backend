@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class TurnstileService {
 
-  private final WebClient webClient = WebClient.create();
+  private final WebClient webClient;
 
   @Value("${cloudflare.turnstile.secret-key}")
   private String secretKey;
