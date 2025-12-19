@@ -49,11 +49,11 @@ public abstract class ExerciseMapper {
         TestCaseResponseDTO dto = testCaseMapper.toTestCaseResponseDTO(tc);
 
         // Then hide private data in DTO only
-        if (!tc.getIsPublic()) {
-          dto.setInput(null);
-          dto.setOutput(null);
-          dto.setNote(null);
-        }
+        // if (!tc.getIsPublic()) {
+        //   dto.setInput(null);
+        //   dto.setOutput(null);
+        //   dto.setNote(null);
+        // }
 
         return dto;
       })
